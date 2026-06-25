@@ -35,8 +35,8 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
       .finally(() => setValidating(false));
   }
 
-  // ¿se puede pagar? sí salvo que la validación sea CONCLUYENTE y diga que no existe.
-  const blocked = !!vResult && vResult.disponible === false && !!vResult.estado;
+  // ¿se puede pagar? sí salvo que la validación sea CONCLUYENTE (no mock/error) y diga que no existe.
+  const blocked = !!vResult && !vResult.mocked && !vResult.error && vResult.disponible === false;
 
   // Paso 2: el cliente confirmó → crear orden y redirigir a Wompi.
   async function confirmAndPay() {

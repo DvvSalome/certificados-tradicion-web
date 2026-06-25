@@ -28,7 +28,8 @@ export async function POST(req: Request) {
   // validó) → instantáneo. Si la validación no es concluyente (mock/timeout) se deja pasar (fail-open):
   // el robot vuelve a consultar antes de generar y, si falla, la devolución automática es el respaldo.
   const check = await verificar(oficina, matricula);
-  if (check.disponible === false && check.estado) {
+  const inconclusive = check.mocked || !!check.error; // mock/timeout → fail-open (robot + devolución respaldan)
+  if (!inconclusive && check.disponible === false) {
     return NextResponse.json({ error: 'No encontramos esa matrícula en esa oficina. Verifícala antes de pagar.' }, { status: 422 });
   }
 
