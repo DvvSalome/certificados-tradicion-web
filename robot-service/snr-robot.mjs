@@ -132,6 +132,11 @@ export class SnrRobot {
       await p.goto(URL_GEN, { waitUntil: 'domcontentloaded', timeout: 30000 });
       await p.waitForSelector(S.matricula, { timeout: 15000 }).catch(() => {});
     }
+    // limpiar cualquier modal/overlay de una consulta previa (sesión reusada): su máscara bloquea los clicks.
+    await p.evaluate(() => {
+      document.querySelectorAll('.ui-widget-overlay,.ui-dialog-mask').forEach((o) => o.remove());
+      document.querySelectorAll('.ui-dialog').forEach((d) => { if (getComputedStyle(d).display !== 'none') d.style.display = 'none'; });
+    }).catch(() => {});
     await this._selectOficina(oficina);
     const indice = await p.inputValue(S.indice).catch(() => null);
     await p.fill(S.matricula, String(matricula));
@@ -140,7 +145,7 @@ export class SnrRobot {
     await p.waitForFunction(() => {
       const m = document.querySelector('[id="formModalMatriculaCarrito"]');
       const t = (m && m.innerText) || document.body.innerText || '';
-      return /Estado|Disponible|no se encuentra|no se encontr/i.test(t);
+      return /Estado|Disponible|no se encuentra|no se encontr|validaci[oó]n Matricula|Error de validaci/i.test(t);
     }, { timeout: 12000 }).catch(() => {});
     await p.waitForTimeout(300);
     const info = await p.evaluate((sel) => {
