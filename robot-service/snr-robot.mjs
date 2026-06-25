@@ -1,0 +1,245 @@
+// SNR Robot — genera/descarga Certificados de Tradición y Libertad.
+// Optimizado: sesión persistida (storageState/cookie) + navegación directa a rutas conocidas.
+// Compatible local (chromium.launch) y producción (Browserless via connectOverCDP).
+//
+// Flujo confirmado por recon (portal v1.60.24, JSF/PrimeFaces):
+//   login -> generate.snr -> oficina(selectOneMenu) -> matricula -> Buscar
+//   -> modal "Informacion Matricula Seleccionada" (Estado: Disponible) -> Agregar al Carrito
+//   -> Pagar (cobra saldo prepago) -> descarga PDF (o se baja del historial).
+import { chromium } from 'playwright';
+import fs from 'fs';
+import path from 'path';
+
+const BASE = 'https://certificados.supernotariado.gov.co';
+const URL_HOME = `${BASE}/certificado`;
+const URL_GEN = `${BASE}/certificado/portal/business/generate.snr`;
+const URL_HIST = `${BASE}/certificado/portal/business/history.snr`;
+
+const S = {
+  userLogin: '[id="formLogin:inpUserLogin"]',
+  passLogin: '[id="formLogin:inpPassLogin"]',
+  btnLogin: '[id="formLogin:btnIngresarLogin"]',
+  oficinaMenu: '[id="formGeneracionCertificados:listaOficinas"]',
+  oficinaPanel: '[id="formGeneracionCertificados:listaOficinas_panel"]',
+  indice: '[id="formGeneracionCertificados:indiceMatricula"]',
+  matricula: '[id="formGeneracionCertificados:inpMatricula"]',
+  btnBuscar: '[id="formGeneracionCertificados:btnBuscarMatricula"]',
+  btnPagar: '[id="formGeneracionCertificados:btnPagar"]',
+  btnLimpiar: '[id="formGeneracionCertificados:btnLimpiar"]',
+  modalMatricula: '[id="formModalMatriculaCarrito"]',
+  dlCertLink: '[title="Presione para descargar certificado"]',
+};
+
+export class SnrRobot {
+  constructor({ user, pass, browserlessWs = null, headless = true, slowMo = 0, stateFile = null, log = console.log } = {}) {
+    if (!user || !pass) throw new Error('SnrRobot: faltan credenciales user/pass');
+    this.user = user; this.pass = pass;
+    this.browserlessWs = browserlessWs; this.headless = headless; this.slowMo = slowMo;
+    this.stateFile = stateFile; this.log = log;
+    this.browser = null; this.ctx = null; this.page = null;
+  }
+
+  async start() {
+    this.browser = this.browserlessWs
+      ? await chromium.connectOverCDP(this.browserlessWs)
+      : await chromium.launch({ headless: this.headless, slowMo: this.slowMo });
+    const opts = {
+      acceptDownloads: true,
+      viewport: { width: 1366, height: 900 },
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    };
+    if (this.stateFile && fs.existsSync(this.stateFile)) { opts.storageState = this.stateFile; this.log('[snr] sesión cargada de ' + this.stateFile); }
+    this.ctx = this.browserlessWs && this.browser.contexts()[0] && !opts.storageState
+      ? this.browser.contexts()[0]
+      : await this.browser.newContext(opts);
+    // Optimización (recon de red): el flujo útil es 1 endpoint JSF (generate.snr). Todo lo demás
+    // —analytics, chat tawk.to, avatar, imágenes/css/fuentes— es ruido. Lo bloqueamos: ~½ de los
+    // requests y -30/40% por carga. No tocamos el host del SNR salvo media estática.
+    await this.ctx.route('**/*', (route) => {
+      const r = route.request();
+      const u = r.url();
+      const block = /google-analytics|googletagmanager|tawk\.to|doubleclick|ServletGraphicsUser/i.test(u);
+      // OJO: NO bloquear 'stylesheet' — PrimeFaces (selectOneMenu/dropdowns) necesita CSS para
+      // renderizar/medir los widgets, sin él los clicks fallan. Imágenes/fuentes/media sí.
+      const media = ['image', 'media', 'font'].includes(r.resourceType());
+      return block || media ? route.abort() : route.continue();
+    }).catch(() => {});
+    this.page = await this.ctx.newPage();
+    return this;
+  }
+
+  async stop() { try { await this.browser?.close(); } catch {} }
+
+  async _saveState() { if (this.stateFile) { fs.mkdirSync(path.dirname(this.stateFile), { recursive: true }); await this.ctx.storageState({ path: this.stateFile }); this.log('[snr] sesión guardada'); } }
+
+  // ¿la sesión sigue viva? (puede entrar a generate.snr sin redirección a login)
+  async isLoggedIn() {
+    const p = this.page;
+    await p.goto(URL_GEN, { waitUntil: 'networkidle', timeout: 30000 }).catch(() => {});
+    await p.waitForTimeout(800);
+    return p.url().includes('generate.snr') && (await p.locator(S.matricula).count().catch(() => 0)) > 0;
+  }
+
+  async login() {
+    const p = this.page;
+    this.log('[snr] login...');
+    await p.goto(URL_HOME, { waitUntil: 'networkidle', timeout: 90000 });
+    await p.waitForTimeout(1200);
+    const aviso = p.locator('[id="modalAvisoPago"] button, [id="modalAvisoPago"] .ui-dialog-titlebar-close').first();
+    if (await aviso.count()) await aviso.click({ force: true }).catch(() => {});
+    await p.waitForTimeout(500);
+    await p.evaluate(() => { document.querySelectorAll('.ui-widget-overlay').forEach((o) => o.remove()); const a = document.querySelector('[id="modalAvisoPago"]'); if (a) a.style.display = 'none'; }).catch(() => {});
+    await p.evaluate(() => { try { PF('dialogLogin').show(); } catch (e) {} }).catch(() => {});
+    await p.waitForSelector(S.userLogin, { state: 'visible', timeout: 15000 });
+    await p.fill(S.userLogin, this.user);
+    await p.fill(S.passLogin, this.pass);
+    await p.click(S.btnLogin);
+    await p.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
+    await p.waitForTimeout(2500);
+    const ok = await p.getByText('Certificado Tradicion', { exact: false }).first().count().catch(() => 0);
+    if (!ok) throw new Error('login falló (no aparece el dashboard)');
+    await this._saveState();
+    this.log('[snr] login OK');
+  }
+
+  async ensureLoggedIn() { if (!(await this.isLoggedIn())) await this.login(); else this.log('[snr] sesión reutilizada'); }
+
+  async _selectOficina(oficina) {
+    const p = this.page;
+    const omId = await p.evaluate((OF) => {
+      const d = [...document.querySelectorAll('.ui-selectonemenu')].find((el) => el.id && new RegExp(OF).test(el.innerText));
+      return d ? d.id : null;
+    }, oficina);
+    if (omId) {
+      await p.locator(`[id="${omId}"]`).click();
+      await p.waitForTimeout(500);
+      const item = p.locator(`[id="${omId}_panel"] li`).filter({ hasText: new RegExp('^' + oficina + '$') }).first();
+      if (await item.count()) await item.click({ force: true });
+      else await p.getByText(oficina, { exact: true }).first().click({ force: true });
+    } else {
+      const nid = await p.evaluate((OF) => { const s = [...document.querySelectorAll('select')].find((se) => [...se.options].some((o) => new RegExp(OF).test(o.text))); return s ? s.id : null; }, oficina);
+      if (!nid) throw new Error('oficina no encontrada: ' + oficina);
+      await p.selectOption(`[id="${nid}"]`, { label: oficina });
+    }
+    await p.waitForTimeout(1200);
+  }
+
+  // Consulta una matrícula y devuelve la info del modal (sin agregar al carrito). GRATIS.
+  async consultar(oficina, matricula) {
+    const p = this.page;
+    if (!p.url().includes('generate.snr')) await p.goto(URL_GEN, { waitUntil: 'networkidle', timeout: 30000 });
+    await this._selectOficina(oficina);
+    const indice = await p.inputValue(S.indice).catch(() => null);
+    await p.fill(S.matricula, String(matricula));
+    await p.click(S.btnBuscar);
+    await p.waitForTimeout(2500);
+    const info = await p.evaluate((sel) => {
+      const m = document.querySelector(sel);
+      const t = (m?.innerText || document.body.innerText || '');
+      const grab = (label) => { const re = new RegExp(label + '\\s*\\n?\\s*([^\\n]+)', 'i'); const r = t.match(re); return r ? r[1].trim() : null; };
+      return { direccion: grab('Direccion'), circulo: grab('Circulo'), estado: grab('Estado'), raw: t.slice(0, 600) };
+    }, S.modalMatricula);
+    info.indice = indice;
+    info.disponible = /disponible/i.test(info.estado || info.raw || '');
+    this.log(`[snr] consulta ${matricula}: estado=${info.estado} indice=${indice}`);
+    return info;
+  }
+
+  async agregarAlCarrito() {
+    const p = this.page;
+    // ID real (de la captura de red): formModalCarrito:btnAgregarCarrito
+    const btn = p.locator('[id="formModalCarrito:btnAgregarCarrito"]').first();
+    if (await btn.count().catch(() => 0)) await btn.click({ force: true });
+    else await p.getByRole('button', { name: /Agregar al Carrito/i }).first().click({ force: true });
+    await p.waitForTimeout(1500);
+    // tras agregar aparece un popup de confirmación que hay que CERRAR para que se habilite "Pagar"
+    const cerrar = p.locator('[id="frmClosePopup:closePopupButton"]').first();
+    if (await cerrar.count().catch(() => 0)) { await cerrar.click({ force: true }).catch(() => {}); }
+    else { const a = p.getByRole('button', { name: /^Aceptar$/ }).first(); if (await a.isVisible().catch(() => false)) await a.click({ force: true }).catch(() => {}); }
+    // btnPagar se habilita por AJAX tras cerrar el popup: ESPERAR activamente (no waits fijos, es flaky).
+    await p.waitForFunction(() => {
+      const b = document.querySelector('[id="formGeneracionCertificados:btnPagar"]');
+      return b && !b.disabled && !b.classList.contains('ui-state-disabled');
+    }, { timeout: 15000 }).then(() => this.log('[snr] carrito listo, Pagar habilitado'))
+      .catch(() => this.log('[snr] ⚠ Pagar no se habilitó en 15s'));
+  }
+
+  async limpiarCarrito() { await this.page.click(S.btnLimpiar).catch(() => {}); await this.page.waitForTimeout(1000); }
+
+  // Lee el saldo de la cuenta prepago (para el panel + alerta de saldo bajo). Devuelve COP (number) o null.
+  // ponytail: heurística = mayor monto $ visible en la pantalla de Cuenta Prepago. Afinar el selector
+  // exacto cuando se confirme el DOM real (ver recon/artifacts/saldo-02-prepago.txt).
+  async leerSaldo() {
+    const p = this.page;
+    const link = p.getByText(/cuenta prepago/i).first();
+    if (await link.count().catch(() => 0)) {
+      await link.click({ force: true }).catch(() => {});
+      await p.waitForLoadState('networkidle', { timeout: 20000 }).catch(() => {});
+      await p.waitForTimeout(2000);
+    }
+    const txt = await p.evaluate(() => document.body.innerText || '');
+    const montos = (txt.match(/\$\s?[\d.]{3,}/g) || []).map((s) => Number(s.replace(/[^\d]/g, ''))).filter((v) => v > 0);
+    if (!montos.length) { this.log('[snr] saldo: no se detectó monto'); return null; }
+    const saldoCOP = Math.max(...montos);
+    this.log('[snr] saldo detectado (heurística): ' + saldoCOP);
+    return saldoCOP;
+  }
+
+  // Descarga un CTL ya generado desde el historial (mecanismo probado). Devuelve Buffer PDF.
+  async descargarDesdeHistorial(matricula) {
+    const p = this.page;
+    await p.goto(URL_HIST, { waitUntil: 'networkidle', timeout: 30000 });
+    await p.waitForSelector(S.dlCertLink, { timeout: 15000 });
+    // ubicar la fila por matrícula y clickear su link de descarga
+    const link = matricula
+      ? p.locator('tr', { hasText: String(matricula) }).locator(S.dlCertLink).first()
+      : p.locator(S.dlCertLink).first();
+    const [dl] = await Promise.all([p.waitForEvent('download', { timeout: 20000 }), link.click({ force: true })]);
+    const tmp = path.join(process.env.TEMP || '.', dl.suggestedFilename() || 'ctl.pdf');
+    await dl.saveAs(tmp);
+    const buf = fs.readFileSync(tmp);
+    if (buf.slice(0, 5).toString() !== '%PDF-') throw new Error('descarga no es PDF');
+    this.log(`[snr] PDF descargado (${buf.length} bytes)`);
+    return buf;
+  }
+
+  // Flujo completo. dryRun=true se detiene ANTES de Pagar (gratis, validable).
+  async generar({ oficina, matricula, dryRun = false }) {
+    await this.ensureLoggedIn();
+    // CONSULTAR ANTES DE GENERAR: si no está disponible, no se cobra nada (ni al SNR ni se sigue).
+    // Error con code NO_DISPONIBLE → el backend dispara la DEVOLUCIÓN automática al cliente.
+    const info = await this.consultar(oficina, matricula);
+    if (!info.disponible) throw Object.assign(new Error(`matrícula ${matricula} no disponible: ${info.estado || info.raw}`), { code: 'NO_DISPONIBLE' });
+    await this.agregarAlCarrito();
+
+    if (dryRun) { await this.limpiarCarrito(); return { dryRun: true, info }; }
+
+    // ── PASO QUE COBRA SALDO (flujo PROBADO end-to-end con 95200) ──
+    const p = this.page;
+    // 1) Pagar → diálogo PrimeFaces.confirm → "Sí"
+    await p.click(S.btnPagar);
+    await p.waitForSelector('.ui-confirmdialog-yes', { timeout: 12000 }).catch(() => {});
+    await p.locator('.ui-confirmdialog-yes').first().click({ force: true })
+      .catch(async () => { await p.getByRole('button', { name: /^S[ií]$/ }).first().click({ force: true }).catch(() => {}); });
+    // 2) payment.snr (Selección de Medios de Pago) → "Cuenta Prepago" (link con title "…prepago…")
+    await p.waitForLoadState('networkidle', { timeout: 25000 }).catch(() => {});
+    await p.waitForTimeout(1500);
+    await p.locator('a[title*="prepago" i]').first().click({ force: true });
+    // 3) Diálogo "Informacion transaccion" (Valor Total) → "Realizar Pago" = COBRA
+    await p.waitForSelector('text=/Realizar Pago/i', { timeout: 12000 }).catch(() => {});
+    await p.getByRole('button', { name: /Realizar Pago/i }).first().click({ force: true });
+    // 4) transaction-result.snr → esperar generación (Estado: Aceptado + PIN/CUS)
+    await p.waitForLoadState('networkidle', { timeout: 60000 }).catch(() => {});
+    await p.waitForTimeout(6000);
+    // Descarga con REINTENTOS: a este punto el SNR YA cobró el saldo y el cert existe en el historial.
+    // Si la descarga falla es transitorio → reintentar (NO regenerar, no se vuelve a cobrar). Tras 3
+    // intentos, el error deja claro que es "generado pero descarga falló → recuperar del historial".
+    let pdf = null;
+    for (let i = 1; i <= 3 && !pdf; i++) {
+      try { pdf = await this.descargarDesdeHistorial(matricula); }
+      catch (e) { this.log(`[snr] descarga intento ${i}/3 falló: ${e.message}`); if (i < 3) await p.waitForTimeout(3000); }
+    }
+    if (!pdf) throw new Error('cert generado y cobrado pero la descarga del historial falló (recuperar manual del historial, NO regenerar)');
+    return { dryRun: false, info, pdf };
+  }
+}
