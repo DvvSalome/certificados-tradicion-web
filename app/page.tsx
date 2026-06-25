@@ -145,6 +145,7 @@ export default function Home() {
       <footer className="border-t border-[var(--border)] bg-white/60">
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-3 px-5 py-6 text-center text-xs text-[var(--muted-2)]">
           <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 font-medium text-[var(--muted)]">
+            <a href="/verificar" className="hover:text-[var(--brand)]">Cómo encontrar tu matrícula</a>
             <a href="/preguntas-frecuentes" className="hover:text-[var(--brand)]">Preguntas frecuentes</a>
             <a href="/precio" className="hover:text-[var(--brand)]">¿Cuánto cuesta?</a>
             <a href="/como-leer-certificado" className="hover:text-[var(--brand)]">Cómo leer tu certificado</a>
