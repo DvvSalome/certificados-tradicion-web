@@ -73,14 +73,20 @@ async function resetVerifyRobot() {
 // Mantener la sesión SNR VIVA (expira a 15 min de inactividad). Navega a generate.snr; si la sesión
 // murió, resetea para que la próxima verificación re-loguee. Así el cliente casi nunca pega el cold (~18s).
 async function keepAlive() {
-  if (!verifyRobot) return;
   try {
+    if (!verifyRobot) { await ensureVerifyRobot(); return; } // re-calentar si no hay sesión
     const p = verifyRobot.page;
     await p.goto('https://certificados.supernotariado.gov.co/certificado/portal/business/generate.snr', { waitUntil: 'domcontentloaded', timeout: 20000 });
     const alive = (await p.locator('[id="formGeneracionCertificados:inpMatricula"]').count().catch(() => 0)) > 0;
-    if (!alive) { console.error('[verify] heartbeat: sesión expiró, reseteo'); await resetVerifyRobot(); }
-    else console.error('[verify] heartbeat OK');
-  } catch (e) { console.error('[verify] heartbeat error: ' + e.message); await resetVerifyRobot(); }
+    if (alive) { console.error('[verify] heartbeat OK'); return; }
+    console.error('[verify] heartbeat: sesión murió, re-calentando');
+    await resetVerifyRobot();
+    await ensureVerifyRobot();
+  } catch (e) {
+    console.error('[verify] heartbeat error, re-calentando: ' + e.message);
+    await resetVerifyRobot();
+    try { await ensureVerifyRobot(); } catch (e2) { console.error('[verify] re-warm falló: ' + e2.message); }
+  }
 }
 
 async function doVerify(oficina, matricula) {
@@ -152,6 +158,6 @@ server.listen(PORT, () => {
   console.error('[robot] worker escuchando en :' + PORT + ' (browserless=' + !!BROWSERLESS_WS + ')');
   // calentar la sesión al arrancar (login en background) → el primer cliente NO paga el cold
   chain = chain.then(() => ensureVerifyRobot()).catch((e) => console.error('[verify] warm-boot falló: ' + e.message));
-  // heartbeat cada 10 min para no dejar expirar la sesión (15 min)
-  setInterval(() => { chain = chain.then(keepAlive).catch(() => {}); }, 10 * 60 * 1000);
+  // heartbeat cada 5 min: mantiene viva (y re-calienta si murió) la sesión SNR + Browserless
+  setInterval(() => { chain = chain.then(keepAlive).catch(() => {}); }, 5 * 60 * 1000);
 });
