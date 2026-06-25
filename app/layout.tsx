@@ -1,20 +1,55 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import StructuredData from "@/components/StructuredData";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Certificado de Tradición y Libertad en línea | Rápido y seguro",
+  metadataBase: new URL("https://certitradicion.com"),
+  title: {
+    default: "Certificado de Tradición y Libertad en línea | Certitradición",
+    template: "%s | Certitradición",
+  },
   description:
-    "Solicita tu Certificado de Tradición y Libertad en minutos. Pago seguro con Wompi, entrega por correo y WhatsApp. Documento con validez de 30 días.",
+    "Solicita tu Certificado de Tradición y Libertad en línea y recíbelo en minutos por correo o WhatsApp. Pago seguro con Wompi. Documento en PDF con validez de 30 días.",
+  keywords: [
+    "certificado de tradición y libertad",
+    "certificado de tradición",
+    "certificado de tradición en línea",
+    "certificado de libertad y tradición",
+    "matrícula inmobiliaria",
+    "certificado de tradición Colombia",
+  ],
+  alternates: { canonical: "/" },
+  applicationName: "Certitradición",
+  authors: [{ name: "Certitradición" }],
+  openGraph: {
+    type: "website",
+    locale: "es_CO",
+    url: "https://certitradicion.com",
+    siteName: "Certitradición",
+    title: "Certificado de Tradición y Libertad en línea | Certitradición",
+    description:
+      "Tu Certificado de Tradición y Libertad en minutos, por correo o WhatsApp. Pago seguro con Wompi. Validez de 30 días.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Certificado de Tradición y Libertad en línea | Certitradición",
+    description:
+      "Tu Certificado de Tradición y Libertad en minutos, por correo o WhatsApp. Pago seguro con Wompi.",
+  },
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 } },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full">{children}</body>
+      <body className="min-h-full">
+        <StructuredData />
+        {children}
+      </body>
     </html>
   );
 }
