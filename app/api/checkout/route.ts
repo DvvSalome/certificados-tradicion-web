@@ -25,7 +25,11 @@ export async function POST(req: Request) {
   const reference = 'CTL-' + randomUUID().replace(/-/g, '').slice(0, 20);
   await orders.create({ reference, matricula, oficina, email, phone, amountInCents: AMOUNT_IN_CENTS, status: 'PENDING_PAYMENT', createdAt: new Date().toISOString() });
 
-  const origin = new URL(req.url).origin;
+  // URL pública del sitio. Detrás de un proxy (Traefik/Vercel) NO usar req.url (da el origen interno localhost).
+  // Prioridad: APP_BASE_URL (fijo y seguro) -> X-Forwarded-Host -> req.url.
+  const fwdHost = req.headers.get('x-forwarded-host');
+  const fwdProto = req.headers.get('x-forwarded-proto') || 'https';
+  const origin = process.env.APP_BASE_URL || (fwdHost ? `${fwdProto}://${fwdHost}` : new URL(req.url).origin);
   const url = checkoutUrl({ reference, amountInCents: AMOUNT_IN_CENTS, redirectUrl: `${origin}/estado?ref=${reference}` });
   return NextResponse.json({ ok: true, reference, checkoutUrl: url });
 }

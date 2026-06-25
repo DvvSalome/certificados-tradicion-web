@@ -14,15 +14,17 @@ export function integritySignature(reference: string, amountInCents: number, cur
 
 export function checkoutUrl(opts: { reference: string; amountInCents: number; redirectUrl: string; currency?: string }): string {
   const currency = opts.currency || 'COP';
-  const p = new URLSearchParams({
-    'public-key': PUB,
-    currency,
-    'amount-in-cents': String(opts.amountInCents),
-    reference: opts.reference,
-    'redirect-url': opts.redirectUrl,
-    'signature:integrity': integritySignature(opts.reference, opts.amountInCents, currency),
-  });
-  return `${CHECKOUT_BASE}?${p.toString()}`;
+  const sig = integritySignature(opts.reference, opts.amountInCents, currency);
+  // Construido a mano para mantener LITERAL la clave `signature:integrity` (el ':' no debe percent-encodearse).
+  const params = [
+    `public-key=${encodeURIComponent(PUB)}`,
+    `currency=${currency}`,
+    `amount-in-cents=${opts.amountInCents}`,
+    `reference=${encodeURIComponent(opts.reference)}`,
+    `redirect-url=${encodeURIComponent(opts.redirectUrl)}`,
+    `signature:integrity=${sig}`,
+  ];
+  return `${CHECKOUT_BASE}?${params.join('&')}`;
 }
 
 // Valida el checksum de un evento webhook de Wompi.
