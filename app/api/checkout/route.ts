@@ -19,8 +19,8 @@ export async function POST(req: Request) {
 
   if (!/^\d{2,10}$/.test(matricula)) return NextResponse.json({ error: 'Matrícula inválida (solo números)' }, { status: 400 });
   if (!isOficina(oficina)) return NextResponse.json({ error: 'Selecciona una oficina de registro válida' }, { status: 400 });
-  if (!email && !phone) return NextResponse.json({ error: 'Ingresa un correo o un WhatsApp' }, { status: 400 });
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: 'Correo inválido' }, { status: 400 });
+  if (!email) return NextResponse.json({ error: 'El correo electrónico es obligatorio' }, { status: 400 });
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: 'Correo inválido' }, { status: 400 });
   if (phone && !/^\+?\d{7,15}$/.test(phone)) return NextResponse.json({ error: 'WhatsApp inválido' }, { status: 400 });
 
   // VALIDAR ANTES DE COBRAR: si la consulta es conclusiva y la matrícula NO está disponible, no se crea

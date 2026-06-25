@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import OficinaSelect from './OficinaSelect';
+
+const VERIFY_STEPS = ['Conectando con el registro…', 'Buscando tu matrícula…', 'Confirmando la información…'];
 
 export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
   const [matricula, setMatricula] = useState('');
@@ -13,7 +15,15 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
   const [confirm, setConfirm] = useState(false);
   // Validación de la matrícula ANTES de pagar
   const [validating, setValidating] = useState(false);
+  const [vStep, setVStep] = useState(0);
   const [vResult, setVResult] = useState<{ disponible: boolean | null; estado: string | null; direccion: string | null; circulo: string | null; mocked?: boolean; error?: string } | null>(null);
+
+  // mensajes de progreso que avanzan mientras valida (para no preocupar al cliente)
+  useEffect(() => {
+    if (!validating) { setVStep(0); return; }
+    const iv = setInterval(() => setVStep((s) => Math.min(s + 1, VERIFY_STEPS.length - 1)), 2800);
+    return () => clearInterval(iv);
+  }, [validating]);
 
   // Paso 1: validar campos, abrir el modal y CONSULTAR la matrícula (muestra la dirección real).
   function onSubmit(e: FormEvent) {
@@ -21,7 +31,8 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
     setError(null);
     if (!oficina) { setError('Selecciona la oficina de registro'); return; }
     if (!matricula.trim()) { setError('Ingresa tu matrícula inmobiliaria'); return; }
-    if (!email.trim() && !phone.trim()) { setError('Ingresa tu correo o WhatsApp para enviarte el certificado'); return; }
+    if (!email.trim()) { setError('Ingresa tu correo electrónico (ahí te enviamos el certificado)'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError('Revisa tu correo electrónico, parece inválido'); return; }
     setConfirm(true);
     setVResult(null);
     setValidating(true);
@@ -94,6 +105,7 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
         <span className={labelText}>Correo electrónico</span>
         <input
           type="email"
+          required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="tucorreo@ejemplo.com"
@@ -101,6 +113,7 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
           autoComplete="email"
           className={input}
         />
+        <span className="text-xs text-[var(--muted)]">Aquí te enviamos tu certificado en PDF.</span>
       </label>
 
       <label className="flex flex-col gap-1.5">
@@ -123,7 +136,7 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
           <circle cx="12" cy="12" r="10" />
           <path d="M12 16v-4M12 8h.01" />
         </svg>
-        Te enviamos el certificado por correo y/o WhatsApp. Ingresa al menos uno.
+        Te enviamos el certificado a tu correo. El WhatsApp es opcional, como respaldo.
       </p>
 
       {error && (
@@ -186,9 +199,17 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
           </div>
 
           {validating ? (
-            <div className="flex items-center gap-3 px-5 pt-4 text-[14px] text-[var(--muted)]">
-              <span aria-hidden className="size-4 rounded-full border-2 border-[var(--border-strong)] border-t-[var(--brand)]" style={{ animation: 'ctl-spin 0.7s linear infinite' }} />
-              Verificando tu matrícula ante el registro…
+            <div className="flex flex-col gap-2.5 px-5 pt-4">
+              <div className="flex items-center gap-3 text-[14px] font-semibold text-[var(--foreground)]">
+                <span aria-hidden className="size-4 shrink-0 rounded-full border-2 border-[var(--border-strong)] border-t-[var(--brand)]" style={{ animation: 'ctl-spin 0.7s linear infinite' }} />
+                <span key={vStep} className="ctl-fade-up">{VERIFY_STEPS[vStep]}</span>
+              </div>
+              <p className="text-[12px] leading-snug text-[var(--muted-2)]">Consultamos el registro oficial <strong>en vivo</strong> — puede tomar unos segundos. No cierres esta ventana.</p>
+              <div className="mt-0.5 flex gap-1.5">
+                {VERIFY_STEPS.map((_, i) => (
+                  <span key={i} className="h-1 flex-1 rounded-full transition-colors duration-500" style={{ background: i <= vStep ? 'var(--brand)' : 'var(--border)' }} />
+                ))}
+              </div>
             </div>
           ) : blocked ? (
             <div className="mx-5 mt-4 rounded-xl border border-[#f3c2bd] bg-[#fdecec] px-4 py-3 text-[13px] text-[#b42318]">
