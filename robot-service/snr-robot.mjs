@@ -30,9 +30,17 @@ const S = {
   dlCertLink: '[title="Presione para descargar certificado"]',
 };
 
+// Selectores del CONSULTAR PÚBLICO (homepage `/certificado`, SIN login → form `formOficinas`).
+const PUB = {
+  ofButton: '[id="formOficinas:autoCompleteOficinas_button"]',
+  ofPanelLi: '[id="formOficinas:autoCompleteOficinas_panel"] li',
+  matricula: '[id="formOficinas:inpMatricula"]',
+  btnBuscar: '[id="formOficinas:btnBuscar"]',
+};
+
 export class SnrRobot {
   constructor({ user, pass, browserlessWs = null, headless = true, slowMo = 0, stateFile = null, log = console.log } = {}) {
-    if (!user || !pass) throw new Error('SnrRobot: faltan credenciales user/pass');
+    // Credenciales solo necesarias para login() (generación). La consulta pública NO requiere sesión.
     this.user = user; this.pass = pass;
     this.browserlessWs = browserlessWs; this.headless = headless; this.slowMo = slowMo;
     this.stateFile = stateFile; this.log = log;
@@ -81,6 +89,7 @@ export class SnrRobot {
   }
 
   async login() {
+    if (!this.user || !this.pass) throw new Error('SnrRobot: faltan credenciales user/pass para login');
     const p = this.page;
     this.log('[snr] login...');
     await p.goto(URL_HOME, { waitUntil: 'networkidle', timeout: 90000 });
@@ -103,6 +112,63 @@ export class SnrRobot {
   }
 
   async ensureLoggedIn() { if (!(await this.isLoggedIn())) await this.login(); else this.log('[snr] sesión reutilizada'); }
+
+  // Consulta PÚBLICA de disponibilidad — homepage `/certificado`, SIN login (form `formOficinas`).
+  // Es lo que usa /verificar: validar antes de pagar NO requiere sesión; solo la generación la requiere.
+  // Devuelve { disponible, estado, direccion, circulo, raw }. Lanza si el portal no da resultado reconocible.
+  // Reintenta UNA vez internamente (la 1ª consulta sobre una página recién abierta a veces no "prende").
+  async consultarPublico(oficina, matricula) {
+    for (let i = 1; i <= 2; i++) {
+      try { return await this._consultaPublicaOnce(oficina, matricula); }
+      catch (e) { if (i === 2) throw e; this.log('[snr] consulta pública reintento: ' + String(e.message).slice(0, 80)); }
+    }
+  }
+
+  async _consultaPublicaOnce(oficina, matricula) {
+    const p = this.page;
+    await p.goto(URL_HOME, { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await p.waitForTimeout(1000);
+    await p.evaluate(() => {
+      document.querySelectorAll('.ui-widget-overlay,.ui-dialog-mask').forEach((o) => o.remove());
+      const a = document.querySelector('[id="modalAvisoPago"]'); if (a) a.style.display = 'none';
+    }).catch(() => {});
+    // Oficina: abrir el dropdown (teclear es flaky en este autoComplete) y elegir por nombre (sin acentos).
+    await p.click(PUB.ofButton, { force: true, timeout: 15000 });
+    await p.waitForSelector(PUB.ofPanelLi, { timeout: 12000 });
+    const items = await p.locator(PUB.ofPanelLi).evaluateAll((els) => els.map((e) => (e.innerText || '').trim()));
+    const norm = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/\s+/g, ' ').trim();
+    const target = norm(oficina);
+    let idx = items.findIndex((t) => norm(t).endsWith(target));
+    if (idx < 0) idx = items.findIndex((t) => norm(t).includes(target));
+    if (idx < 0) throw new Error('oficina no encontrada (consulta pública): ' + oficina);
+    await p.locator(PUB.ofPanelLi).nth(idx).click({ force: true });
+    // esperar a que el AJAX de selección de oficina termine (el input refleja la oficina elegida)
+    await p.waitForFunction(() => { const i = document.querySelector('[id="formOficinas:autoCompleteOficinas_input"]'); return !!(i && (i.value || '').trim().length > 2); }, { timeout: 7000 }).catch(() => {});
+    await p.waitForTimeout(900);
+    await p.evaluate(() => { document.querySelectorAll('.ui-widget-overlay,.ui-dialog-mask').forEach((o) => o.remove()); }).catch(() => {});
+    await p.fill(PUB.matricula, String(matricula));
+    await p.click(PUB.btnBuscar, { force: true });
+    await p.waitForFunction(
+      () => /Estado\s+Disponible|Estado\s+No|no se encuentra|no se encontr|no existe|Error de validaci|validaci[oó]n Matricula/i.test((document.body.innerText || '').replace(/\s+/g, ' ')),
+      { timeout: 15000 },
+    ).catch(() => {});
+    await p.waitForTimeout(300);
+    const info = await p.evaluate(() => {
+      const dlgs = [...document.querySelectorAll('.ui-dialog')].filter((d) => getComputedStyle(d).display !== 'none');
+      const dlg = dlgs.find((d) => /Informacion|Matricula|Estado|no se enc/i.test(d.innerText || ''));
+      const flat = (dlg?.innerText || document.body.innerText || '').replace(/\s+/g, ' ');
+      const between = (a, b) => { const m = flat.match(new RegExp(a + '\\s+(.*?)\\s+' + b, 'i')); return m ? m[1].trim() : null; };
+      const em = flat.match(/Estado\s+([A-Za-zÁÉÍÓÚáéíóúÑñ ]+?)\s+(?:Agregar|Cancelar|Pagar|$)/i);
+      return { direccion: between('Direccion', 'Circulo'), circulo: between('Circulo', 'Estado'), estado: em ? em[1].trim() : null, raw: flat.slice(0, 500) };
+    });
+    const notFound = /no se encuentra|no se encontr|no existe|no es posible generar|Error de validaci[oó]n|No se ha encontrado/i.test(info.raw);
+    const hasInfo = /Estado\s+(Disponible|No)/i.test(info.raw) || !!info.estado;
+    if (!hasInfo && !notFound) throw new Error('consulta pública sin resultado: ' + info.raw.slice(0, 120));
+    info.disponible = !notFound && /disponible/i.test(info.estado || '') && !/no\s*disponible/i.test(info.estado || '');
+    if (notFound && !info.estado) info.estado = 'No encontrada';
+    this.log(`[snr] consulta pública ${matricula}: estado=${info.estado} disp=${info.disponible}`);
+    return info;
+  }
 
   async _selectOficina(oficina) {
     const p = this.page;

@@ -48,21 +48,19 @@ async function generar({ reference, oficina, matricula, email }) {
   }
 }
 
-// ── VERIFICAR (rápido): robot logueado PERSISTENTE reusado entre consultas (no re-loguea cada vez).
-//    Serializado con un mutex (las verificaciones comparten una sola sesión/página).
+// ── VERIFICAR (rápido): CONSULTA PÚBLICA (sin login) con navegador persistente reusado entre consultas.
+//    Serializado con un mutex (comparten una sola página). NO loguea: validar disponibilidad es público
+//    (form `formOficinas` del homepage) → no quema logins ni se ve afectado por bloqueos de la cuenta.
 let verifyRobot = null;
 let chain = Promise.resolve();
 
 async function ensureVerifyRobot() {
   if (verifyRobot) return verifyRobot;
-  const r = new SnrRobot({
-    user: process.env.SNR_USER, pass: process.env.SNR_PASS,
-    browserlessWs: BROWSERLESS_WS || null, headless: true, stateFile: null, log: (m) => console.error(m),
-  });
+  // Sin credenciales: la consulta pública no requiere sesión.
+  const r = new SnrRobot({ browserlessWs: BROWSERLESS_WS || null, headless: true, stateFile: null, log: (m) => console.error(m) });
   await r.start();
-  await r.login();
   verifyRobot = r;
-  console.error('[verify] sesión SNR iniciada (se reutiliza)');
+  console.error('[verify] navegador listo (consulta pública, SIN login)');
   return r;
 }
 async function resetVerifyRobot() {
@@ -74,12 +72,12 @@ async function resetVerifyRobot() {
 // murió, resetea para que la próxima verificación re-loguee. Así el cliente casi nunca pega el cold (~18s).
 async function keepAlive() {
   try {
-    if (!verifyRobot) { await ensureVerifyRobot(); return; } // re-calentar si no hay sesión
+    if (!verifyRobot) { await ensureVerifyRobot(); return; } // re-calentar si no hay navegador
     const p = verifyRobot.page;
-    await p.goto('https://certificados.supernotariado.gov.co/certificado/portal/business/generate.snr', { waitUntil: 'domcontentloaded', timeout: 20000 });
-    const alive = (await p.locator('[id="formGeneracionCertificados:inpMatricula"]').count().catch(() => 0)) > 0;
+    await p.goto('https://certificados.supernotariado.gov.co/certificado', { waitUntil: 'domcontentloaded', timeout: 20000 });
+    const alive = (await p.locator('[id="formOficinas:inpMatricula"]').count().catch(() => 0)) > 0;
     if (alive) { console.error('[verify] heartbeat OK'); return; }
-    console.error('[verify] heartbeat: sesión murió, re-calentando');
+    console.error('[verify] heartbeat: navegador murió, re-calentando');
     await resetVerifyRobot();
     await ensureVerifyRobot();
   } catch (e) {
@@ -92,13 +90,13 @@ async function keepAlive() {
 async function doVerify(oficina, matricula) {
   try {
     const r = await ensureVerifyRobot();
-    return await r.consultar(oficina, matricula);
+    return await r.consultarPublico(oficina, matricula);
   } catch (e) {
-    // sesión muerta/expirada → reiniciar y reintentar UNA vez
+    // navegador muerto → reiniciar y reintentar UNA vez
     console.error('[verify] reintento tras error: ' + e.message);
     await resetVerifyRobot();
     const r = await ensureVerifyRobot();
-    return await r.consultar(oficina, matricula);
+    return await r.consultarPublico(oficina, matricula);
   }
 }
 
@@ -156,8 +154,8 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, () => {
   console.error('[robot] worker escuchando en :' + PORT + ' (browserless=' + !!BROWSERLESS_WS + ')');
-  // calentar la sesión al arrancar (login en background) → el primer cliente NO paga el cold
+  // calentar el navegador al arrancar (SIN login) → el primer cliente NO paga el cold de Browserless
   chain = chain.then(() => ensureVerifyRobot()).catch((e) => console.error('[verify] warm-boot falló: ' + e.message));
-  // heartbeat cada 5 min: mantiene viva (y re-calienta si murió) la sesión SNR + Browserless
+  // heartbeat cada 5 min: mantiene vivo el navegador/Browserless (consulta pública, sin login)
   setInterval(() => { chain = chain.then(keepAlive).catch(() => {}); }, 5 * 60 * 1000);
 });
