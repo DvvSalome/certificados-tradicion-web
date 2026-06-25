@@ -24,18 +24,20 @@ export default function SiteFooter() {
 
         <div className="my-7 h-px bg-white/10" />
 
-        <nav className="mb-4 flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-white/55">
-          <a href="/privacidad" className="transition-colors hover:text-white">Política de Privacidad</a>
-          <a href="/terminos" className="transition-colors hover:text-white">Términos y Condiciones</a>
-          <a href="/reembolsos" className="transition-colors hover:text-white">Política de Reembolsos</a>
-          <a href="/contacto" className="transition-colors hover:text-white">Contacto</a>
-        </nav>
+        <div className="flex flex-col items-center text-center">
+          <nav className="mb-4 flex flex-wrap justify-center gap-x-5 gap-y-1.5 text-xs text-white/55">
+            <a href="/privacidad" className="transition-colors hover:text-white">Política de Privacidad</a>
+            <a href="/terminos" className="transition-colors hover:text-white">Términos y Condiciones</a>
+            <a href="/reembolsos" className="transition-colors hover:text-white">Política de Reembolsos</a>
+            <a href="/contacto" className="transition-colors hover:text-white">Contacto</a>
+          </nav>
 
-        <p className="max-w-2xl text-xs leading-relaxed text-white/55">
-          Servicio privado de gestión documental. No formamos parte del Gobierno de Colombia ni de GOV.CO;
-          actuamos como intermediarios para facilitar tu solicitud ante la autoridad competente.
-        </p>
-        <p className="mt-3 text-xs text-white/40">© 2026 Certitradición · Pago seguro procesado por Wompi</p>
+          <p className="max-w-2xl text-xs leading-relaxed text-white/55">
+            Servicio privado de gestión documental. No formamos parte del Gobierno de Colombia ni de GOV.CO;
+            actuamos como intermediarios para facilitar tu solicitud ante la autoridad competente.
+          </p>
+          <p className="mt-3 text-xs text-white/40">© 2026 Certitradición · Pago seguro procesado por Wompi</p>
+        </div>
       </div>
     </footer>
   );
