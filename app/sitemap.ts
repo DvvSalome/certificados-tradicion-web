@@ -22,9 +22,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })),
   ]
 
+  const legales: MetadataRoute.Sitemap = ['privacidad', 'terminos', 'reembolsos', 'contacto'].map((s) => ({
+    url: `${BASE_URL}/${s}`, lastModified, changeFrequency: 'yearly' as const, priority: 0.3,
+  }))
+
   return [
     ...ciudades,
     ...guias,
+    ...legales,
     {
       url: BASE_URL,
       lastModified,
