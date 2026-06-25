@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { OFICINAS } from '@/lib/oficinas';
 import { formatCOP } from '@/lib/config';
+import OficinaSelect from '@/components/OficinaSelect';
 
 interface BatchItem { matricula: string; oficina: string; status: string; costCents: number | null; error: string | null }
 interface Batch {
@@ -87,13 +87,7 @@ export default function BatchPanel() {
         <div className="flex flex-col gap-3">
           <label className="flex flex-col gap-1.5">
             <span className="text-[13px] font-medium text-[var(--muted)]">Oficina de registro</span>
-            <select
-              value={oficina}
-              onChange={(e) => setOficina(e.target.value)}
-              className="rounded-xl border border-[var(--border-strong)] bg-white px-3.5 py-2.5 text-[15px] outline-none focus:border-[var(--brand-ring)]"
-            >
-              {OFICINAS.map((o) => <option key={o} value={o}>{o}</option>)}
-            </select>
+            <OficinaSelect value={oficina} onChange={setOficina} />
           </label>
           <label className="flex flex-col gap-1.5">
             <span className="text-[13px] font-medium text-[var(--muted)]">Matrículas <span className="text-[var(--muted-2)]">(una por línea)</span></span>

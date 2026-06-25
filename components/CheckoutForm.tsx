@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { OFICINAS } from '@/lib/oficinas';
+import OficinaSelect from './OficinaSelect';
 
 export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
   const [matricula, setMatricula] = useState('');
@@ -73,20 +73,7 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
     <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
       <label className="flex flex-col gap-1.5">
         <span className={labelText}>Oficina de Registro</span>
-        <select
-          required
-          value={oficina}
-          onChange={(e) => setOficina(e.target.value)}
-          disabled={loading}
-          className={`${input} ${oficina ? '' : 'text-[var(--muted-2)]'} pr-11`}
-        >
-          <option value="">Selecciona la oficina…</option>
-          {OFICINAS.map((o) => (
-            <option key={o} value={o} className="text-[var(--foreground)]">
-              {o}
-            </option>
-          ))}
-        </select>
+        <OficinaSelect value={oficina} onChange={setOficina} disabled={loading} />
       </label>
 
       <label className="flex flex-col gap-1.5">
