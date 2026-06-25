@@ -10,9 +10,37 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirm, setConfirm] = useState(false);
+  // Validación de la matrícula ANTES de pagar
+  const [validating, setValidating] = useState(false);
+  const [vResult, setVResult] = useState<{ disponible: boolean | null; estado: string | null; direccion: string | null; circulo: string | null; mocked?: boolean; error?: string } | null>(null);
 
-  async function onSubmit(e: FormEvent) {
+  // Paso 1: validar campos, abrir el modal y CONSULTAR la matrícula (muestra la dirección real).
+  function onSubmit(e: FormEvent) {
     e.preventDefault();
+    setError(null);
+    if (!oficina) { setError('Selecciona la oficina de registro'); return; }
+    if (!matricula.trim()) { setError('Ingresa tu matrícula inmobiliaria'); return; }
+    if (!email.trim() && !phone.trim()) { setError('Ingresa tu correo o WhatsApp para enviarte el certificado'); return; }
+    setConfirm(true);
+    setVResult(null);
+    setValidating(true);
+    fetch('/api/validar', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ oficina, matricula: matricula.trim() }),
+    })
+      .then((r) => r.json())
+      .then((j) => setVResult(j))
+      .catch(() => setVResult({ disponible: null, estado: null, direccion: null, circulo: null, error: 'red' }))
+      .finally(() => setValidating(false));
+  }
+
+  // ¿se puede pagar? sí salvo que la validación sea CONCLUYENTE y diga que no existe.
+  const blocked = !!vResult && vResult.disponible === false && !!vResult.estado;
+
+  // Paso 2: el cliente confirmó → crear orden y redirigir a Wompi.
+  async function confirmAndPay() {
+    if (blocked || validating) return;
     setError(null);
     setLoading(true);
     try {
@@ -24,12 +52,14 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
       const j = await res.json();
       if (!res.ok) {
         setError(j.error || 'Ocurrió un error');
+        setConfirm(false);
         setLoading(false);
         return;
       }
       window.location.href = j.checkoutUrl;
     } catch {
       setError('Error de conexión, intenta de nuevo');
+      setConfirm(false);
       setLoading(false);
     }
   }
@@ -39,6 +69,7 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
   const labelText = 'text-sm font-semibold text-[var(--foreground)]';
 
   return (
+    <>
     <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
       <label className="flex flex-col gap-1.5">
         <span className={labelText}>Oficina de Registro</span>
@@ -150,5 +181,110 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
         Al continuar serás redirigido a la pasarela segura de Wompi.
       </p>
     </form>
+
+    {confirm && (
+      <div
+        className="fixed inset-0 z-50 flex items-end justify-center bg-[rgba(13,27,42,0.5)] p-4 backdrop-blur-sm sm:items-center"
+        role="dialog"
+        aria-modal="true"
+        onClick={() => !loading && setConfirm(false)}
+      >
+        <div
+          className="ctl-fade-up w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="border-b border-[var(--border)] bg-[var(--brand-50)] px-5 py-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--brand)]">Revisa antes de pagar</p>
+            <p className="text-sm text-[var(--muted)]">Verificamos tu matrícula antes de cobrarte.</p>
+          </div>
+
+          {validating ? (
+            <div className="flex items-center gap-3 px-5 pt-4 text-[14px] text-[var(--muted)]">
+              <span aria-hidden className="size-4 rounded-full border-2 border-[var(--border-strong)] border-t-[var(--brand)]" style={{ animation: 'ctl-spin 0.7s linear infinite' }} />
+              Verificando tu matrícula ante el registro…
+            </div>
+          ) : blocked ? (
+            <div className="mx-5 mt-4 rounded-xl border border-[#f3c2bd] bg-[#fdecec] px-4 py-3 text-[13px] text-[#b42318]">
+              <p className="font-semibold">No encontramos la matrícula {matricula}</p>
+              <p className="mt-0.5">en la oficina {oficina}. Revisa el número y la oficina antes de pagar.</p>
+            </div>
+          ) : vResult && vResult.disponible ? (
+            <div className="mx-5 mt-4 overflow-hidden rounded-xl border border-[var(--accent)]/30 bg-[var(--accent-50)]">
+              <div className="flex items-center gap-2 px-4 py-2.5">
+                <span className="grid size-6 place-items-center rounded-full bg-[var(--accent)] text-white"><svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg></span>
+                <p className="text-[14px] font-semibold text-[var(--accent)]">Encontramos tu inmueble</p>
+              </div>
+              {(vResult.direccion || vResult.circulo) && (
+                <p className="border-t border-[var(--accent)]/20 bg-white px-4 py-2 text-[13px] text-[var(--muted)]">
+                  {vResult.direccion}{vResult.direccion && vResult.circulo ? ' · ' : ''}{vResult.circulo}
+                </p>
+              )}
+            </div>
+          ) : null}
+
+          <dl className="flex flex-col gap-3 px-5 py-4 text-[14px]">
+            <div className="flex items-center justify-between gap-3">
+              <dt className="text-[var(--muted)]">Oficina</dt>
+              <dd className="font-semibold text-[var(--foreground)]">{oficina}</dd>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <dt className="text-[var(--muted)]">Matrícula</dt>
+              <dd className="font-mono font-semibold text-[var(--foreground)]">{matricula}</dd>
+            </div>
+            {email.trim() && (
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-[var(--muted)]">Correo</dt>
+                <dd className="truncate font-medium text-[var(--foreground)]">{email}</dd>
+              </div>
+            )}
+            {phone.trim() && (
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-[var(--muted)]">WhatsApp</dt>
+                <dd className="font-medium text-[var(--foreground)]">{phone}</dd>
+              </div>
+            )}
+            <div className="mt-1 flex items-center justify-between gap-3 border-t border-[var(--border)] pt-3">
+              <dt className="font-semibold text-[var(--foreground)]">Total</dt>
+              <dd className="text-lg font-bold text-[var(--foreground)]">{priceLabel}</dd>
+            </div>
+          </dl>
+
+          {!blocked && !validating && (
+            <p className="mx-5 mb-4 flex items-start gap-2 rounded-lg bg-[var(--accent-50)] px-3 py-2.5 text-xs leading-snug text-[var(--accent)]">
+              <svg className="mt-px size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M9 12l2 2 4-4" /><circle cx="12" cy="12" r="10" />
+              </svg>
+              {vResult && vResult.disponible
+                ? 'Verificada. Te llega por correo y/o WhatsApp en minutos.'
+                : 'Si la matrícula no existe, te devolvemos el pago automáticamente.'}
+            </p>
+          )}
+
+          <div className="flex gap-3 border-t border-[var(--border)] px-5 py-4">
+            <button
+              type="button"
+              onClick={() => setConfirm(false)}
+              disabled={loading}
+              className={`${blocked ? 'flex-1' : 'flex-1'} rounded-xl border border-[var(--border-strong)] bg-white px-4 py-3 text-[15px] font-semibold text-[var(--muted)] transition hover:text-[var(--foreground)] disabled:opacity-60`}
+            >
+              {blocked ? 'Corregir matrícula' : 'Corregir'}
+            </button>
+            {!blocked && (
+              <button
+                type="button"
+                onClick={confirmAndPay}
+                disabled={loading || validating}
+                className="flex-[1.4] inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--brand)] px-4 py-3 text-[15px] font-semibold text-white shadow-sm transition hover:bg-[var(--brand-600)] disabled:opacity-60"
+              >
+                {loading ? (
+                  <><span aria-hidden className="size-4 rounded-full border-2 border-white/40 border-t-white" style={{ animation: 'ctl-spin 0.7s linear infinite' }} /> Redirigiendo…</>
+                ) : validating ? 'Verificando…' : 'Confirmar y pagar'}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

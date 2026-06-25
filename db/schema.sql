@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS orders (
   phone            TEXT,
   amount_in_cents  BIGINT NOT NULL,
   status           TEXT NOT NULL DEFAULT 'PENDING_PAYMENT'
-                     CHECK (status IN ('PENDING_PAYMENT','PAID','GENERATING','DELIVERED','FAILED')),
+                     CHECK (status IN ('PENDING_PAYMENT','PAID','GENERATING','DELIVERED','FAILED','REFUND_PENDING','REFUNDED')),
   transaction_id   TEXT,
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -60,3 +60,16 @@ CREATE TABLE IF NOT EXISTS batch_items (
 );
 CREATE INDEX IF NOT EXISTS batch_items_batch_idx ON batch_items (batch_id);
 CREATE INDEX IF NOT EXISTS batch_items_pending_idx ON batch_items (status, created_at) WHERE status = 'PENDING';
+
+-- Caché de validación de matrícula (checkout valida ANTES de pagar). Evita re-consultar al SNR por
+-- la misma matrícula repetida → protege la cuenta. PK = oficina+matrícula.
+CREATE TABLE IF NOT EXISTS verificaciones (
+  oficina     TEXT NOT NULL,
+  matricula   TEXT NOT NULL,
+  disponible  BOOLEAN,
+  estado      TEXT,
+  direccion   TEXT,
+  circulo     TEXT,
+  checked_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (oficina, matricula)
+);

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { recordGeneration } from '@/lib/admin';
 import { orders } from '@/lib/orders';
 import { sendAlert } from '@/lib/alerts';
+import { refundForInvalidMatricula } from '@/lib/refunds';
 
 export const runtime = 'nodejs';
 
@@ -17,6 +18,7 @@ interface Body {
   matricula?: string;
   oficina?: string;
   status?: 'OK' | 'FAILED';
+  errorCode?: 'NO_DISPONIBLE' | 'ERROR';
   costCents?: number | null;
   error?: string | null;
 }
@@ -34,15 +36,24 @@ export async function POST(req: Request) {
   });
 
   if (b.status === 'OK') {
-    if (b.reference) await orders.update(b.reference, { status: 'DELIVERED' });
-  } else {
-    if (b.reference) await orders.update(b.reference, { status: 'FAILED' });
-    await sendAlert({
-      kind: 'generacion_fallida',
-      title: '🔴 Falló la generación de un certificado',
-      message: `No se pudo generar la matrícula ${b.matricula} (${b.oficina}). ${b.error ? 'Error: ' + b.error : ''} Revisa el robot/saldo.`,
-      data: { matricula: b.matricula, oficina: b.oficina, referencia: b.reference ?? null, error: b.error ?? null },
-    });
+    // transición atómica: solo marca DELIVERED si seguía en curso (no pisa REFUNDED/FAILED por un reporte tardío).
+    if (b.reference) await orders.transition(b.reference, ['GENERATING', 'PAID'], 'DELIVERED');
+    return NextResponse.json({ ok: true });
   }
+
+  // FALLO. Si fue por matrícula inválida/no disponible → DEVOLUCIÓN automática al cliente.
+  if (b.errorCode === 'NO_DISPONIBLE' && b.reference) {
+    const r = await refundForInvalidMatricula(b.reference);
+    return NextResponse.json({ ok: true, refunded: r.refunded, manual: r.manual });
+  }
+
+  // Otro fallo (red/robot/SNR): es problema NUESTRO, no se devuelve solo → alerta para reintentar/gestionar.
+  if (b.reference) await orders.transition(b.reference, ['GENERATING', 'PAID'], 'FAILED');
+  await sendAlert({
+    kind: 'generacion_fallida',
+    title: '🔴 Falló la generación de un certificado',
+    message: `No se pudo generar la matrícula ${b.matricula} (${b.oficina}). ${b.error ? 'Error: ' + b.error : ''} Revisa el robot/saldo. (El cliente pagó — gestionar reintento o devolución.)`,
+    data: { matricula: b.matricula, oficina: b.oficina, referencia: b.reference ?? null, error: b.error ?? null },
+  });
   return NextResponse.json({ ok: true });
 }

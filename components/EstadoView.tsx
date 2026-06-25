@@ -31,7 +31,19 @@ const LABELS: Record<string, { title: string; desc: string; variant: Variant }> 
     desc: 'No se realizó ningún cobro o fue rechazado. Puedes intentar de nuevo.',
     variant: 'error',
   },
+  REFUND_PENDING: {
+    title: 'Estamos devolviendo tu pago',
+    desc: 'Esa matrícula no estaba disponible para generar, así que te devolvemos el pago. Puede tardar unos días en reflejarse según tu banco.',
+    variant: 'wait',
+  },
+  REFUNDED: {
+    title: 'Te devolvimos el pago',
+    desc: 'Esa matrícula no estaba disponible, así que no te cobramos. El reembolso puede tardar unos días en reflejarse. Revisa la matrícula e inténtalo de nuevo.',
+    variant: 'wait',
+  },
 };
+
+const FINAL_NO_CERT = ['FAILED', 'REFUND_PENDING', 'REFUNDED'];
 
 // Order of the happy-path timeline.
 const FLOW = ['PENDING_PAYMENT', 'PAID', 'GENERATING', 'DELIVERED'] as const;
@@ -115,7 +127,7 @@ export default function EstadoView() {
   const loading = !status;
   const v = s ? VARIANT_STYLES[s.variant] : null;
   const activeIdx = status ? FLOW.indexOf(status as (typeof FLOW)[number]) : -1;
-  const showTimeline = status !== 'FAILED';
+  const showTimeline = !FINAL_NO_CERT.includes(status ?? '');
 
   return (
     <div className="flex flex-col gap-5">
@@ -192,12 +204,12 @@ export default function EstadoView() {
         </ol>
       )}
 
-      {status === 'FAILED' && (
+      {FINAL_NO_CERT.includes(status ?? '') && (
         <a
           href="/"
           className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--brand)] px-6 py-3.5 text-center text-sm font-semibold text-white shadow-[0_8px_20px_-6px_rgba(16,58,115,0.5)] transition hover:bg-[var(--brand-600)] active:scale-[0.99]"
         >
-          Intentar de nuevo
+          {status === 'FAILED' ? 'Intentar de nuevo' : 'Intentar con otra matrícula'}
         </a>
       )}
 

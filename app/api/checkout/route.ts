@@ -4,6 +4,7 @@ import { orders } from '@/lib/orders';
 import { checkoutUrl } from '@/lib/wompi';
 import { AMOUNT_IN_CENTS } from '@/lib/config';
 import { isOficina } from '@/lib/oficinas';
+import { verificar } from '@/lib/verify';
 
 export const runtime = 'nodejs';
 
@@ -21,6 +22,15 @@ export async function POST(req: Request) {
   if (!email && !phone) return NextResponse.json({ error: 'Ingresa un correo o un WhatsApp' }, { status: 400 });
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: 'Correo inválido' }, { status: 400 });
   if (phone && !/^\+?\d{7,15}$/.test(phone)) return NextResponse.json({ error: 'WhatsApp inválido' }, { status: 400 });
+
+  // VALIDAR ANTES DE COBRAR: si la consulta es conclusiva y la matrícula NO está disponible, no se crea
+  // la orden ni se redirige a Wompi (evita cobrar por una matrícula inexistente). Pega caché (el modal ya
+  // validó) → instantáneo. Si la validación no es concluyente (mock/timeout) se deja pasar (fail-open):
+  // el robot vuelve a consultar antes de generar y, si falla, la devolución automática es el respaldo.
+  const check = await verificar(oficina, matricula);
+  if (check.disponible === false && check.estado) {
+    return NextResponse.json({ error: 'No encontramos esa matrícula en esa oficina. Verifícala antes de pagar.' }, { status: 422 });
+  }
 
   const reference = 'CTL-' + randomUUID().replace(/-/g, '').slice(0, 20);
   await orders.create({ reference, matricula, oficina, email, phone, amountInCents: AMOUNT_IN_CENTS, status: 'PENDING_PAYMENT', createdAt: new Date().toISOString() });

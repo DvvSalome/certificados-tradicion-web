@@ -51,6 +51,26 @@ export function verifyEvent(body: unknown): boolean {
   }
 }
 
+// Anula/devuelve una transacción (POST /transactions/{id}/void, Bearer private key, sin body).
+// Aplica a TARJETA y transacciones recientes (nuestro caso: validamos a los segundos del pago).
+// Para PSE/Nequi puede no aplicar → devuelve ok:false y el backend alerta para devolución manual.
+export async function voidTransaction(id: string): Promise<{ ok: boolean; status?: string; error?: string }> {
+  if (!PRIVATE) return { ok: false, error: 'sin private key' };
+  try {
+    const base = process.env.WOMPI_API_BASE || 'https://production.wompi.co/v1';
+    const r = await fetch(`${base}/transactions/${id}/void`, {
+      method: 'POST',
+      cache: 'no-store',
+      headers: { Authorization: `Bearer ${PRIVATE}` },
+    });
+    const j = (await r.json().catch(() => ({}))) as { data?: { status?: string }; error?: { reason?: string } };
+    if (!r.ok) return { ok: false, error: j?.error?.reason || `HTTP ${r.status}` };
+    return { ok: true, status: j?.data?.status };
+  } catch (e) {
+    return { ok: false, error: String(e).slice(0, 120) };
+  }
+}
+
 // Consulta una transacción en la API de Wompi (FUENTE DE VERDAD; nunca confiar solo en el webhook/redirect).
 export async function getTransaction(
   id: string,

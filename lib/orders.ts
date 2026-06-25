@@ -1,6 +1,6 @@
 import { getPool } from './db';
 
-export type OrderStatus = 'PENDING_PAYMENT' | 'PAID' | 'GENERATING' | 'DELIVERED' | 'FAILED';
+export type OrderStatus = 'PENDING_PAYMENT' | 'PAID' | 'GENERATING' | 'DELIVERED' | 'FAILED' | 'REFUND_PENDING' | 'REFUNDED';
 
 export interface Order {
   reference: string;
@@ -20,6 +20,9 @@ interface Store {
   update(reference: string, patch: Partial<Pick<Order, 'status' | 'transactionId'>>): Promise<Order | null>;
   // Claim ATÓMICO PENDING_PAYMENT -> GENERATING. Devuelve la orden si ESTE proceso ganó el claim, null si no.
   claimForGeneration(reference: string, transactionId: string): Promise<Order | null>;
+  // Transición ATÓMICA condicional: pasa a `to` SOLO si el estado actual está en `from`.
+  // Devuelve la orden si ganó (transicionó), null si el estado no era elegible (idempotencia/anti-carrera).
+  transition(reference: string, from: OrderStatus[], to: OrderStatus): Promise<Order | null>;
 }
 
 // ── Backend en memoria (solo dev local sin DATABASE_URL; NO usar en producción) ──
@@ -39,6 +42,13 @@ const memStore: Store = {
     const o = mem.get(r);
     if (!o || o.status !== 'PENDING_PAYMENT') return null;
     const u: Order = { ...o, status: 'GENERATING', transactionId: txId };
+    mem.set(r, u);
+    return u;
+  },
+  async transition(r, from, to) {
+    const o = mem.get(r);
+    if (!o || !from.includes(o.status)) return null;
+    const u: Order = { ...o, status: to };
     mem.set(r, u);
     return u;
   },
@@ -88,6 +98,15 @@ const pgStore: Store = {
       `UPDATE orders SET status = 'GENERATING', transaction_id = $2, updated_at = now()
        WHERE reference = $1 AND status = 'PENDING_PAYMENT' RETURNING *`,
       [r, txId],
+    );
+    return rows[0] ? toOrder(rows[0]) : null;
+  },
+  async transition(r, from, to) {
+    // UPDATE condicional = atómico: solo una request concurrente gana la transición.
+    const { rows } = await getPool().query<Row>(
+      `UPDATE orders SET status = $3, updated_at = now()
+       WHERE reference = $1 AND status = ANY($2) RETURNING *`,
+      [r, from, to],
     );
     return rows[0] ? toOrder(rows[0]) : null;
   },
