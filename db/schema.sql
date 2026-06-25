@@ -19,7 +19,7 @@ CREATE INDEX IF NOT EXISTS orders_status_idx ON orders (status);
 -- costo real del SNR (columna Valor del historial) y estado del robot (última corrida).
 CREATE TABLE IF NOT EXISTS generations (
   id            BIGSERIAL PRIMARY KEY,
-  reference     TEXT REFERENCES orders (reference),
+  reference     TEXT,  -- liga a orders.reference (sin FK: es bitácora; tolera reportes sueltos)
   matricula     TEXT NOT NULL,
   oficina       TEXT NOT NULL,
   status        TEXT NOT NULL CHECK (status IN ('OK','FAILED')),
