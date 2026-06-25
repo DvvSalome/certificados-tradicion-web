@@ -41,7 +41,7 @@ async function buildPreview(pdfBuffer) {
   }
 }
 
-export async function entregarCorreo({ pdf, matricula, oficina, email }) {
+export async function entregarCorreo({ pdf, matricula, oficina, email, reference }) {
   if (!email) return { sent: false, reason: 'sin email' };
   if (!SMTP_PASS) return { sent: false, reason: 'sin SMTP_PASS' };
   const fecha = new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date());
@@ -54,7 +54,7 @@ export async function entregarCorreo({ pdf, matricula, oficina, email }) {
     from: `"Certitradición" <${SMTP_USER}>`,
     to: email,
     subject: ctlSubject(matricula),
-    html: ctlEmailHtml({ matricula, oficina, fecha, previewCid, descargaUrl: SITE, sitioUrl: SITE }),
+    html: ctlEmailHtml({ matricula, oficina, fecha, previewCid, sitioUrl: SITE }),
     attachments,
   });
   return { sent: true, withPreview: !!preview };

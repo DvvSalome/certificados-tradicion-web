@@ -34,7 +34,7 @@ async function generar({ reference, oficina, matricula, email }) {
     console.error(`[robot] ✅ ${matricula} generado (${r.pdf?.length || 0} bytes)`);
     // ENTREGA por correo (best-effort: el cert ya está generado+pagado; si el correo falla se loguea)
     try {
-      const d = await entregarCorreo({ pdf: r.pdf, matricula, oficina, email });
+      const d = await entregarCorreo({ pdf: r.pdf, matricula, oficina, email, reference });
       console.error(`[robot] correo ${matricula}: ${d.sent ? 'ENVIADO a ' + email + (d.withPreview ? ' (con preview)' : '') : 'NO enviado (' + d.reason + ')'}`);
     } catch (de) {
       console.error(`[robot] ⚠ correo ${matricula} FALLÓ (cert OK, reenviar manual): ${de.message}`);

@@ -18,13 +18,15 @@ export function ctlEmailHtml({ matricula = '', oficina = '', fecha = '', sitioUr
       </td></tr></table>
     </td></tr>` : '';
 
-  const button = descargaUrl ? `
+  // El certificado va ADJUNTO (PDF). Solo un aviso claro — sin botones ni links inútiles
+  // (el cliente ya tiene su certificado en el adjunto).
+  const button = `
     <tr><td style="padding:20px 28px 4px;" align="center">
-      <table role="presentation" cellpadding="0" cellspacing="0" align="center"><tr><td align="center" bgcolor="${brand}" style="border-radius:999px;box-shadow:0 10px 24px -8px rgba(16,58,115,.55);">
-        <a href="${descargaUrl}" target="_blank" style="display:inline-block;padding:15px 30px;color:#fff;font-size:15px;font-weight:700;text-decoration:none;border-radius:999px;font-family:${font};">Descargar mi certificado &nbsp;&#8595;</a>
+      <table role="presentation" cellpadding="0" cellspacing="0" align="center"><tr><td align="center" style="background:#e6f4ee;border:1px solid #bfe3d2;border-radius:16px;padding:16px 24px;">
+        <span style="color:${green};font-size:16px;font-weight:800;font-family:${font};">&#128206;&nbsp; Tu certificado va adjunto a este correo</span>
+        <span style="display:block;color:${muted};font-size:12px;margin-top:5px;font-family:${font};">Archivo <strong>PDF oficial</strong> — descárgalo e imprímelo · validez 30 días</span>
       </td></tr></table>
-      <p style="margin:10px 0 0;color:${soft};font-size:11px;font-family:${font};">PDF oficial · validez 30 días</p>
-    </td></tr>` : '';
+    </td></tr>`;
 
   return `<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -39,7 +41,7 @@ export function ctlEmailHtml({ matricula = '', oficina = '', fecha = '', sitioUr
     <tr><td style="padding:34px 32px 0;" align="center">
       <span style="display:inline-block;background:#e6f4ee;color:${green};font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;padding:6px 14px;border-radius:999px;">&#10003;&nbsp; Certificado emitido</span>
       <h1 style="margin:16px 0 0;color:${ink};font-size:26px;font-weight:800;letter-spacing:-.5px;">Tu certificado está listo</h1>
-      <p style="margin:10px auto 0;max-width:400px;color:${muted};font-size:15px;line-height:1.55;">Aquí tienes tu <strong style="color:${ink};">Certificado de Tradición y Libertad</strong>, oficial y vigente. Tócalo abajo para descargarlo.</p>
+      <p style="margin:10px auto 0;max-width:400px;color:${muted};font-size:15px;line-height:1.55;">Aquí tienes tu <strong style="color:${ink};">Certificado de Tradición y Libertad</strong>, oficial y vigente. Lo encuentras <strong style="color:${ink};">adjunto a este correo</strong>, listo para descargar e imprimir.</p>
     </td></tr>
 
     ${preview}
