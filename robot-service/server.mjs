@@ -4,6 +4,7 @@
 // NO_DISPONIBLE dispara la devolución automática; otro error queda FAILED + alerta.
 import http from 'http';
 import { SnrRobot } from './snr-robot.mjs';
+import { entregarCorreo } from './deliver.mjs';
 
 const PORT = Number(process.env.PORT || 3000);
 const SECRET = process.env.N8N_WEBHOOK_SECRET || '';
@@ -20,7 +21,7 @@ async function reportPanel(body) {
   }).then((r) => console.error('[robot] reporte panel', r.status)).catch((e) => console.error('[robot] reporte falló', e.message));
 }
 
-async function generar({ reference, oficina, matricula }) {
+async function generar({ reference, oficina, matricula, email }) {
   const robot = new SnrRobot({
     user: process.env.SNR_USER, pass: process.env.SNR_PASS,
     browserlessWs: BROWSERLESS_WS || null, headless: true, stateFile: null,
@@ -31,7 +32,13 @@ async function generar({ reference, oficina, matricula }) {
     const r = await robot.generar({ oficina, matricula });
     await reportPanel({ reference, matricula, oficina, status: 'OK', costCents: COST_CENTS });
     console.error(`[robot] ✅ ${matricula} generado (${r.pdf?.length || 0} bytes)`);
-    // TODO entrega: enviar r.pdf por email/WhatsApp (siguiente paso).
+    // ENTREGA por correo (best-effort: el cert ya está generado+pagado; si el correo falla se loguea)
+    try {
+      const d = await entregarCorreo({ pdf: r.pdf, matricula, oficina, email });
+      console.error(`[robot] correo ${matricula}: ${d.sent ? 'ENVIADO a ' + email + (d.withPreview ? ' (con preview)' : '') : 'NO enviado (' + d.reason + ')'}`);
+    } catch (de) {
+      console.error(`[robot] ⚠ correo ${matricula} FALLÓ (cert OK, reenviar manual): ${de.message}`);
+    }
   } catch (e) {
     const errorCode = e.code === 'NO_DISPONIBLE' ? 'NO_DISPONIBLE' : 'ERROR';
     await reportPanel({ reference, matricula, oficina, status: 'FAILED', errorCode, error: String(e.message || e).slice(0, 300) });
