@@ -48,7 +48,70 @@ async function generar({ reference, oficina, matricula, email }) {
   }
 }
 
+// ── VERIFICAR (rápido): robot logueado PERSISTENTE reusado entre consultas (no re-loguea cada vez).
+//    Serializado con un mutex (las verificaciones comparten una sola sesión/página).
+let verifyRobot = null;
+let chain = Promise.resolve();
+
+async function ensureVerifyRobot() {
+  if (verifyRobot) return verifyRobot;
+  const r = new SnrRobot({
+    user: process.env.SNR_USER, pass: process.env.SNR_PASS,
+    browserlessWs: BROWSERLESS_WS || null, headless: true, stateFile: null, log: (m) => console.error(m),
+  });
+  await r.start();
+  await r.login();
+  verifyRobot = r;
+  console.error('[verify] sesión SNR iniciada (se reutiliza)');
+  return r;
+}
+async function resetVerifyRobot() {
+  try { await verifyRobot?.stop(); } catch {}
+  verifyRobot = null;
+}
+
+async function doVerify(oficina, matricula) {
+  try {
+    const r = await ensureVerifyRobot();
+    return await r.consultar(oficina, matricula);
+  } catch (e) {
+    // sesión muerta/expirada → reiniciar y reintentar UNA vez
+    console.error('[verify] reintento tras error: ' + e.message);
+    await resetVerifyRobot();
+    const r = await ensureVerifyRobot();
+    return await r.consultar(oficina, matricula);
+  }
+}
+
+// encola para serializar (una verificación a la vez sobre la sesión compartida)
+function verificarSerial(oficina, matricula) {
+  const run = chain.then(() => doVerify(oficina, matricula));
+  chain = run.catch(() => {});
+  return run;
+}
+
 const server = http.createServer((req, res) => {
+  if (req.method === 'POST' && req.url === '/verificar') {
+    if (!SECRET || req.headers['x-webhook-secret'] !== SECRET) { res.writeHead(401); return res.end('no autorizado'); }
+    let body = '';
+    req.on('data', (c) => { body += c; if (body.length > 1e5) req.destroy(); });
+    req.on('end', async () => {
+      let p;
+      try { p = JSON.parse(body); } catch { res.writeHead(400); return res.end('JSON inválido'); }
+      const oficina = String(p.oficina || ''), matricula = String(p.matricula || '').toUpperCase();
+      if (!oficina || !matricula) { res.writeHead(400); return res.end('faltan oficina/matricula'); }
+      try {
+        const info = await verificarSerial(oficina, matricula);
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ oficina, matricula, disponible: !!info.disponible, estado: info.estado, direccion: info.direccion, circulo: info.circulo }));
+      } catch (e) {
+        console.error('[verify] error final: ' + e.message);
+        res.writeHead(502, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ error: 'verify failed' }));
+      }
+    });
+    return;
+  }
   if (req.method === 'GET' && req.url === '/health') {
     res.writeHead(200, { 'content-type': 'application/json' });
     return res.end(JSON.stringify({ ok: true, browserless: !!BROWSERLESS_WS }));

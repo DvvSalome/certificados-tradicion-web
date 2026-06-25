@@ -127,12 +127,22 @@ export class SnrRobot {
   // Consulta una matrícula y devuelve la info del modal (sin agregar al carrito). GRATIS.
   async consultar(oficina, matricula) {
     const p = this.page;
-    if (!p.url().includes('generate.snr')) await p.goto(URL_GEN, { waitUntil: 'networkidle', timeout: 30000 });
+    // domcontentloaded + esperar el input (no 'networkidle', que espera TODA la red = lento)
+    if (!p.url().includes('generate.snr')) {
+      await p.goto(URL_GEN, { waitUntil: 'domcontentloaded', timeout: 30000 });
+      await p.waitForSelector(S.matricula, { timeout: 15000 }).catch(() => {});
+    }
     await this._selectOficina(oficina);
     const indice = await p.inputValue(S.indice).catch(() => null);
     await p.fill(S.matricula, String(matricula));
     await p.click(S.btnBuscar);
-    await p.waitForTimeout(2500);
+    // esperar a que el modal se pueble (en vez de sleep fijo de 2.5s)
+    await p.waitForFunction(() => {
+      const m = document.querySelector('[id="formModalMatriculaCarrito"]');
+      const t = (m && m.innerText) || document.body.innerText || '';
+      return /Estado|Disponible|no se encuentra|no se encontr/i.test(t);
+    }, { timeout: 12000 }).catch(() => {});
+    await p.waitForTimeout(300);
     const info = await p.evaluate((sel) => {
       const m = document.querySelector(sel);
       const t = (m?.innerText || document.body.innerText || '');
