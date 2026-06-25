@@ -1,182 +1,273 @@
 import CheckoutForm from '@/components/CheckoutForm';
 import SiteFooter from '@/components/SiteFooter';
+import { Seal } from '@/components/Brand';
 import { PRICE_COP, formatCOP } from '@/lib/config';
 
+// Diseño Home (Claude Design · "Certitradicion Home"). Hero con sello animado + panel de checkout.
 export default function Home() {
   const priceLabel = formatCOP(PRICE_COP);
 
+  const navLink = 'transition-colors hover:text-white';
+
   return (
-    <div className="min-h-screen">
-      {/* Top bar */}
-      <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-white/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-3.5">
-          <div className="flex items-center gap-2.5">
-            <span
-              aria-hidden="true"
-              className="grid size-9 place-items-center rounded-xl bg-[var(--brand)] text-white shadow-sm"
-            >
-              <ShieldIcon className="size-5" />
-            </span>
-            <div className="leading-tight">
-              <p className="text-[15px] font-semibold tracking-tight text-[var(--foreground)]">
-                Certificado de Tradición
-              </p>
-              <p className="text-[11px] font-medium text-[var(--muted-2)]">Gestión en línea · Colombia</p>
-            </div>
+    <div style={{ minHeight: '100vh', background: 'var(--background)' }}>
+      {/* ===== HERO ===== */}
+      <div
+        style={{
+          position: 'relative',
+          overflow: 'hidden',
+          background:
+            'radial-gradient(900px 440px at 80% -12%, #1B4E8F 0%, rgba(27,78,143,0) 60%), linear-gradient(158deg,#103A73 0%, #0B2C55 100%)',
+        }}
+      >
+        <header
+          style={{
+            position: 'relative',
+            zIndex: 3,
+            maxWidth: 1200,
+            margin: '0 auto',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 20,
+            padding: '22px 32px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Seal size={38} tone="onDark" />
+            <p style={{ margin: 0, fontWeight: 800, fontSize: 18, letterSpacing: '-0.02em', color: '#fff' }}>Certitradición</p>
           </div>
-          <span className="hidden items-center gap-1.5 rounded-full bg-[var(--accent-50)] px-3 py-1.5 text-xs font-semibold text-[var(--accent)] sm:inline-flex">
-            <LockIcon className="size-3.5" />
-            Pago 100% seguro
-          </span>
-        </div>
-      </header>
+          <nav className="hidden items-center gap-6 text-sm font-medium text-white/80 sm:flex">
+            <a href="#como-funciona" className={navLink}>Cómo funciona</a>
+            <a href="/precio" className={navLink}>Precio</a>
+            <a href="/preguntas-frecuentes" className={navLink}>Preguntas</a>
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-white"
+              style={{ background: 'rgba(255,255,255,.12)' }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              Pago seguro
+            </span>
+          </nav>
+        </header>
 
-      <main className="mx-auto grid max-w-5xl gap-10 px-5 py-10 lg:grid-cols-[1.05fr_1fr] lg:gap-12 lg:py-16">
-        {/* Left: value proposition */}
-        <section className="flex flex-col gap-7 lg:pt-2">
-          <div className="flex flex-col gap-4">
-            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[var(--border-strong)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--brand)] shadow-sm">
-              <span className="relative flex size-2">
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-[var(--accent)] opacity-60" />
-                <span className="relative inline-flex size-2 rounded-full bg-[var(--accent)]" />
-              </span>
-              Documento oficial de la SNR
+        <div
+          style={{
+            position: 'relative',
+            zIndex: 2,
+            maxWidth: 1200,
+            margin: '0 auto',
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 40,
+            alignItems: 'center',
+            padding: '36px 32px 116px',
+          }}
+        >
+          {/* left copy */}
+          <div style={{ flex: '1 1 440px', minWidth: 300, display: 'flex', flexDirection: 'column', gap: 22 }}>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 9,
+                width: 'fit-content',
+                padding: '7px 14px',
+                borderRadius: 999,
+                background: 'rgba(255,255,255,.1)',
+                border: '1px solid rgba(255,255,255,.18)',
+                fontWeight: 600,
+                fontSize: 12.5,
+                color: '#fff',
+              }}
+            >
+              <span style={{ width: 7, height: 7, borderRadius: 999, background: '#34D399' }} /> Documento oficial · validez 30 días
             </span>
 
-            <h1 className="text-[clamp(2rem,7vw,2.9rem)] font-bold leading-[1.06] tracking-[-0.02em] text-[var(--foreground)]">
-              Tu Certificado de Tradición y Libertad,{' '}
-              <span className="text-[var(--brand)]">en minutos.</span>
+            <h1
+              style={{
+                margin: 0,
+                fontWeight: 800,
+                fontSize: 'clamp(38px,5vw,56px)',
+                lineHeight: 1.04,
+                letterSpacing: '-0.03em',
+                color: '#fff',
+              }}
+            >
+              El certificado de tu propiedad, oficial y al día.
             </h1>
 
-            <p className="max-w-md text-[17px] leading-relaxed text-[var(--muted)]">
-              Solicítalo en línea con tu matrícula inmobiliaria y recíbelo por correo o WhatsApp.
-              Rápido, seguro y sin filas.
+            <p style={{ margin: 0, maxWidth: 440, fontSize: 18, lineHeight: 1.6, color: 'rgba(255,255,255,.82)' }}>
+              Tu Certificado de Tradición y Libertad, oficial y vigente. Lo recibes en PDF por correo o WhatsApp, en minutos.
             </p>
-          </div>
 
-          {/* Trust bullets */}
-          <ul className="flex flex-col gap-3.5">
-            {[
-              { t: 'Entrega por correo y WhatsApp', d: 'Lo recibes en formato PDF, listo para descargar e imprimir.' },
-              { t: 'Validez de 30 días', d: 'Vigencia legal según los términos de la Superintendencia de Notariado y Registro.' },
-              { t: 'Pago protegido por Wompi', d: 'Tus datos viajan cifrados. No almacenamos tu información de pago.' },
-            ].map((f) => (
-              <li key={f.t} className="flex items-start gap-3">
-                <span
-                  aria-hidden="true"
-                  className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full bg-[var(--accent-50)] text-[var(--accent)]"
-                >
-                  <CheckIcon className="size-3.5" />
-                </span>
-                <div>
-                  <p className="text-[15px] font-semibold text-[var(--foreground)]">{f.t}</p>
-                  <p className="text-sm leading-snug text-[var(--muted)]">{f.d}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-
-          {/* Steps */}
-          <div className="rounded-2xl border border-[var(--border)] bg-white/60 p-5">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--muted-2)]">
-              Cómo funciona
-            </p>
-            <ol className="grid gap-4 sm:grid-cols-3">
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 26, paddingTop: 6 }}>
               {[
-                { n: '1', t: 'Ingresa los datos', d: 'Oficina y matrícula.' },
-                { n: '2', t: 'Paga seguro', d: 'Con tarjeta o PSE vía Wompi.' },
-                { n: '3', t: 'Recíbelo', d: 'En tu correo o WhatsApp.' },
-              ].map((s) => (
-                <li key={s.n} className="flex flex-col gap-1.5">
-                  <span className="grid size-7 place-items-center rounded-full bg-[var(--brand-50)] text-sm font-bold text-[var(--brand)]">
-                    {s.n}
-                  </span>
-                  <p className="text-sm font-semibold text-[var(--foreground)]">{s.t}</p>
-                  <p className="text-xs leading-snug text-[var(--muted)]">{s.d}</p>
-                </li>
+                { v: priceLabel, l: 'Pago único · IVA incl.' },
+                { v: 'Minutos', l: 'Entrega típica' },
+                { v: '30 días', l: 'Vigencia legal' },
+              ].map((s, i) => (
+                <div key={s.l} style={{ display: 'flex', gap: 26 }}>
+                  {i > 0 && <div style={{ width: 1, background: 'rgba(255,255,255,.18)' }} />}
+                  <div>
+                    <p style={{ margin: 0, fontWeight: 800, fontSize: 24, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>{s.v}</p>
+                    <p style={{ margin: '2px 0 0', fontWeight: 500, fontSize: 12.5, color: 'rgba(255,255,255,.65)' }}>{s.l}</p>
+                  </div>
+                </div>
               ))}
-            </ol>
+            </div>
           </div>
-        </section>
 
-        {/* Right: checkout card */}
-        <section className="lg:pt-2">
-          <div className="lg:sticky lg:top-24">
-            <div className="overflow-hidden rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface)] shadow-[0_12px_40px_-12px_rgba(13,27,42,0.18)]">
-              {/* Price header */}
-              <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--brand-50)] px-6 py-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-[var(--brand)]">
-                    Solicitud de certificado
-                  </p>
-                  <p className="text-sm text-[var(--muted)]">Pago único · sin suscripciones</p>
+          {/* right: animated certificate */}
+          <div style={{ flex: '1 1 340px', minWidth: 280, position: 'relative', height: 400 }}>
+            <div
+              style={{
+                position: 'absolute',
+                right: 0,
+                top: 8,
+                width: 300,
+                height: 384,
+                transform: 'rotate(-2deg)',
+                borderRadius: 14,
+                background: '#fff',
+                boxShadow: '0 34px 64px -22px rgba(0,0,0,.5)',
+                overflow: 'hidden',
+                padding: '26px 24px',
+                animation: 'cz-bob 6s ease-in-out infinite',
+              }}
+            >
+              {/* scan beam */}
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  top: 64,
+                  height: 34,
+                  background: 'linear-gradient(180deg, rgba(52,211,153,0) 0%, rgba(52,211,153,.30) 50%, rgba(52,211,153,0) 100%)',
+                  animation: 'cz-scan 7s cubic-bezier(.4,0,.2,1) infinite',
+                  pointerEvents: 'none',
+                }}
+              />
+              {/* header */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingBottom: 13, borderBottom: '1px solid #E3E9F1' }}>
+                <svg width="26" height="26" viewBox="0 0 64 64" fill="none">
+                  <circle cx="32" cy="32" r="29" fill="#103A73" />
+                  <path d="M42 24.5 A 12 12 0 1 0 42 39.5" stroke="#fff" strokeWidth="6" fill="none" strokeLinecap="round" />
+                  <path d="M37.6 32 l 2.4 2.4 l 5.4 -6.3" stroke="#34D399" strokeWidth="3.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <div style={{ flex: 1 }}>
+                  <div style={{ height: 7, width: '74%', borderRadius: 4, background: '#0D1B2A' }} />
+                  <div style={{ height: 5, width: '46%', marginTop: 5, borderRadius: 4, background: '#CFD9E6' }} />
                 </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold tracking-tight text-[var(--foreground)]">{priceLabel}</p>
-                  <p className="text-[11px] font-medium text-[var(--muted-2)]">IVA incluido</p>
+                <span style={{ fontWeight: 600, fontSize: 8, fontFamily: 'ui-monospace,monospace', letterSpacing: '.06em', color: '#8593A3', whiteSpace: 'nowrap' }}>
+                  N° 040-168410
+                </span>
+              </div>
+              {/* data rows filling */}
+              <div style={{ marginTop: 15, display: 'flex', flexDirection: 'column', gap: 13 }}>
+                {[
+                  { lw: '30%', fw: '88%', a: 'cz-grow1' },
+                  { lw: '24%', fw: '64%', a: 'cz-grow2' },
+                  { lw: '28%', fw: '78%', a: 'cz-grow3' },
+                  { lw: '22%', fw: '52%', a: 'cz-grow4' },
+                ].map((r, i) => (
+                  <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style={{ height: 5, width: r.lw, borderRadius: 3, background: '#CFD9E6' }} />
+                    <div style={{ height: 10, borderRadius: 4, background: '#EEF3FB', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: r.fw, borderRadius: 4, background: 'linear-gradient(90deg,#103A73,#1B4E8F)', transformOrigin: 'left', animation: `${r.a} 7s ease-in-out infinite` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* status cross-fade */}
+              <div style={{ position: 'relative', marginTop: 18, height: 42 }}>
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', gap: 9, padding: '0 13px', borderRadius: 10, background: '#F4F6FB', animation: 'cz-gray 7s ease-in-out infinite' }}>
+                  <span style={{ width: 15, height: 15, flexShrink: 0, borderRadius: 999, border: '2px solid #CFD9E6', borderTopColor: '#103A73', animation: 'cz-spin .7s linear infinite' }} />
+                  <span style={{ fontWeight: 600, fontSize: 11.5, color: '#5B6B7E' }}>Analizando gravámenes…</span>
+                </div>
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', gap: 9, padding: '0 13px', borderRadius: 10, background: '#E8F5EF', animation: 'cz-green 7s ease-in-out infinite' }}>
+                  <span style={{ display: 'grid', placeItems: 'center', width: 20, height: 20, flexShrink: 0, borderRadius: 999, background: '#0F7A52', color: '#fff' }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                  </span>
+                  <span style={{ fontWeight: 700, fontSize: 11.5, color: '#0F7A52' }}>Sin gravámenes vigentes</span>
                 </div>
               </div>
-
-              <div className="p-6">
-                <CheckoutForm priceLabel={priceLabel} />
+              <p style={{ margin: '16px 0 0', textAlign: 'center', fontWeight: 600, fontSize: 8.5, fontFamily: 'ui-monospace,monospace', letterSpacing: '.14em', color: '#A9B4C2' }}>
+                CERTIFICADO DE TRADICIÓN Y LIBERTAD
+              </p>
+              {/* validation stamp */}
+              <div style={{ position: 'absolute', right: 20, bottom: 60, animation: 'cz-stamp 7s ease-in-out infinite', transformOrigin: 'center', pointerEvents: 'none' }}>
+                <div style={{ position: 'relative', width: 60, height: 60, borderRadius: 999, border: '2px solid #0F7A52', display: 'grid', placeItems: 'center' }}>
+                  <div style={{ position: 'absolute', inset: 4, borderRadius: 999, border: '1px dashed rgba(15,122,82,.55)' }} />
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0F7A52" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                    <span style={{ fontWeight: 800, fontSize: 6.5, letterSpacing: '.14em', color: '#0F7A52' }}>VÁLIDO</span>
+                  </div>
+                </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-              {/* Reassurance strip */}
-              <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 border-t border-[var(--border)] bg-[#fafbfd] px-6 py-4 text-xs font-medium text-[var(--muted)]">
-                <span className="inline-flex items-center gap-1.5">
-                  <LockIcon className="size-3.5 text-[var(--accent)]" /> Cifrado SSL
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <ShieldIcon className="size-3.5 text-[var(--accent)]" /> Pago seguro Wompi
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <ClockIcon className="size-3.5 text-[var(--accent)]" /> Entrega rápida
-                </span>
+      {/* ===== CHECKOUT PANEL ===== */}
+      <div id="como-funciona" style={{ maxWidth: 1200, margin: '-76px auto 0', position: 'relative', zIndex: 5, padding: '0 24px 60px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 40, alignItems: 'flex-start' }}>
+          {/* process + trust */}
+          <div style={{ flex: '1 1 360px', minWidth: 280, paddingTop: 88, display: 'flex', flexDirection: 'column', gap: 26 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: 12, letterSpacing: '.12em', textTransform: 'uppercase', color: '#103A73' }}>En tres pasos</p>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {[
+                  { n: '1', t: 'Ingresa oficina y matrícula', d: 'El formulario más corto del mercado.' },
+                  { n: '2', t: 'Verificamos y pagas seguro', d: 'Confirmamos tu inmueble antes de cobrarte. Pago con Wompi.' },
+                  { n: '3', t: 'Recíbelo al instante', d: 'PDF oficial por correo y WhatsApp.', last: true },
+                ].map((s) => (
+                  <div key={s.n} style={{ display: 'flex', gap: 15 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <span style={{ display: 'grid', placeItems: 'center', width: 34, height: 34, borderRadius: 999, background: s.last ? '#0F7A52' : '#103A73', color: '#fff', fontWeight: 700, fontSize: 15 }}>
+                        {s.last ? (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                        ) : s.n}
+                      </span>
+                      {!s.last && <span style={{ width: 2, flex: 1, background: '#CFD9E6', margin: '4px 0' }} />}
+                    </div>
+                    <div style={{ paddingBottom: s.last ? 0 : 22 }}>
+                      <p style={{ margin: 0, fontWeight: 600, fontSize: 15.5, color: '#0D1B2A' }}>{s.t}</p>
+                      <p style={{ margin: '3px 0 0', fontSize: 13.5, lineHeight: 1.5, color: '#5B6B7E' }}>{s.d}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <p className="mt-4 px-1 text-center text-xs leading-relaxed text-[var(--muted-2)]">
-              Servicio de gestión privado. No somos canal oficial de la Superintendencia de Notariado y
-              Registro (SNR); facilitamos el trámite en tu nombre.
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {[
+                { t: 'Cifrado SSL', icon: <><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></> },
+                { t: 'Pago seguro Wompi', icon: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /> },
+                { t: 'Validez 30 días', icon: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></> },
+              ].map((b) => (
+                <span key={b.t} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 13px', borderRadius: 999, background: '#fff', border: '1px solid #E3E9F1', fontWeight: 600, fontSize: 12, color: '#5B6B7E' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0F7A52" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{b.icon}</svg>
+                  {b.t}
+                </span>
+              ))}
+            </div>
+
+            <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.6, color: '#8593A3', maxWidth: 380 }}>
+              Servicio de gestión privado. No somos canal oficial de la Superintendencia de Notariado y Registro (SNR); facilitamos el trámite en tu nombre.
             </p>
           </div>
-        </section>
-      </main>
+
+          {/* checkout (teaser + modal real, cableado a Wompi) */}
+          <CheckoutForm priceLabel={priceLabel} />
+        </div>
+      </div>
 
       <SiteFooter />
     </div>
-  );
-}
-
-/* — Inline icons (no external deps) — */
-function ShieldIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-      <path d="m9 12 2 2 4-4" />
-    </svg>
-  );
-}
-function LockIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="3" y="11" width="18" height="11" rx="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
-  );
-}
-function CheckIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M20 6 9 17l-5-5" />
-    </svg>
-  );
-}
-function ClockIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 7v5l3 2" />
-    </svg>
   );
 }

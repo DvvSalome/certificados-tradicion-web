@@ -13,7 +13,28 @@ function tx() {
   return transporter;
 }
 
-// 1ª página del PDF → difuminada + candado "VISTA PROTEGIDA". Best-effort.
+// Sello de marca (anillo punteado + "C" + check) como PNG transparent para el header del correo.
+// Inline SVG no renderiza en clientes de correo → lo rasterizamos con sharp y lo adjuntamos como CID.
+let _logoPng = null;
+async function brandLogoPng() {
+  if (_logoPng) return _logoPng;
+  try {
+    const sharp = (await import('sharp')).default;
+    const svg = `<svg width="168" height="168" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" fill="none">
+      <circle cx="32" cy="32" r="29.5" stroke="#ffffff" stroke-width="2.4" stroke-dasharray="1.6 3.8" stroke-linecap="round"/>
+      <circle cx="32" cy="32" r="21" fill="none" stroke="#ffffff" stroke-opacity="0.25" stroke-width="1.1"/>
+      <path d="M42 24.5 A 12 12 0 1 0 42 39.5" stroke="#ffffff" stroke-width="5.6" fill="none" stroke-linecap="round"/>
+      <path d="M37.6 32 l 2.4 2.4 l 5.4 -6.3" stroke="#34D399" stroke-width="3.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
+    _logoPng = await sharp(Buffer.from(svg)).png().toBuffer();
+  } catch (e) {
+    console.error('[deliver] logo falló (header sin sello):', e.message);
+    _logoPng = null;
+  }
+  return _logoPng;
+}
+
+// 1ª página del PDF → difuminada + sello "VISTA PROTEGIDA". Best-effort.
 async function buildPreview(pdfBuffer) {
   try {
     const sharp = (await import('sharp')).default;
@@ -25,11 +46,12 @@ async function buildPreview(pdfBuffer) {
     const cx = width / 2, cy = height / 2;
     const svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
       <rect width="100%" height="100%" fill="#0d1b2a" opacity="0.5"/>
-      <g transform="translate(${cx},${cy - 56})">
-        <circle r="58" fill="#ffffff" opacity="0.14"/>
-        <rect x="-30" y="-2" width="60" height="46" rx="9" fill="#ffffff"/>
-        <path d="M -19 -2 V -19 a 19 19 0 0 1 38 0 V -2" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
-        <circle cx="0" cy="20" r="6" fill="#103A73"/>
+      <circle cx="${cx}" cy="${cy - 60}" r="68" fill="#ffffff" opacity="0.10"/>
+      <g transform="translate(${cx},${cy - 60}) scale(2) translate(-32,-32)">
+        <circle cx="32" cy="32" r="29.5" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-dasharray="1.6 3.8" stroke-linecap="round"/>
+        <circle cx="32" cy="32" r="21" fill="none" stroke="#ffffff" stroke-width="1.1" opacity="0.25"/>
+        <path d="M42 24.5 A 12 12 0 1 0 42 39.5" fill="none" stroke="#ffffff" stroke-width="5.6" stroke-linecap="round"/>
+        <path d="M37.6 32 l 2.4 2.4 l 5.4 -6.3" fill="none" stroke="#34D399" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"/>
       </g>
       <text x="${cx}" y="${cy + 52}" text-anchor="middle" font-family="Arial,sans-serif" font-size="40" font-weight="bold" fill="#ffffff" letter-spacing="2">VISTA PROTEGIDA</text>
       <text x="${cx}" y="${cy + 98}" text-anchor="middle" font-family="Arial,sans-serif" font-size="25" fill="#cfe0f2">Descarga el PDF adjunto para ver tu certificado completo</text>
@@ -50,11 +72,15 @@ export async function entregarCorreo({ pdf, matricula, oficina, email, reference
   let previewCid = '';
   if (preview) { previewCid = 'ctlpreview'; attachments.push({ filename: 'vista-protegida.png', content: preview, cid: previewCid }); }
 
+  const logo = await brandLogoPng();
+  let logoUrl = '';
+  if (logo) { logoUrl = 'cid:ctllogo'; attachments.push({ filename: 'certitradicion.png', content: logo, cid: 'ctllogo' }); }
+
   await tx().sendMail({
     from: `"Certitradición" <${SMTP_USER}>`,
     to: email,
     subject: ctlSubject(matricula),
-    html: ctlEmailHtml({ matricula, oficina, fecha, previewCid, sitioUrl: SITE }),
+    html: ctlEmailHtml({ matricula, oficina, fecha, previewCid, sitioUrl: SITE, logoUrl }),
     attachments,
   });
   return { sent: true, withPreview: !!preview };

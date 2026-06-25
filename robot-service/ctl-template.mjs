@@ -6,10 +6,14 @@ export function ctlEmailHtml({ matricula = '', oficina = '', fecha = '', sitioUr
   const brand = '#103A73', brand600 = '#0d2f5e', ink = '#0D1B2A', muted = '#5B6B7F', soft = '#8794a6', line = '#E7EDF5', green = '#0F7A52', bg = '#eef1f7';
   const font = "'Plus Jakarta Sans','Helvetica Neue',Arial,sans-serif";
 
-  const header = logoUrl
-    ? `<img src="${logoUrl}" alt="Certitradición" height="32" style="display:block;border:0;">`
-    : `<span style="color:#fff;font-size:21px;font-weight:800;letter-spacing:-.4px;">Certitradición</span>
-       <span style="color:#9fc0e8;font-size:10px;display:block;margin-top:3px;letter-spacing:.4px;">CERTIFICADOS DE TRADICIÓN Y LIBERTAD · COLOMBIA</span>`;
+  const header = `
+    <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+      ${logoUrl ? `<td valign="middle" style="padding-right:13px;"><img src="${logoUrl}" alt="" width="42" height="42" style="display:block;border:0;"></td>` : ''}
+      <td valign="middle">
+        <span style="color:#fff;font-size:21px;font-weight:800;letter-spacing:-.4px;font-family:${font};">Certitradición</span>
+        <span style="color:#9fc0e8;font-size:10px;display:block;margin-top:3px;letter-spacing:.18em;font-family:${font};">CERTIFICADOS DE TRADICIÓN · COLOMBIA</span>
+      </td>
+    </tr></table>`;
 
   const preview = previewCid ? `
     <tr><td style="padding:8px 28px 0;" align="center">

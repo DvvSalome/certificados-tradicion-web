@@ -96,6 +96,20 @@ select {
   animation: ctl-fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* — Animaciones del diseño Home (Claude Design "Certitradicion Home.dc.html") — */
+@keyframes cz-spin { to { transform: rotate(360deg); } }
+@keyframes cz-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes cz-bob { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-10px) rotate(-2deg); } }
+@keyframes cz-grow1 { 0%,6%{transform:scaleX(0)} 14%{transform:scaleX(1)} 88%{transform:scaleX(1)} 95%,100%{transform:scaleX(0)} }
+@keyframes cz-grow2 { 0%,11%{transform:scaleX(0)} 19%{transform:scaleX(1)} 88%{transform:scaleX(1)} 95%,100%{transform:scaleX(0)} }
+@keyframes cz-grow3 { 0%,16%{transform:scaleX(0)} 24%{transform:scaleX(1)} 88%{transform:scaleX(1)} 95%,100%{transform:scaleX(0)} }
+@keyframes cz-grow4 { 0%,21%{transform:scaleX(0)} 29%{transform:scaleX(1)} 88%{transform:scaleX(1)} 95%,100%{transform:scaleX(0)} }
+@keyframes cz-scan { 0%{transform:translateY(0); opacity:0} 4%{opacity:.9} 30%{transform:translateY(196px); opacity:.9} 36%{opacity:0} 100%{opacity:0; transform:translateY(0)} }
+@keyframes cz-gray { 0%,40%{opacity:1} 47%{opacity:0} 100%{opacity:0} }
+@keyframes cz-green { 0%,43%{opacity:0; transform:translateY(5px)} 50%{opacity:1; transform:none} 88%{opacity:1; transform:none} 95%,100%{opacity:0; transform:translateY(5px)} }
+@keyframes cz-stamp { 0%,38%{opacity:0; transform:scale(.4) rotate(-26deg)} 47%{opacity:1; transform:scale(1.14) rotate(-8deg)} 52%{transform:scale(1) rotate(-8deg)} 88%{opacity:1; transform:scale(1) rotate(-8deg)} 95%,100%{opacity:0; transform:scale(.55) rotate(-26deg)} }
+@keyframes cz-modalin { from { opacity:0; transform: scale(.93) translateY(16px); } to { opacity:1; transform: scale(1) translateY(0); } }
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
