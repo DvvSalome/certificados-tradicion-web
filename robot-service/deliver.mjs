@@ -1,7 +1,7 @@
 // Entrega del CTL por correo: plantilla premium + PDF adjunto + preview DIFUMINADO ("vista protegida").
 // El preview es best-effort (try/catch): si falla, igual se envía el correo con el PDF adjunto.
 import nodemailer from 'nodemailer';
-import { ctlEmailHtml, ctlSubject } from './ctl-template.mjs';
+import { ctlEmailHtml, ctlEmailText, ctlSubject } from './ctl-template.mjs';
 
 const SMTP_USER = process.env.SMTP_USER || 'certificados@certitradicion.com';
 const SMTP_PASS = process.env.SMTP_PASS || '';
@@ -79,7 +79,9 @@ export async function entregarCorreo({ pdf, matricula, oficina, email, reference
   await tx().sendMail({
     from: `"Certitradición" <${SMTP_USER}>`,
     to: email,
+    replyTo: SMTP_USER,
     subject: ctlSubject(matricula),
+    text: ctlEmailText({ matricula, oficina, fecha, sitioUrl: SITE }),
     html: ctlEmailHtml({ matricula, oficina, fecha, previewCid, sitioUrl: SITE, logoUrl }),
     attachments,
   });

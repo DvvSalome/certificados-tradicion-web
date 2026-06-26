@@ -2,6 +2,24 @@
 // El preview va DIFUMINADO + candado (se procesa como imagen, no por CSS — los clientes no soportan blur).
 export const ctlSubject = (matricula) => `Tu Certificado de Tradición y Libertad — matrícula ${matricula}`;
 
+// Versión TEXTO PLANO (multipart/alternative) — mejora entregabilidad: los correos solo-HTML puntúan
+// peor en los filtros de spam (sobre todo en dominios nuevos / Outlook).
+export function ctlEmailText({ matricula = '', oficina = '', fecha = '', sitioUrl = 'https://certitradicion.com' } = {}) {
+  return `Tu Certificado de Tradición y Libertad está listo.
+
+Adjunto a este correo va tu certificado oficial en PDF, listo para descargar e imprimir.
+
+Matrícula inmobiliaria: ${matricula}
+Oficina de Registro: ${oficina}
+Fecha de emisión: ${fecha}
+Vigencia: 30 días
+
+¿Dudas? Responde este correo o escríbenos a certificados@certitradicion.com
+
+— Certitradición · ${sitioUrl}
+Servicio de gestión privado. No formamos parte del Gobierno de Colombia ni de GOV.CO; actuamos como intermediarios para facilitar tu solicitud ante la autoridad competente.`;
+}
+
 export function ctlEmailHtml({ matricula = '', oficina = '', fecha = '', sitioUrl = 'https://certitradicion.com', logoUrl = '', previewCid = '', descargaUrl = '' } = {}) {
   const brand = '#103A73', brand600 = '#0d2f5e', ink = '#0D1B2A', muted = '#5B6B7F', soft = '#8794a6', line = '#E7EDF5', green = '#0F7A52', bg = '#eef1f7';
   const font = "'Plus Jakarta Sans','Helvetica Neue',Arial,sans-serif";
