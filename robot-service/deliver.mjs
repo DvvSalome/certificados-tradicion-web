@@ -1,6 +1,8 @@
 // Entrega del CTL por correo: plantilla premium + PDF adjunto + preview DIFUMINADO ("vista protegida").
 // El preview es best-effort (try/catch): si falla, igual se envía el correo con el PDF adjunto.
 import nodemailer from 'nodemailer';
+import { ImapFlow } from 'imapflow';
+import MailComposer from 'nodemailer/lib/mail-composer/index.js';
 import { ctlEmailHtml, ctlEmailText, ctlSubject } from './ctl-template.mjs';
 
 const SMTP_USER = process.env.SMTP_USER || 'certificados@certitradicion.com';
@@ -63,6 +65,23 @@ async function buildPreview(pdfBuffer) {
   }
 }
 
+// Guarda una copia del correo en la carpeta "Enviados" del buzón vía IMAP APPEND (Hostinger: imap.hostinger.com).
+// Construye el MIME crudo con MailComposer (idéntico al enviado) y lo appendea a la carpeta \Sent.
+async function guardarEnEnviados(message) {
+  const raw = await new Promise((resolve, reject) => {
+    new MailComposer(message).compile().build((err, msg) => (err ? reject(err) : resolve(msg)));
+  });
+  const client = new ImapFlow({ host: 'imap.hostinger.com', port: 993, secure: true, auth: { user: SMTP_USER, pass: SMTP_PASS }, logger: false });
+  await client.connect();
+  try {
+    const boxes = await client.list();
+    const sent = boxes.find((b) => b.specialUse === '\\Sent')?.path || 'Sent';
+    await client.append(sent, raw, ['\\Seen']);
+  } finally {
+    await client.logout().catch(() => {});
+  }
+}
+
 export async function entregarCorreo({ pdf, matricula, oficina, email, reference }) {
   if (!email) return { sent: false, reason: 'sin email' };
   if (!SMTP_PASS) return { sent: false, reason: 'sin SMTP_PASS' };
@@ -76,7 +95,7 @@ export async function entregarCorreo({ pdf, matricula, oficina, email, reference
   let logoUrl = '';
   if (logo) { logoUrl = 'cid:ctllogo'; attachments.push({ filename: 'certitradicion.png', content: logo, cid: 'ctllogo' }); }
 
-  await tx().sendMail({
+  const message = {
     from: `"Certitradición" <${SMTP_USER}>`,
     to: email,
     replyTo: SMTP_USER,
@@ -84,6 +103,10 @@ export async function entregarCorreo({ pdf, matricula, oficina, email, reference
     text: ctlEmailText({ matricula, oficina, fecha, sitioUrl: SITE }),
     html: ctlEmailHtml({ matricula, oficina, fecha, previewCid, sitioUrl: SITE, logoUrl }),
     attachments,
-  });
+  };
+  await tx().sendMail(message);
+  // Copia en la carpeta "Enviados" del webmail (IMAP APPEND). SMTP solo ENTREGA; la carpeta Enviados se
+  // llena vía IMAP. Best-effort: el correo ya se envió, esto es solo la copia visible en el webmail.
+  await guardarEnEnviados(message).catch((e) => console.error('[deliver] IMAP append (Enviados) falló — no crítico: ' + e.message));
   return { sent: true, withPreview: !!preview };
 }
