@@ -21,15 +21,36 @@ async function reportPanel(body) {
   }).then((r) => console.error('[robot] reporte panel', r.status)).catch((e) => console.error('[robot] reporte falló', e.message));
 }
 
-async function generar({ reference, oficina, matricula, email }) {
-  const robot = new SnrRobot({
+// Robot de GENERACIÓN PERSISTENTE: reusa la sesión SNR logueada entre ventas. ensureLoggedIn() (adentro
+// de robot.generar()) solo re-loguea si la sesión murió. Así 50 certificados/día ≈ 1 login por vida del
+// proceso (+ re-login si la sesión expira por inactividad), NO 50 logins/día → no quema la cuenta.
+// Las generaciones se SERIALIZAN (genChain): comparten una sola página, una a la vez (a 50/día no hay cola).
+// Browserless soporta 5 sesiones concurrentes, así que esto convive con el robot de validación (sin login).
+let genRobot = null;
+let genChain = Promise.resolve();
+
+async function ensureGenRobot() {
+  if (genRobot && genRobot.browser?.isConnected()) return genRobot;
+  if (genRobot) await resetGenRobot(); // sesión muerta (Browserless la cerró por inactividad) → recrear
+  const r = new SnrRobot({
     user: process.env.SNR_USER, pass: process.env.SNR_PASS,
-    browserlessWs: BROWSERLESS_WS || null, headless: true, stateFile: null,
-    log: (m) => console.error(m),
+    browserlessWs: BROWSERLESS_WS || null, headless: true, stateFile: null, log: (m) => console.error(m),
   });
+  await r.start();
+  genRobot = r;
+  return r;
+}
+async function resetGenRobot() { try { await genRobot?.stop(); } catch {} genRobot = null; }
+
+function generar(job) {
+  genChain = genChain.catch(() => {}).then(() => generarOne(job));
+  return genChain;
+}
+
+async function generarOne({ reference, oficina, matricula, email }) {
   try {
-    await robot.start();
-    const r = await robot.generar({ oficina, matricula });
+    const robot = await ensureGenRobot();
+    const r = await robot.generar({ oficina, matricula }); // ensureLoggedIn() adentro REUSA la sesión
     await reportPanel({ reference, matricula, oficina, status: 'OK', costCents: COST_CENTS });
     console.error(`[robot] ✅ ${matricula} generado (${r.pdf?.length || 0} bytes)`);
     // ENTREGA por correo (best-effort: el cert ya está generado+pagado; si el correo falla se loguea)
@@ -43,8 +64,9 @@ async function generar({ reference, oficina, matricula, email }) {
     const errorCode = e.code === 'NO_DISPONIBLE' ? 'NO_DISPONIBLE' : 'ERROR';
     await reportPanel({ reference, matricula, oficina, status: 'FAILED', errorCode, error: String(e.message || e).slice(0, 300) });
     console.error(`[robot] ✕ ${matricula} ${errorCode}: ${e.message}`);
-  } finally {
-    await robot.stop();
+    // NO_DISPONIBLE: la sesión está sana (solo se consultó) → conservar. Otro error: puede estar sucia/muerta
+    // (carrito a medias, página rota) → resetear para que la próxima generación arranque limpia (re-loguea).
+    if (errorCode !== 'NO_DISPONIBLE') await resetGenRobot();
   }
 }
 
