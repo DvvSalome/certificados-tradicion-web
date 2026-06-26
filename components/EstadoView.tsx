@@ -23,7 +23,7 @@ const LABELS: Record<string, { title: string; desc: string; variant: Variant }> 
   },
   DELIVERED: {
     title: '¡Tu certificado fue enviado!',
-    desc: 'Revisa tu correo y/o WhatsApp.',
+    desc: 'Revísalo en tu correo. Si no lo ves, mira la carpeta de Spam / No deseados y márcalo como “No es spam” — así te llega siempre a tu bandeja.',
     variant: 'success',
   },
   FAILED: {
