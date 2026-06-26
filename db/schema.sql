@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS orders (
   status           TEXT NOT NULL DEFAULT 'PENDING_PAYMENT'
                      CHECK (status IN ('PENDING_PAYMENT','PAID','GENERATING','DELIVERED','FAILED','REFUND_PENDING','REFUNDED')),
   transaction_id   TEXT,
+  plan             TEXT NOT NULL DEFAULT 'basico' CHECK (plan IN ('basico','express')),
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );

@@ -11,6 +11,7 @@ export interface Order {
   amountInCents: number;
   status: OrderStatus;
   transactionId?: string;
+  plan?: 'basico' | 'express';
   createdAt: string;
 }
 
@@ -57,7 +58,7 @@ const memStore: Store = {
 // ── Backend Postgres (producción) ──
 type Row = {
   reference: string; matricula: string; oficina: string; email: string | null; phone: string | null;
-  amount_in_cents: string | number; status: OrderStatus; transaction_id: string | null; created_at: Date | string;
+  amount_in_cents: string | number; status: OrderStatus; transaction_id: string | null; plan?: string | null; created_at: Date | string;
 };
 function toOrder(row: Row): Order {
   return {
@@ -69,15 +70,16 @@ function toOrder(row: Row): Order {
     amountInCents: Number(row.amount_in_cents), // pg devuelve BIGINT como string
     status: row.status,
     transactionId: row.transaction_id ?? undefined,
+    plan: (row.plan === 'express' ? 'express' : 'basico'),
     createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at),
   };
 }
 const pgStore: Store = {
   async create(o) {
     const { rows } = await getPool().query<Row>(
-      `INSERT INTO orders (reference, matricula, oficina, email, phone, amount_in_cents, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-      [o.reference, o.matricula, o.oficina, o.email, o.phone, o.amountInCents, o.status],
+      `INSERT INTO orders (reference, matricula, oficina, email, phone, amount_in_cents, status, plan)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+      [o.reference, o.matricula, o.oficina, o.email, o.phone, o.amountInCents, o.status, o.plan ?? 'basico'],
     );
     return toOrder(rows[0]);
   },
