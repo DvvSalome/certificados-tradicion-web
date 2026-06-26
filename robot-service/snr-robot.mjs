@@ -276,9 +276,15 @@ export class SnrRobot {
       ? p.locator('tr', { hasText: String(matricula) }).locator(S.dlCertLink).first()
       : p.locator(S.dlCertLink).first();
     const [dl] = await Promise.all([p.waitForEvent('download', { timeout: 20000 }), link.click({ force: true })]);
-    const tmp = path.join(process.env.TEMP || '.', dl.suggestedFilename() || 'ctl.pdf');
-    await dl.saveAs(tmp);
-    const buf = fs.readFileSync(tmp);
+    // Browserless = navegador REMOTO: dl.saveAs()/path()/createReadStream() fallan (el archivo queda en el
+    // server remoto, no en este proceso). El link sirve un PDF por URL directa (/static/fileDispatcher/…pdf),
+    // así que lo bajamos por HTTP con las cookies de la sesión del navegador. (Confirmado en recuperación real.)
+    const url = dl.url();
+    if (!/^https?:/i.test(url)) throw new Error('URL de descarga inesperada: ' + String(url).slice(0, 80));
+    const cookies = await this.ctx.cookies();
+    const res = await fetch(url, { headers: { cookie: cookies.map((c) => c.name + '=' + c.value).join('; '), 'user-agent': 'Mozilla/5.0', referer: URL_HIST } });
+    if (!res.ok) throw new Error('descarga HTTP ' + res.status);
+    const buf = Buffer.from(await res.arrayBuffer());
     if (buf.slice(0, 5).toString() !== '%PDF-') throw new Error('descarga no es PDF');
     this.log(`[snr] PDF descargado (${buf.length} bytes)`);
     return buf;
