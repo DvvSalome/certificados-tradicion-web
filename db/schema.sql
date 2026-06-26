@@ -7,16 +7,13 @@ CREATE TABLE IF NOT EXISTS orders (
   phone            TEXT,
   amount_in_cents  BIGINT NOT NULL,
   status           TEXT NOT NULL DEFAULT 'PENDING_PAYMENT'
-                     CHECK (status IN ('PENDING_PAYMENT','PAID','GENERATING','RETRYING','DELIVERED','FAILED','REFUND_PENDING','REFUNDED')),
+                     CHECK (status IN ('PENDING_PAYMENT','PAID','GENERATING','DELIVERED','FAILED','REFUND_PENDING','REFUNDED')),
   transaction_id   TEXT,
-  attempts         INTEGER NOT NULL DEFAULT 0,   -- intentos de generación (blindada: reintento + devolución)
-  next_retry_at    TIMESTAMPTZ,                  -- cuándo reintentar (status=RETRYING)
   created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE INDEX IF NOT EXISTS orders_status_idx ON orders (status);
-CREATE INDEX IF NOT EXISTS orders_retry_idx ON orders (next_retry_at) WHERE status = 'RETRYING';
 
 -- Bitácora de generaciones del robot. El panel la usa para "certificados generados",
 -- costo real del SNR (columna Valor del historial) y estado del robot (última corrida).
