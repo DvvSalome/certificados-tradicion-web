@@ -11,6 +11,7 @@ const SECRET = process.env.N8N_WEBHOOK_SECRET || '';
 const PANEL = (process.env.PANEL_BASE_URL || '').replace(/\/$/, '');
 const COST_CENTS = Number(process.env.SNR_COST_COP || 23000) * 100;
 const BROWSERLESS_WS = process.env.BROWSERLESS_WS || '';
+const RETRY_SWEEP_MS = Number(process.env.GEN_RETRY_SWEEP_MIN || 5) * 60 * 1000;
 
 async function reportPanel(body) {
   if (!PANEL || !SECRET) { console.error('[robot] sin PANEL/SECRET, no reporto'); return; }
@@ -45,6 +46,30 @@ async function generar({ reference, oficina, matricula, email }) {
     console.error(`[robot] ✕ ${matricula} ${errorCode}: ${e.message}`);
   } finally {
     await robot.stop();
+  }
+}
+
+// ── BLINDADA: reintento automático de pedidos pagados cuya generación falló (login/SNR/red caídos).
+//    El panel los deja en RETRYING; aquí los reclamamos (atómico) y reintentamos. Tras N intentos el
+//    panel los devuelve solo. Sobrevive reinicios: el estado vive en Postgres, no en memoria.
+async function retrySweep() {
+  if (!PANEL || !SECRET) return;
+  let list = [];
+  try {
+    const r = await fetch(`${PANEL}/api/admin/retry-due`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-webhook-secret': SECRET },
+    });
+    if (!r.ok) { console.error('[retry] retry-due', r.status); return; }
+    list = (await r.json())?.orders || [];
+  } catch (e) {
+    console.error('[retry] retry-due falló', e.message);
+    return;
+  }
+  if (!list.length) return;
+  console.error(`[retry] reintentando ${list.length} pedido(s)`);
+  for (const o of list) {
+    await generar(o).catch((e) => console.error('[retry] generar throw', e.message)); // secuencial (1 sesión Browserless)
   }
 }
 
@@ -158,4 +183,6 @@ server.listen(PORT, () => {
   chain = chain.then(() => ensureVerifyRobot()).catch((e) => console.error('[verify] warm-boot falló: ' + e.message));
   // heartbeat cada 5 min: mantiene vivo el navegador/Browserless (consulta pública, sin login)
   setInterval(() => { chain = chain.then(keepAlive).catch(() => {}); }, 5 * 60 * 1000);
+  // sweeper de reintentos: reintenta los pedidos pagados cuya generación falló (blindada)
+  setInterval(() => { retrySweep().catch(() => {}); }, RETRY_SWEEP_MS);
 });

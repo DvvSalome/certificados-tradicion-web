@@ -21,6 +21,11 @@ const LABELS: Record<string, { title: string; desc: string; variant: Variant }> 
     desc: 'Estamos emitiendo tu CTL ante la SNR. No cierres esta página.',
     variant: 'progress',
   },
+  RETRYING: {
+    title: 'Generando tu certificado…',
+    desc: 'El registro está tardando un poco; lo reintentamos automáticamente. Te llega apenas esté listo — puedes dejar esta página abierta.',
+    variant: 'progress',
+  },
   DELIVERED: {
     title: '¡Tu certificado fue enviado!',
     desc: 'Revisa tu correo y/o WhatsApp.',
@@ -33,12 +38,12 @@ const LABELS: Record<string, { title: string; desc: string; variant: Variant }> 
   },
   REFUND_PENDING: {
     title: 'Estamos devolviendo tu pago',
-    desc: 'Esa matrícula no estaba disponible para generar, así que te devolvemos el pago. Puede tardar unos días en reflejarse según tu banco.',
+    desc: 'No pudimos generar tu certificado, así que te devolvemos el pago. Puede tardar unos días en reflejarse según tu banco.',
     variant: 'wait',
   },
   REFUNDED: {
     title: 'Te devolvimos el pago',
-    desc: 'Esa matrícula no estaba disponible, así que no te cobramos. El reembolso puede tardar unos días en reflejarse. Revisa la matrícula e inténtalo de nuevo.',
+    desc: 'No pudimos generar tu certificado, así que no te cobramos. El reembolso puede tardar unos días en reflejarse según tu banco. Puedes intentarlo de nuevo.',
     variant: 'wait',
   },
 };
@@ -126,7 +131,8 @@ export default function EstadoView() {
   const s = status ? LABELS[status] : null;
   const loading = !status;
   const v = s ? VARIANT_STYLES[s.variant] : null;
-  const activeIdx = status ? FLOW.indexOf(status as (typeof FLOW)[number]) : -1;
+  const flowStatus = status === 'RETRYING' ? 'GENERATING' : status;
+  const activeIdx = flowStatus ? FLOW.indexOf(flowStatus as (typeof FLOW)[number]) : -1;
   const showTimeline = !FINAL_NO_CERT.includes(status ?? '');
 
   return (
