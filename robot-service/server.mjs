@@ -5,6 +5,7 @@
 import http from 'http';
 import { SnrRobot } from './snr-robot.mjs';
 import { entregarCorreo } from './deliver.mjs';
+import { consultaHttp } from './snr-consulta-http.mjs';
 
 const PORT = Number(process.env.PORT || 3000);
 const SECRET = process.env.N8N_WEBHOOK_SECRET || '';
@@ -109,24 +110,29 @@ async function keepAlive() {
   }
 }
 
-async function doVerify(oficina, matricula) {
-  try {
-    const r = await ensureVerifyRobot();
-    return await r.consultarPublico(oficina, matricula);
-  } catch (e) {
-    // navegador muerto → reiniciar y reintentar UNA vez
-    console.error('[verify] reintento tras error: ' + e.message);
-    await resetVerifyRobot();
-    const r = await ensureVerifyRobot();
-    return await r.consultarPublico(oficina, matricula);
-  }
-}
-
-// encola para serializar (una verificación a la vez sobre la sesión compartida)
-function verificarSerial(oficina, matricula) {
-  const run = chain.then(() => doVerify(oficina, matricula));
+// Fallback con NAVEGADOR (consulta pública Playwright): serializado sobre la página compartida del verifyRobot.
+function browserVerify(oficina, matricula) {
+  const run = chain.then(async () => {
+    try {
+      const r = await ensureVerifyRobot();
+      return await r.consultarPublico(oficina, matricula);
+    } catch (e) {
+      console.error('[verify] reintento navegador tras error: ' + e.message);
+      await resetVerifyRobot();
+      const r = await ensureVerifyRobot();
+      return await r.consultarPublico(oficina, matricula);
+    }
+  });
   chain = run.catch(() => {});
   return run;
+}
+
+async function doVerify(oficina, matricula) {
+  // 1) RÁPIDO: HTTP directo (sin navegador, ~0.5s, en PARALELO). Si falla por lo que sea → fallback navegador.
+  try { return await consultaHttp(oficina, matricula); }
+  catch (e) { console.error('[verify] HTTP falló (' + e.message + ') → fallback navegador'); }
+  // 2) Fallback: consulta pública con navegador (más lenta pero adaptable a cambios del portal).
+  return browserVerify(oficina, matricula);
 }
 
 const server = http.createServer((req, res) => {
@@ -140,7 +146,7 @@ const server = http.createServer((req, res) => {
       const oficina = String(p.oficina || ''), matricula = String(p.matricula || '').toUpperCase();
       if (!oficina || !matricula) { res.writeHead(400); return res.end('faltan oficina/matricula'); }
       try {
-        const info = await verificarSerial(oficina, matricula);
+        const info = await doVerify(oficina, matricula);
         res.writeHead(200, { 'content-type': 'application/json' });
         res.end(JSON.stringify({ oficina, matricula, disponible: !!info.disponible, estado: info.estado, direccion: info.direccion, circulo: info.circulo }));
       } catch (e) {
