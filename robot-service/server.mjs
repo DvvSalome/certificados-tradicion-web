@@ -48,15 +48,31 @@ function generar(job) {
   return genChain;
 }
 
-async function generarOne({ reference, oficina, matricula, email }) {
+async function generarOne({ reference, oficina, matricula, email, plan }) {
   try {
     const robot = await ensureGenRobot();
     const r = await robot.generar({ oficina, matricula }); // ensureLoggedIn() adentro REUSA la sesión
     await reportPanel({ reference, matricula, oficina, status: 'OK', costCents: COST_CENTS });
     console.error(`[robot] ✅ ${matricula} generado (${r.pdf?.length || 0} bytes)`);
+    // EXPRESS: Estudio de Títulos (best-effort — el CTL YA está reportado/entregado; si esto falla, el CTL igual sale).
+    let estudioPdf = null;
+    if (plan === 'express') {
+      try {
+        const { generarEstudio } = await import('./estudio.mjs');
+        const { renderEstudioPdf } = await import('./estudio-pdf.mjs');
+        const fecha = new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date());
+        const data = await generarEstudio(r.pdf, { matricula, oficina });
+        estudioPdf = await renderEstudioPdf(data, { matricula, oficina, fecha });
+        console.error(`[estudio] ✅ ${matricula} (${estudioPdf.length} bytes, semáforo ${data.semaforo})`);
+      } catch (ee) {
+        // Best-effort: NO re-reportar como generación (duplicaría la bitácora). Solo alerta "estudio pendiente".
+        console.error(`[estudio] ✕ ${matricula}: ${ee.message}`);
+        await reportPanel({ reference, matricula, oficina, estudioFailed: true, error: String(ee.message || ee).slice(0, 200) }).catch(() => {});
+      }
+    }
     // ENTREGA por correo (best-effort: el cert ya está generado+pagado; si el correo falla se loguea)
     try {
-      const d = await entregarCorreo({ pdf: r.pdf, matricula, oficina, email, reference });
+      const d = await entregarCorreo({ pdf: r.pdf, matricula, oficina, email, reference, estudio: estudioPdf });
       console.error(`[robot] correo ${matricula}: ${d.sent ? 'ENVIADO a ' + email + (d.withPreview ? ' (con preview)' : '') : 'NO enviado (' + d.reason + ')'}`);
     } catch (de) {
       console.error(`[robot] ⚠ correo ${matricula} FALLÓ (cert OK, reenviar manual): ${de.message}`);

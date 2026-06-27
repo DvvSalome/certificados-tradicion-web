@@ -21,11 +21,25 @@ interface Body {
   errorCode?: 'NO_DISPONIBLE' | 'ERROR';
   costCents?: number | null;
   error?: string | null;
+  estudioFailed?: boolean; // Express: el Estudio falló (el CTL sí se entregó) → solo alerta, no cuenta generación.
 }
 
 export async function POST(req: Request) {
   if (!authed(req)) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   const b = (await req.json().catch(() => ({}))) as Body;
+
+  // Express: el Estudio de Títulos falló pero el CTL YA se generó+entregó. NO es una generación nueva
+  // (no se cuenta en la bitácora ni toca la orden) → solo alerta al admin para reenviar el Estudio manual.
+  if (b.estudioFailed) {
+    await sendAlert({
+      kind: 'estudio_pendiente',
+      title: '🟡 Estudio de Títulos pendiente (Express)',
+      message: `El CTL de la matrícula ${b.matricula ?? '?'} (${b.oficina ?? '?'}) se entregó, pero el Estudio de Títulos falló. ${b.error ? 'Error: ' + b.error + '. ' : ''}Generar y reenviar el Estudio manual al cliente.`,
+      data: { matricula: b.matricula ?? null, oficina: b.oficina ?? null, referencia: b.reference ?? null, error: b.error ?? null },
+    });
+    return NextResponse.json({ ok: true, estudioAlert: true });
+  }
+
   if (!b.matricula || !b.oficina || (b.status !== 'OK' && b.status !== 'FAILED')) {
     return NextResponse.json({ error: 'matricula, oficina y status (OK|FAILED) requeridos' }, { status: 400 });
   }

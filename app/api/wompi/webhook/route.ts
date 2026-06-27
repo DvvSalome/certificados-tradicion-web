@@ -48,6 +48,7 @@ export async function POST(req: Request) {
       email: claimed.email,
       phone: claimed.phone,
       transactionId: String(tx.id),
+      plan: claimed.plan ?? order.plan,
     });
   } else if (tx.status && ['DECLINED', 'ERROR', 'VOIDED'].includes(tx.status)) {
     if (order.status === 'PENDING_PAYMENT') await orders.update(reference, { status: 'FAILED', transactionId: String(tx.id) });

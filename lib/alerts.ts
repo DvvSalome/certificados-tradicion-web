@@ -4,7 +4,7 @@
 const ALERT_URL = process.env.N8N_ALERT_URL ?? '';
 const SECRET = process.env.N8N_WEBHOOK_SECRET ?? '';
 
-export type AlertKind = 'saldo_bajo' | 'generacion_fallida' | 'pago_fallido';
+export type AlertKind = 'saldo_bajo' | 'generacion_fallida' | 'pago_fallido' | 'estudio_pendiente';
 
 export interface Alert {
   kind: AlertKind;

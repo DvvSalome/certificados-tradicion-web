@@ -82,12 +82,13 @@ async function guardarEnEnviados(message) {
   }
 }
 
-export async function entregarCorreo({ pdf, matricula, oficina, email, reference }) {
+export async function entregarCorreo({ pdf, matricula, oficina, email, reference, estudio }) {
   if (!email) return { sent: false, reason: 'sin email' };
   if (!SMTP_PASS) return { sent: false, reason: 'sin SMTP_PASS' };
   const fecha = new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date());
   const preview = await buildPreview(pdf);
   const attachments = [{ filename: `Certificado-Tradicion-${matricula}.pdf`, content: pdf }];
+  if (estudio) attachments.push({ filename: `Estudio-Titulos-${matricula}.pdf`, content: estudio });
   let previewCid = '';
   if (preview) { previewCid = 'ctlpreview'; attachments.push({ filename: 'vista-protegida.png', content: preview, cid: previewCid }); }
 
@@ -100,8 +101,8 @@ export async function entregarCorreo({ pdf, matricula, oficina, email, reference
     to: email,
     replyTo: SMTP_USER,
     subject: ctlSubject(matricula),
-    text: ctlEmailText({ matricula, oficina, fecha, sitioUrl: SITE }),
-    html: ctlEmailHtml({ matricula, oficina, fecha, previewCid, sitioUrl: SITE, logoUrl }),
+    text: ctlEmailText({ matricula, oficina, fecha, sitioUrl: SITE, conEstudio: !!estudio }),
+    html: ctlEmailHtml({ matricula, oficina, fecha, previewCid, sitioUrl: SITE, logoUrl, conEstudio: !!estudio }),
     attachments,
   };
   await tx().sendMail(message);

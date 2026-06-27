@@ -4,10 +4,10 @@ export const ctlSubject = (matricula) => `Tu Certificado de Tradición y Liberta
 
 // Versión TEXTO PLANO (multipart/alternative) — mejora entregabilidad: los correos solo-HTML puntúan
 // peor en los filtros de spam (sobre todo en dominios nuevos / Outlook).
-export function ctlEmailText({ matricula = '', oficina = '', fecha = '', sitioUrl = 'https://certitradicion.com' } = {}) {
+export function ctlEmailText({ matricula = '', oficina = '', fecha = '', sitioUrl = 'https://certitradicion.com', conEstudio = false } = {}) {
   return `Tu Certificado de Tradición y Libertad está listo.
 
-Adjunto a este correo va tu certificado oficial en PDF, listo para descargar e imprimir.
+Adjunto a este correo va tu certificado oficial en PDF, listo para descargar e imprimir.${conEstudio ? '\nTambién incluimos tu Estudio de Títulos (PDF) con el análisis de propietarios, gravámenes y banderas de riesgo del inmueble.' : ''}
 
 Matrícula inmobiliaria: ${matricula}
 Oficina de Registro: ${oficina}
@@ -20,9 +20,17 @@ Vigencia: 30 días
 Servicio de gestión privado. No formamos parte del Gobierno de Colombia ni de GOV.CO; actuamos como intermediarios para facilitar tu solicitud ante la autoridad competente.`;
 }
 
-export function ctlEmailHtml({ matricula = '', oficina = '', fecha = '', sitioUrl = 'https://certitradicion.com', logoUrl = '', previewCid = '', descargaUrl = '' } = {}) {
+export function ctlEmailHtml({ matricula = '', oficina = '', fecha = '', sitioUrl = 'https://certitradicion.com', logoUrl = '', previewCid = '', descargaUrl = '', conEstudio = false } = {}) {
   const brand = '#103A73', brand600 = '#0d2f5e', ink = '#0D1B2A', muted = '#5B6B7F', soft = '#8794a6', line = '#E7EDF5', green = '#0F7A52', bg = '#eef1f7';
   const font = "'Plus Jakarta Sans','Helvetica Neue',Arial,sans-serif";
+
+  const estudioNote = conEstudio ? `
+    <tr><td style="padding:8px 28px 4px;" align="center">
+      <table role="presentation" cellpadding="0" cellspacing="0" align="center"><tr><td align="center" style="background:#eef3fb;border:1px solid #c9d8ef;border-radius:16px;padding:16px 24px;">
+        <span style="color:${brand};font-size:16px;font-weight:800;font-family:${font};">&#128269;&nbsp; Incluye tu Estudio de Títulos</span>
+        <span style="display:block;color:${muted};font-size:12px;margin-top:5px;font-family:${font};">Segundo PDF adjunto — propietarios, gravámenes y banderas de riesgo del inmueble</span>
+      </td></tr></table>
+    </td></tr>` : '';
 
   const header = `
     <table role="presentation" cellpadding="0" cellspacing="0"><tr>
@@ -68,6 +76,7 @@ export function ctlEmailHtml({ matricula = '', oficina = '', fecha = '', sitioUr
 
     ${preview}
     ${button}
+    ${estudioNote}
 
     <tr><td style="padding:22px 28px 6px;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f9fc;border:1px solid ${line};border-radius:16px;"><tr><td style="padding:6px 20px;">
