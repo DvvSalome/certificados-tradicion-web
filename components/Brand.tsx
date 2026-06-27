@@ -4,23 +4,19 @@
 //  - tone="onDark":  anillo blanco, sin disco (para fondos oscuros)
 
 export function Seal({ size = 38, tone = 'onDark' }: { size?: number; tone?: 'onLight' | 'onDark' }) {
-  if (tone === 'onLight') {
-    return (
-      <svg width={size} height={size} viewBox="0 0 64 64" fill="none" aria-hidden="true">
-        <circle cx="32" cy="32" r="29.5" stroke="#103A73" strokeWidth="2.2" strokeDasharray="1.5 3.7" strokeLinecap="round" />
-        <circle cx="32" cy="32" r="25" fill="#103A73" />
-        <circle cx="32" cy="32" r="21" fill="none" stroke="rgba(255,255,255,.22)" strokeWidth="1.2" />
-        <path d="M42 24.5 A 12 12 0 1 0 42 39.5" stroke="#fff" strokeWidth="5.4" fill="none" strokeLinecap="round" />
-        <path d="M37.6 32 l 2.4 2.4 l 5.4 -6.3" stroke="#34D399" strokeWidth="3.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    );
-  }
+  // Logo: documento firmado (documento + líneas + firma + pluma). Mono, tone-aware.
+  const c = tone === 'onDark' ? '#fff' : '#1B2A3A';
   return (
-    <svg width={size} height={size} viewBox="0 0 64 64" fill="none" aria-hidden="true">
-      <circle cx="32" cy="32" r="29.5" stroke="#fff" strokeWidth="2.4" strokeDasharray="1.6 3.8" strokeLinecap="round" />
-      <circle cx="32" cy="32" r="21" fill="none" stroke="rgba(255,255,255,.25)" strokeWidth="1.1" />
-      <path d="M42 24.5 A 12 12 0 1 0 42 39.5" stroke="#fff" strokeWidth="5.6" fill="none" strokeLinecap="round" />
-      <path d="M37.6 32 l 2.4 2.4 l 5.4 -6.3" stroke="#34D399" strokeWidth="3.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    <svg width={size} height={size} viewBox="0 0 96 96" fill="none" stroke={c} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M34 9 H57 a7 7 0 0 1 7 7 V80 a7 7 0 0 1 -7 7 H23 a7 7 0 0 1 -7 -7 V26 Z" />
+      <path d="M16 26 H29 a5 5 0 0 0 5 -5 V9" />
+      <path d="M25 34 H53" />
+      <path d="M25 43 H49" />
+      <path d="M25 52 H53" />
+      <path d="M25 61 H46" />
+      <path d="M25 75 c 4 -7 8 -5 9 1 c 1 5 5 5 7 -1 c 1 -4 5 -3 6 1 c 1 3 4 4 8 -1" strokeWidth="4" />
+      <path d="M25 84 H50" />
+      <path d="M75.5 13.4 A 5.8 5.8 0 0 1 86 18.2 L 67.6 59.8 L 55 75.5 L 57 55.2 Z" fill={c} stroke="none" />
     </svg>
   );
 }

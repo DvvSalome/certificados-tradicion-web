@@ -19,7 +19,7 @@ export default function Home() {
           position: 'relative',
           overflow: 'hidden',
           background:
-            'radial-gradient(900px 440px at 80% -12%, #1B4E8F 0%, rgba(27,78,143,0) 60%), linear-gradient(158deg,#103A73 0%, #0B2C55 100%)',
+            'radial-gradient(900px 440px at 80% -12%, #2C3E50 0%, rgba(27,78,143,0) 60%), linear-gradient(158deg,#1B2A3A 0%, #13202C 100%)',
         }}
       >
         <header
@@ -148,7 +148,7 @@ export default function Home() {
               {/* estado del análisis — corre SOBRE el documento */}
               <div style={{ position: 'absolute', left: 16, right: 16, bottom: 52, height: 42 }}>
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', gap: 9, padding: '0 13px', borderRadius: 11, background: '#fff', boxShadow: '0 8px 22px -6px rgba(13,27,42,.28)', animation: 'cz-gray 7s ease-in-out infinite' }}>
-                  <span style={{ width: 15, height: 15, flexShrink: 0, borderRadius: 999, border: '2px solid #CFD9E6', borderTopColor: '#103A73', animation: 'cz-spin .7s linear infinite' }} />
+                  <span style={{ width: 15, height: 15, flexShrink: 0, borderRadius: 999, border: '2px solid #CFD9E6', borderTopColor: '#1B2A3A', animation: 'cz-spin .7s linear infinite' }} />
                   <span style={{ fontWeight: 600, fontSize: 11.5, color: '#5B6B7E' }}>Analizando gravámenes…</span>
                 </div>
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', gap: 9, padding: '0 13px', borderRadius: 11, background: '#E8F5EF', boxShadow: '0 8px 22px -6px rgba(15,122,82,.3)', animation: 'cz-green 7s ease-in-out infinite' }}>
@@ -179,7 +179,7 @@ export default function Home() {
           {/* process + trust */}
           <div style={{ flex: '1 1 360px', minWidth: 280, paddingTop: 88, display: 'flex', flexDirection: 'column', gap: 26 }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              <p style={{ margin: 0, fontWeight: 700, fontSize: 12, letterSpacing: '.12em', textTransform: 'uppercase', color: '#103A73' }}>En tres pasos</p>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: 12, letterSpacing: '.12em', textTransform: 'uppercase', color: '#1B2A3A' }}>En tres pasos</p>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 {[
                   { n: '1', t: 'Ingresa oficina y matrícula', d: 'El formulario más corto del mercado.' },
@@ -188,7 +188,7 @@ export default function Home() {
                 ].map((s) => (
                   <div key={s.n} style={{ display: 'flex', gap: 15 }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <span style={{ display: 'grid', placeItems: 'center', width: 34, height: 34, borderRadius: 999, background: s.last ? '#0F7A52' : '#103A73', color: '#fff', fontWeight: 700, fontSize: 15 }}>
+                      <span style={{ display: 'grid', placeItems: 'center', width: 34, height: 34, borderRadius: 999, background: s.last ? '#0F7A52' : '#1B2A3A', color: '#fff', fontWeight: 700, fontSize: 15 }}>
                         {s.last ? (
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
                         ) : s.n}

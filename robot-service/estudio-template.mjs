@@ -20,17 +20,17 @@ export function estudioHtml(e, { matricula, oficina, fecha }) {
   const V = e.avaluo;
   const avaluoHtml = !V || !V.disponible
     ? '<p class="muted">Estimado no disponible (no se identificó el área del inmueble en el CTL).</p>'
-    : `<div class="resumen"><b style="font-size:20px;color:#103A73">${esc(V.estimado)}</b> <span class="muted">(rango ${esc(V.min)} – ${esc(V.max)})</span><br><span class="muted" style="font-size:12px">Área ${esc(V.areaM2)} m²${V.ciudad ? ' · referencia ' + esc(V.ciudad) : ''}. ${esc(V.nota)}</span></div>`;
+    : `<div class="resumen"><b style="font-size:20px;color:#1B2A3A">${esc(V.estimado)}</b> <span class="muted">(rango ${esc(V.min)} – ${esc(V.max)})</span><br><span class="muted" style="font-size:12px">Área ${esc(V.areaM2)} m²${V.ciudad ? ' · referencia ' + esc(V.ciudad) : ''}. ${esc(V.nota)}</span></div>`;
   return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><style>
   *{box-sizing:border-box;font-family:'Segoe UI',Arial,sans-serif} body{margin:0;color:#0D1B2A}
   .page{padding:40px 44px}
-  .head{display:flex;align-items:center;gap:12px;border-bottom:2px solid #103A73;padding-bottom:16px}
-  .brand{font-weight:800;font-size:20px;color:#103A73} .sub{font-size:10px;letter-spacing:.18em;color:#8593A3}
+  .head{display:flex;align-items:center;gap:12px;border-bottom:2px solid #1B2A3A;padding-bottom:16px}
+  .brand{font-weight:800;font-size:20px;color:#1B2A3A} .sub{font-size:10px;letter-spacing:.18em;color:#8593A3}
   h1{font-size:22px;margin:22px 0 4px} .muted{color:#5B6B7E}
   .sema{display:flex;align-items:center;gap:12px;background:${s.bg};border-radius:12px;padding:14px 18px;margin:16px 0}
   .dot{width:26px;height:26px;border-radius:999px;background:${s.c}} .sema b{color:${s.c};font-size:16px}
   table{width:100%;border-collapse:collapse;margin:6px 0 14px} .k{color:#5B6B7E;width:160px;padding:5px 0} .v{font-weight:600;padding:5px 0}
-  h2{font-size:14px;color:#103A73;margin:18px 0 6px;text-transform:uppercase;letter-spacing:.04em}
+  h2{font-size:14px;color:#1B2A3A;margin:18px 0 6px;text-transform:uppercase;letter-spacing:.04em}
   ul{margin:6px 0;padding-left:18px} li{margin:6px 0}
   .tag{font-size:10px;background:#eef1f7;color:#5B6B7E;border-radius:6px;padding:1px 6px} .tag.v{background:#FDECEC;color:#B42318}
   .flag{display:flex;flex-direction:column;border-left:4px solid #999;background:#fafbfd;padding:8px 12px;margin:6px 0;border-radius:6px}

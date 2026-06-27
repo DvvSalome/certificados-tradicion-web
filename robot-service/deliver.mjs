@@ -22,11 +22,13 @@ async function brandLogoPng() {
   if (_logoPng) return _logoPng;
   try {
     const sharp = (await import('sharp')).default;
-    const svg = `<svg width="168" height="168" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" fill="none">
-      <circle cx="32" cy="32" r="29.5" stroke="#ffffff" stroke-width="2.4" stroke-dasharray="1.6 3.8" stroke-linecap="round"/>
-      <circle cx="32" cy="32" r="21" fill="none" stroke="#ffffff" stroke-opacity="0.25" stroke-width="1.1"/>
-      <path d="M42 24.5 A 12 12 0 1 0 42 39.5" stroke="#ffffff" stroke-width="5.6" fill="none" stroke-linecap="round"/>
-      <path d="M37.6 32 l 2.4 2.4 l 5.4 -6.3" stroke="#34D399" stroke-width="3.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    const svg = `<svg width="168" height="168" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M34 9 H57 a7 7 0 0 1 7 7 V80 a7 7 0 0 1 -7 7 H23 a7 7 0 0 1 -7 -7 V26 Z"/>
+      <path d="M16 26 H29 a5 5 0 0 0 5 -5 V9"/>
+      <path d="M25 34 H53"/><path d="M25 43 H49"/><path d="M25 52 H53"/><path d="M25 61 H46"/>
+      <path d="M25 75 c 4 -7 8 -5 9 1 c 1 5 5 5 7 -1 c 1 -4 5 -3 6 1 c 1 3 4 4 8 -1" stroke-width="4"/>
+      <path d="M25 84 H50"/>
+      <path d="M75.5 13.4 A 5.8 5.8 0 0 1 86 18.2 L 67.6 59.8 L 55 75.5 L 57 55.2 Z" fill="#ffffff" stroke="none"/>
     </svg>`;
     _logoPng = await sharp(Buffer.from(svg)).png().toBuffer();
   } catch (e) {

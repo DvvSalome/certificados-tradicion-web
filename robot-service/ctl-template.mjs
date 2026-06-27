@@ -21,7 +21,7 @@ Servicio de gestión privado. No formamos parte del Gobierno de Colombia ni de G
 }
 
 export function ctlEmailHtml({ matricula = '', oficina = '', fecha = '', sitioUrl = 'https://certitradicion.com', logoUrl = '', previewCid = '', descargaUrl = '', conEstudio = false } = {}) {
-  const brand = '#103A73', brand600 = '#0d2f5e', ink = '#0D1B2A', muted = '#5B6B7F', soft = '#8794a6', line = '#E7EDF5', green = '#0F7A52', bg = '#eef1f7';
+  const brand = '#1B2A3A', brand600 = '#13202C', ink = '#0D1B2A', muted = '#5B6B7F', soft = '#8794a6', line = '#E7EDF5', green = '#0F7A52', bg = '#eef1f7';
   const font = "'Plus Jakarta Sans','Helvetica Neue',Arial,sans-serif";
 
   const estudioNote = conEstudio ? `
@@ -37,7 +37,7 @@ export function ctlEmailHtml({ matricula = '', oficina = '', fecha = '', sitioUr
       ${logoUrl ? `<td valign="middle" style="padding-right:13px;"><img src="${logoUrl}" alt="" width="42" height="42" style="display:block;border:0;"></td>` : ''}
       <td valign="middle">
         <span style="color:#fff;font-size:21px;font-weight:800;letter-spacing:-.4px;font-family:${font};">Certitradición</span>
-        <span style="color:#9fc0e8;font-size:10px;display:block;margin-top:3px;letter-spacing:.18em;font-family:${font};">CERTIFICADOS DE TRADICIÓN · COLOMBIA</span>
+        <span style="color:#9DB0C4;font-size:10px;display:block;margin-top:3px;letter-spacing:.18em;font-family:${font};">CERTIFICADOS DE TRADICIÓN · COLOMBIA</span>
       </td>
     </tr></table>`;
 

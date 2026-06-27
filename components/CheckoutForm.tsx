@@ -111,7 +111,7 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '20px 28px', borderBottom: '1px solid #E3E9F1', background: '#EEF3FB' }}>
           <div>
-            <p style={{ margin: 0, fontWeight: 700, fontSize: 12, letterSpacing: '.1em', textTransform: 'uppercase', color: '#103A73' }}>Solicita tu certificado</p>
+            <p style={{ margin: 0, fontWeight: 700, fontSize: 12, letterSpacing: '.1em', textTransform: 'uppercase', color: '#1B2A3A' }}>Solicita tu certificado</p>
             <p style={{ margin: '3px 0 0', fontSize: 13.5, color: '#5B6B7E' }}>Por correo y WhatsApp, en minutos.</p>
           </div>
           <div style={{ textAlign: 'right' }}>
@@ -130,7 +130,7 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
               <span style={{ fontSize: 14.5, color: '#8593A3' }}>{f.t}</span>
             </div>
           ))}
-          <div className="transition group-hover:brightness-110" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9, marginTop: 4, borderRadius: 12, background: '#103A73', padding: 16, fontWeight: 600, fontSize: 16, color: '#fff', boxShadow: '0 8px 20px -6px rgba(16,58,115,.5)' }}>
+          <div className="transition group-hover:brightness-110" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9, marginTop: 4, borderRadius: 12, background: '#1B2A3A', padding: 16, fontWeight: 600, fontSize: 16, color: '#fff', boxShadow: '0 8px 20px -6px rgba(16,58,115,.5)' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
             Solicitar mi certificado
           </div>
@@ -155,7 +155,7 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
               style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', borderRadius: 24, overflow: 'hidden', boxShadow: '0 50px 120px -30px rgba(0,0,0,.65)', animation: 'cz-modalin .42s cubic-bezier(.22,1,.36,1) both' }}
             >
               {/* LEFT — marca */}
-              <div style={{ flex: '1 1 320px', minWidth: 260, position: 'relative', padding: '48px 42px', background: 'radial-gradient(720px 380px at 22% -10%, #1B4E8F 0%, rgba(27,78,143,0) 60%), linear-gradient(160deg,#103A73,#0B2C55)', overflow: 'hidden' }}>
+              <div style={{ flex: '1 1 320px', minWidth: 260, position: 'relative', padding: '48px 42px', background: 'radial-gradient(720px 380px at 22% -10%, #2C3E50 0%, rgba(27,78,143,0) 60%), linear-gradient(160deg,#1B2A3A,#13202C)', overflow: 'hidden' }}>
                 <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 24 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
                     <Seal size={34} tone="onDark" />
@@ -185,7 +185,7 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
               <div style={{ flex: '1 1 380px', minWidth: 300, background: '#fff' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '22px 28px', borderBottom: '1px solid #E3E9F1' }}>
                   <div>
-                    <p style={{ margin: 0, fontWeight: 700, fontSize: 12, letterSpacing: '.1em', textTransform: 'uppercase', color: '#103A73' }}>Completa tu solicitud</p>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: 12, letterSpacing: '.1em', textTransform: 'uppercase', color: '#1B2A3A' }}>Completa tu solicitud</p>
                     <p style={{ margin: '3px 0 0', fontSize: 13, color: '#5B6B7E' }}>Toma menos de un minuto.</p>
                   </div>
                   <button type="button" onClick={closeModal} aria-label="Cerrar" className="transition hover:bg-[var(--background)]" style={{ display: 'grid', placeItems: 'center', width: 36, height: 36, flexShrink: 0, border: '1px solid #E3E9F1', borderRadius: 10, background: '#fff', cursor: 'pointer', color: '#5B6B7E' }}>
@@ -214,7 +214,7 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
                                 style={{
                                   position: 'relative', flex: '1 1 150px', textAlign: 'left', cursor: 'pointer',
                                   borderRadius: 14, padding: '13px 14px',
-                                  border: sel ? '2px solid #103A73' : '1px solid #CFD9E6',
+                                  border: sel ? '2px solid #1B2A3A' : '1px solid #CFD9E6',
                                   background: sel ? '#EEF3FB' : '#fff',
                                   boxShadow: sel ? '0 8px 20px -10px rgba(16,58,115,.4)' : 'none',
                                 }}
@@ -223,10 +223,10 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
                                   <span style={{ position: 'absolute', top: -9, right: 12, padding: '2px 8px', borderRadius: 999, background: '#0F7A52', color: '#fff', fontSize: 9.5, fontWeight: 800, letterSpacing: '.06em' }}>MÁS ELEGIDO</span>
                                 )}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                  <span style={{ display: 'inline-block', width: 16, height: 16, flexShrink: 0, borderRadius: 999, border: sel ? '5px solid #103A73' : '2px solid #CFD9E6', background: '#fff' }} />
+                                  <span style={{ display: 'inline-block', width: 16, height: 16, flexShrink: 0, borderRadius: 999, border: sel ? '5px solid #1B2A3A' : '2px solid #CFD9E6', background: '#fff' }} />
                                   <span style={{ fontWeight: 800, fontSize: 15, color: '#0D1B2A' }}>{p.label}</span>
                                 </div>
-                                <p style={{ margin: '7px 0 0', fontWeight: 800, fontSize: 18, color: '#103A73', fontVariantNumeric: 'tabular-nums' }}>{formatCOP(p.priceCop)}</p>
+                                <p style={{ margin: '7px 0 0', fontWeight: 800, fontSize: 18, color: '#1B2A3A', fontVariantNumeric: 'tabular-nums' }}>{formatCOP(p.priceCop)}</p>
                                 <ul style={{ margin: '8px 0 0', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 4 }}>
                                   {p.features.slice(0, pid === 'express' ? 4 : 2).map((f) => (
                                     <li key={f} style={{ display: 'flex', gap: 6, fontSize: 11.5, lineHeight: 1.35, color: '#5B6B7E' }}>
@@ -265,7 +265,7 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
                           {error}
                         </p>
                       )}
-                      <button type="button" onClick={submit} className="transition hover:brightness-110 active:scale-[0.99]" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9, marginTop: 2, border: 'none', cursor: 'pointer', borderRadius: 12, background: '#103A73', padding: 16, fontWeight: 600, fontSize: 16, color: '#fff', boxShadow: '0 8px 20px -6px rgba(16,58,115,.5)' }}>
+                      <button type="button" onClick={submit} className="transition hover:brightness-110 active:scale-[0.99]" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9, marginTop: 2, border: 'none', cursor: 'pointer', borderRadius: 12, background: '#1B2A3A', padding: 16, fontWeight: 600, fontSize: 16, color: '#fff', boxShadow: '0 8px 20px -6px rgba(16,58,115,.5)' }}>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
                         Pagar {planPrice}
                       </button>
@@ -276,17 +276,17 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
                   {/* REVIEW */}
                   {step === 'review' && (
                     <div className="ctl-fade-up" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                      <p style={{ margin: 0, fontWeight: 700, fontSize: 11.5, letterSpacing: '.1em', textTransform: 'uppercase', color: '#103A73' }}>Revisa antes de pagar</p>
+                      <p style={{ margin: 0, fontWeight: 700, fontSize: 11.5, letterSpacing: '.1em', textTransform: 'uppercase', color: '#1B2A3A' }}>Revisa antes de pagar</p>
 
                       {validating ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '13px 15px', borderRadius: 12, background: '#EEF3FB', fontWeight: 600, fontSize: 14, color: '#0D1B2A' }}>
-                            <span style={{ width: 17, height: 17, flexShrink: 0, borderRadius: 999, border: '2px solid #CFD9E6', borderTopColor: '#103A73', animation: 'cz-spin .7s linear infinite' }} />
+                            <span style={{ width: 17, height: 17, flexShrink: 0, borderRadius: 999, border: '2px solid #CFD9E6', borderTopColor: '#1B2A3A', animation: 'cz-spin .7s linear infinite' }} />
                             <span key={vStep} className="ctl-fade-up">{VERIFY_STEPS[vStep]}</span>
                           </div>
                           <div style={{ display: 'flex', gap: 6 }}>
                             {VERIFY_STEPS.map((_, i) => (
-                              <span key={i} style={{ height: 4, flex: 1, borderRadius: 999, background: i <= vStep ? '#103A73' : '#E3E9F1', transition: 'background .5s' }} />
+                              <span key={i} style={{ height: 4, flex: 1, borderRadius: 999, background: i <= vStep ? '#1B2A3A' : '#E3E9F1', transition: 'background .5s' }} />
                             ))}
                           </div>
                         </div>
@@ -338,7 +338,7 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
                           {blocked ? 'Corregir matrícula' : 'Corregir'}
                         </button>
                         {!blocked && (
-                          <button type="button" onClick={confirmAndPay} disabled={validating} className="transition hover:brightness-110 disabled:opacity-60" style={{ flex: 1.4, border: 'none', borderRadius: 12, background: '#103A73', padding: 13, cursor: 'pointer', fontWeight: 600, fontSize: 15, color: '#fff' }}>
+                          <button type="button" onClick={confirmAndPay} disabled={validating} className="transition hover:brightness-110 disabled:opacity-60" style={{ flex: 1.4, border: 'none', borderRadius: 12, background: '#1B2A3A', padding: 13, cursor: 'pointer', fontWeight: 600, fontSize: 15, color: '#fff' }}>
                             {validating ? 'Verificando…' : 'Confirmar y pagar'}
                           </button>
                         )}
@@ -349,7 +349,7 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
                   {/* PAYING */}
                   {step === 'paying' && (
                     <div className="ctl-fade-up" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: '40px 10px', textAlign: 'center' }}>
-                      <span style={{ width: 34, height: 34, borderRadius: 999, border: '3px solid #E3E9F1', borderTopColor: '#103A73', animation: 'cz-spin .7s linear infinite' }} />
+                      <span style={{ width: 34, height: 34, borderRadius: 999, border: '3px solid #E3E9F1', borderTopColor: '#1B2A3A', animation: 'cz-spin .7s linear infinite' }} />
                       <p style={{ margin: 0, fontWeight: 600, fontSize: 15, color: '#0D1B2A' }}>Redirigiendo a la pasarela segura de Wompi…</p>
                       <p style={{ margin: 0, fontSize: 13, color: '#8593A3' }}>No cierres esta ventana.</p>
                     </div>
