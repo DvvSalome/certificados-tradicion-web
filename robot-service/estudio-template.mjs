@@ -5,7 +5,8 @@ const esc = (s) => String(s ?? '').replace(/[&<>]/g, (m) => ({ '&': '&amp;', '<'
 export function estudioHtml(e, { matricula, oficina, fecha }) {
   const s = SEMA[e.semaforo] || SEMA.amarillo;
   const row = (k, v) => v ? `<tr><td class="k">${esc(k)}</td><td class="v">${esc(v)}</td></tr>` : '';
-  const banderas = (e.banderas || []).map((b) => `<div class="flag ${b.nivel}"><b>${esc(b.titulo)}</b><span>${esc(b.detalle)}</span></div>`).join('') || '<p class="muted">No se detectaron banderas de riesgo en el documento.</p>';
+  const nivelClass = (n) => (n === 'rojo' || n === 'amarillo' ? n : '');
+  const banderas = (e.banderas || []).map((b) => `<div class="flag ${nivelClass(b.nivel)}"><b>${esc(b.titulo)}</b><span>${esc(b.detalle)}</span></div>`).join('') || '<p class="muted">No se detectaron banderas de riesgo en el documento.</p>';
   const props = (e.propietarios || []).map((p) => `<li><b>${esc(p.nombre)}</b>${p.identificacion ? ' · ' + esc(p.identificacion) : ''} <span class="muted">${esc(p.modo || '')}${p.anotacion ? ' (' + esc(p.anotacion) + ')' : ''}</span></li>`).join('') || '<li class="muted">No identificados en el texto.</li>';
   const grav = (e.gravamenes || []).map((g) => `<li><b>${esc(g.tipo)}</b> ${g.vigente ? '<span class="tag v">VIGENTE</span>' : '<span class="tag">no vigente</span>'}<br><span class="muted">${esc(g.descripcion)}${g.anotacion ? ' · ' + esc(g.anotacion) : ''}</span></li>`).join('') || '<li class="muted">Sin gravámenes ni limitaciones vigentes encontrados.</li>';
   return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><style>

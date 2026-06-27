@@ -25,8 +25,10 @@ export async function generarEstudio(pdfBuffer, { matricula, oficina }) {
   const raw = await nimChat([{ role: 'system', content: SYS }, { role: 'user', content: user }], { json: true, maxTokens: 3000 });
   let data;
   try { data = JSON.parse(raw); } catch { data = JSON.parse((raw.match(/\{[\s\S]*\}/) || ['{}'])[0]); }
-  // saneo + defaults (nunca confiar 100% en el modelo)
-  data.inmueble = { matricula: String(matricula), direccion: null, circulo: oficina || null, area: null, ...(data.inmueble || {}) };
+  // saneo + defaults (nunca confiar 100% en el modelo). matrícula = SIEMPRE la del caller (autoritativa,
+  // es un documento legal); círculo cae a la oficina si el modelo no lo trae.
+  const im = data.inmueble || {};
+  data.inmueble = { matricula: String(matricula), direccion: im.direccion ?? null, circulo: im.circulo ?? (oficina || null), area: im.area ?? null };
   data.propietarios = Array.isArray(data.propietarios) ? data.propietarios : [];
   data.gravamenes = Array.isArray(data.gravamenes) ? data.gravamenes : [];
   data.banderas = Array.isArray(data.banderas) ? data.banderas : [];
