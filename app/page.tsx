@@ -1,11 +1,13 @@
 import CheckoutForm from '@/components/CheckoutForm';
 import SiteFooter from '@/components/SiteFooter';
 import { Seal } from '@/components/Brand';
-import { PRICE_COP, formatCOP } from '@/lib/config';
+import { PLANS, formatCOP } from '@/lib/config';
 
 // Diseño Home (Claude Design · "Certitradicion Home"). Hero con sello animado + panel de checkout.
 export default function Home() {
-  const priceLabel = formatCOP(PRICE_COP);
+  // Precio "entrada" del home = plan Básico (literal en código → consistente con el modal, sin depender
+  // de env stale ni del timing build/runtime). El modal permite subir a Express.
+  const priceLabel = formatCOP(PLANS.basico.priceCop);
 
   const navLink = 'transition-colors hover:text-white';
 
