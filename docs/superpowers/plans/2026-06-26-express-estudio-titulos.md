@@ -251,8 +251,8 @@ Expected: `OK`
 - [ ] **Step 3: Verificar contra NIM real** (script temporal — la key ya está validada)
 
 ```bash
-cd web/robot-service && NVIDIA_API_KEY=***REDACTED*** \
-node --input-type=module -e "import {nimChat} from './nim-client.mjs'; console.log(await nimChat([{role:'user',content:'Responde solo: OK'}]))"
+export NVIDIA_API_KEY="<TU_KEY_NIM>"   # NUNCA escribir la key en un archivo versionado — pasarla por env
+cd web/robot-service && node --input-type=module -e "import {nimChat} from './nim-client.mjs'; console.log(await nimChat([{role:'user',content:'Responde solo: OK'}]))"
 ```
 Expected: imprime `OK` (o similar). **No commitear la key en ningún archivo.**
 
