@@ -96,7 +96,7 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
   }
 
   const inputCls =
-    'w-full rounded-xl border border-[var(--border-strong)] bg-white px-4 py-3 text-[15px] text-[var(--foreground)] outline-none transition placeholder:text-[var(--muted-2)] focus:border-[var(--brand-ring)] focus:ring-4 focus:ring-[var(--brand-50)]';
+    'w-full rounded-xl border border-[var(--border-strong)] bg-white px-4 py-2.5 text-[15px] text-[var(--foreground)] outline-none transition placeholder:text-[var(--muted-2)] focus:border-[var(--brand-ring)] focus:ring-4 focus:ring-[var(--brand-50)]';
 
   const planPrice = formatCOP(PLANS[plan].priceCop); // precio del plan elegido (botón, total, chip)
 
@@ -152,7 +152,7 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
           onClick={closeModal}
           role="dialog"
           aria-modal="true"
-          style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 18px', overflow: 'auto', background: 'rgba(7,15,28,.64)', backdropFilter: 'blur(9px)', animation: 'cz-fade .25s ease both' }}
+          style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px 16px', overflow: 'auto', background: 'rgba(7,15,28,.64)', backdropFilter: 'blur(9px)', animation: 'cz-fade .25s ease both' }}
         >
           <div style={{ width: '100%', maxWidth: 980, margin: 'auto' }}>
             <div
@@ -160,7 +160,7 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
               style={{ position: 'relative', display: 'flex', flexWrap: 'wrap', borderRadius: 24, overflow: 'hidden', boxShadow: '0 50px 120px -30px rgba(0,0,0,.65)', animation: 'cz-modalin .42s cubic-bezier(.22,1,.36,1) both' }}
             >
               {/* LEFT — marca */}
-              <div style={{ flex: '1 1 320px', minWidth: 260, position: 'relative', padding: '48px 42px', background: 'radial-gradient(720px 380px at 22% -10%, #2C3E50 0%, rgba(27,78,143,0) 60%), linear-gradient(160deg,#1B2A3A,#13202C)', overflow: 'hidden' }}>
+              <div style={{ flex: '1 1 320px', minWidth: 260, position: 'relative', padding: '34px 38px', background: 'radial-gradient(720px 380px at 22% -10%, #2C3E50 0%, rgba(27,78,143,0) 60%), linear-gradient(160deg,#1B2A3A,#13202C)', overflow: 'hidden' }}>
                 <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 24 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
                     <Seal size={34} tone="onDark" />
@@ -198,14 +198,14 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
                   </button>
                 </div>
 
-                <div style={{ padding: '24px 28px 28px' }}>
+                <div style={{ padding: '16px 28px 22px' }}>
                   {/* FORM */}
                   {step === 'form' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
                       {/* SELECTOR DE PLAN */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         <span style={{ fontWeight: 600, fontSize: 13.5, color: '#0D1B2A' }}>Elige tu plan</span>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                           {(['basico', 'express'] as PlanId[]).map((pid) => {
                             const p = PLANS[pid];
                             const sel = plan === pid;
@@ -218,7 +218,7 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
                                 className="transition"
                                 style={{
                                   position: 'relative', flex: '1 1 150px', textAlign: 'left', cursor: 'pointer',
-                                  borderRadius: 14, padding: '13px 14px',
+                                  borderRadius: 13, padding: '10px 12px',
                                   border: sel ? '2px solid #1B2A3A' : '1px solid #CFD9E6',
                                   background: sel ? '#EEF3FB' : '#fff',
                                   boxShadow: sel ? '0 8px 20px -10px rgba(16,58,115,.4)' : 'none',
@@ -231,10 +231,10 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
                                   <span style={{ display: 'inline-block', width: 16, height: 16, flexShrink: 0, borderRadius: 999, border: sel ? '5px solid #1B2A3A' : '2px solid #CFD9E6', background: '#fff' }} />
                                   <span style={{ fontWeight: 800, fontSize: 15, color: '#0D1B2A' }}>{p.label}</span>
                                 </div>
-                                <p style={{ margin: '7px 0 0', fontWeight: 800, fontSize: 18, color: '#1B2A3A', fontVariantNumeric: 'tabular-nums' }}>{formatCOP(p.priceCop)}</p>
+                                <p style={{ margin: '7px 0 0', fontWeight: 800, fontSize: 15, color: '#1B2A3A', fontVariantNumeric: 'tabular-nums' }}>{formatCOP(p.priceCop)}</p>
                                 <ul style={{ margin: '8px 0 0', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 4 }}>
                                   {p.features.slice(0, pid === 'express' ? 4 : 2).map((f) => (
-                                    <li key={f} style={{ display: 'flex', gap: 6, fontSize: 11.5, lineHeight: 1.35, color: '#5B6B7E' }}>
+                                    <li key={f} style={{ display: 'flex', gap: 5, fontSize: 10.5, lineHeight: 1.28, color: '#5B6B7E' }}>
                                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0F7A52" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ marginTop: 2, flexShrink: 0 }}><path d="M20 6 9 17l-5-5" /></svg>
                                       <span>{f}</span>
                                     </li>
