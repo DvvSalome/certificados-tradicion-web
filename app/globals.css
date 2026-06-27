@@ -12,7 +12,7 @@
 
   /* Brand — institutional deep blue (confianza) + verde válido */
   --brand: #1B2A3A;
-  --brand-600: #0e3667;
+  --brand-600: #15222f;
   --brand-700: #13202C;
   --brand-50: #eef3fb;
   --brand-ring: #2563c9;
@@ -109,6 +109,10 @@ select {
 @keyframes cz-green { 0%,43%{opacity:0; transform:translateY(5px)} 50%{opacity:1; transform:none} 88%{opacity:1; transform:none} 95%,100%{opacity:0; transform:translateY(5px)} }
 @keyframes cz-stamp { 0%,38%{opacity:0; transform:scale(.4) rotate(-26deg)} 47%{opacity:1; transform:scale(1.14) rotate(-8deg)} 52%{transform:scale(1) rotate(-8deg)} 88%{opacity:1; transform:scale(1) rotate(-8deg)} 95%,100%{opacity:0; transform:scale(.55) rotate(-26deg)} }
 @keyframes cz-modalin { from { opacity:0; transform: scale(.93) translateY(16px); } to { opacity:1; transform: scale(1) translateY(0); } }
+
+/* Cursor del titular tipo máquina de escribir */
+@keyframes cz-blink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+.cz-cursor { color: var(--accent); font-weight: 400; margin-left: 1px; animation: cz-blink 1.05s step-end infinite; }
 
 @media (prefers-reduced-motion: reduce) {
   *,

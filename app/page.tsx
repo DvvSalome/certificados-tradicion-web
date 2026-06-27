@@ -2,6 +2,7 @@ import CheckoutForm from '@/components/CheckoutForm';
 import SiteFooter from '@/components/SiteFooter';
 import { Seal } from '@/components/Brand';
 import { PLANS, formatCOP } from '@/lib/config';
+import { RotatingTail } from '@/components/RotatingTail';
 
 // Diseño Home (Claude Design · "Certitradicion Home"). Hero con sello animado + panel de checkout.
 export default function Home() {
@@ -98,7 +99,8 @@ export default function Home() {
                 color: '#fff',
               }}
             >
-              El certificado de tu propiedad, oficial y al día.
+              El certificado de tu propiedad,{' '}
+              <RotatingTail phrases={['oficial y al día.', 'listo en minutos.', 'sin filas ni trámites.', 'verificado y seguro.']} />
             </h1>
 
             <p style={{ margin: 0, maxWidth: 440, fontSize: 18, lineHeight: 1.6, color: 'rgba(255,255,255,.82)' }}>
