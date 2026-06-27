@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { orders } from '@/lib/orders';
 import { checkoutUrl } from '@/lib/wompi';
-import { AMOUNT_IN_CENTS } from '@/lib/config';
+import { planAmountCents } from '@/lib/config';
 import { isOficina } from '@/lib/oficinas';
 import { verificar } from '@/lib/verify';
 
@@ -33,14 +33,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'No encontramos esa matrícula en esa oficina. Verifícala antes de pagar.' }, { status: 422 });
   }
 
+  const plan = body.plan === 'express' ? 'express' : 'basico';
+  const amountInCents = planAmountCents(plan);
+
   const reference = 'CTL-' + randomUUID().replace(/-/g, '').slice(0, 20);
-  await orders.create({ reference, matricula, oficina, email, phone, amountInCents: AMOUNT_IN_CENTS, status: 'PENDING_PAYMENT', createdAt: new Date().toISOString() });
+  await orders.create({ reference, matricula, oficina, email, phone, amountInCents, status: 'PENDING_PAYMENT', plan, createdAt: new Date().toISOString() });
 
   // URL pública del sitio. Detrás de un proxy (Traefik/Vercel) NO usar req.url (da el origen interno localhost).
   // Prioridad: APP_BASE_URL (fijo y seguro) -> X-Forwarded-Host -> req.url.
   const fwdHost = req.headers.get('x-forwarded-host');
   const fwdProto = req.headers.get('x-forwarded-proto') || 'https';
   const origin = process.env.APP_BASE_URL || (fwdHost ? `${fwdProto}://${fwdHost}` : new URL(req.url).origin);
-  const url = checkoutUrl({ reference, amountInCents: AMOUNT_IN_CENTS, redirectUrl: `${origin}/estado?ref=${reference}` });
+  const url = checkoutUrl({ reference, amountInCents, redirectUrl: `${origin}/estado?ref=${reference}` });
   return NextResponse.json({ ok: true, reference, checkoutUrl: url });
 }

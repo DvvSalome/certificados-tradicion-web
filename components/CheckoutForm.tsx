@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import OficinaSelect from './OficinaSelect';
 import { Seal } from './Brand';
+import { PLANS, formatCOP, type PlanId } from '@/lib/config';
 
 const VERIFY_STEPS = ['Conectando con el registro…', 'Buscando tu matrícula…', 'Confirmando la información…'];
 
@@ -14,6 +15,7 @@ type VResult = { disponible: boolean | null; estado: string | null; direccion: s
 export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>('form');
+  const [plan, setPlan] = useState<PlanId>('express'); // Express por defecto = mayor conversión
   const [matricula, setMatricula] = useState('');
   const [oficina, setOficina] = useState('');
   const [email, setEmail] = useState('');
@@ -78,7 +80,7 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ matricula, oficina, email, phone }),
+        body: JSON.stringify({ matricula, oficina, email, phone, plan }),
       });
       const j = await res.json();
       if (!res.ok) { setError(j.error || 'Ocurrió un error'); setStep('form'); setLoading(false); return; }
@@ -90,6 +92,8 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
 
   const inputCls =
     'w-full rounded-xl border border-[var(--border-strong)] bg-white px-4 py-3 text-[15px] text-[var(--foreground)] outline-none transition placeholder:text-[var(--muted-2)] focus:border-[var(--brand-ring)] focus:ring-4 focus:ring-[var(--brand-50)]';
+
+  const planPrice = formatCOP(PLANS[plan].priceCop); // precio del plan elegido (botón, total, chip)
 
   return (
     <>
@@ -171,8 +175,8 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
                     ))}
                   </ul>
                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, width: 'fit-content', padding: '10px 16px', borderRadius: 12, background: 'rgba(255,255,255,.1)', border: '1px solid rgba(255,255,255,.16)' }}>
-                    <span style={{ fontWeight: 800, fontSize: 20, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>{priceLabel}</span>
-                    <span style={{ fontWeight: 500, fontSize: 12.5, color: 'rgba(255,255,255,.66)' }}>pago único · IVA incl.</span>
+                    <span style={{ fontWeight: 800, fontSize: 20, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>{planPrice}</span>
+                    <span style={{ fontWeight: 500, fontSize: 12.5, color: 'rgba(255,255,255,.66)' }}>{PLANS[plan].label} · pago único · IVA incl.</span>
                   </div>
                 </div>
               </div>
@@ -193,6 +197,49 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
                   {/* FORM */}
                   {step === 'form' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 15 }}>
+                      {/* SELECTOR DE PLAN */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                        <span style={{ fontWeight: 600, fontSize: 13.5, color: '#0D1B2A' }}>Elige tu plan</span>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                          {(['basico', 'express'] as PlanId[]).map((pid) => {
+                            const p = PLANS[pid];
+                            const sel = plan === pid;
+                            return (
+                              <button
+                                type="button"
+                                key={pid}
+                                onClick={() => setPlan(pid)}
+                                aria-pressed={sel}
+                                className="transition"
+                                style={{
+                                  position: 'relative', flex: '1 1 150px', textAlign: 'left', cursor: 'pointer',
+                                  borderRadius: 14, padding: '13px 14px',
+                                  border: sel ? '2px solid #103A73' : '1px solid #CFD9E6',
+                                  background: sel ? '#EEF3FB' : '#fff',
+                                  boxShadow: sel ? '0 8px 20px -10px rgba(16,58,115,.4)' : 'none',
+                                }}
+                              >
+                                {p.recommended && (
+                                  <span style={{ position: 'absolute', top: -9, right: 12, padding: '2px 8px', borderRadius: 999, background: '#0F7A52', color: '#fff', fontSize: 9.5, fontWeight: 800, letterSpacing: '.06em' }}>MÁS ELEGIDO</span>
+                                )}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <span style={{ display: 'inline-block', width: 16, height: 16, flexShrink: 0, borderRadius: 999, border: sel ? '5px solid #103A73' : '2px solid #CFD9E6', background: '#fff' }} />
+                                  <span style={{ fontWeight: 800, fontSize: 15, color: '#0D1B2A' }}>{p.label}</span>
+                                </div>
+                                <p style={{ margin: '7px 0 0', fontWeight: 800, fontSize: 18, color: '#103A73', fontVariantNumeric: 'tabular-nums' }}>{formatCOP(p.priceCop)}</p>
+                                <ul style={{ margin: '8px 0 0', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                  {p.features.slice(0, pid === 'express' ? 3 : 2).map((f) => (
+                                    <li key={f} style={{ display: 'flex', gap: 6, fontSize: 11.5, lineHeight: 1.35, color: '#5B6B7E' }}>
+                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0F7A52" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ marginTop: 2, flexShrink: 0 }}><path d="M20 6 9 17l-5-5" /></svg>
+                                      <span>{f}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                       <label style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
                         <span style={{ fontWeight: 600, fontSize: 13.5, color: '#0D1B2A' }}>Oficina de Registro</span>
                         <OficinaSelect value={oficina} onChange={setOficina} />
@@ -220,7 +267,7 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
                       )}
                       <button type="button" onClick={submit} className="transition hover:brightness-110 active:scale-[0.99]" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9, marginTop: 2, border: 'none', cursor: 'pointer', borderRadius: 12, background: '#103A73', padding: 16, fontWeight: 600, fontSize: 16, color: '#fff', boxShadow: '0 8px 20px -6px rgba(16,58,115,.5)' }}>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-                        Pagar {priceLabel}
+                        Pagar {planPrice}
                       </button>
                       <p style={{ margin: 0, textAlign: 'center', fontSize: 12, color: '#8593A3' }}>Al continuar serás redirigido a la pasarela segura de Wompi.</p>
                     </div>
@@ -274,8 +321,8 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
                           <dd style={{ margin: 0, fontWeight: 600, fontFamily: 'ui-monospace,monospace', color: '#0D1B2A' }}>{matricula}</dd>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, paddingTop: 11, borderTop: '1px solid #E3E9F1' }}>
-                          <dt style={{ fontWeight: 600, fontSize: 15, color: '#0D1B2A' }}>Total</dt>
-                          <dd style={{ margin: 0, fontWeight: 800, fontSize: 19, color: '#0D1B2A', fontVariantNumeric: 'tabular-nums' }}>{priceLabel}</dd>
+                          <dt style={{ fontWeight: 600, fontSize: 15, color: '#0D1B2A' }}>Total · {PLANS[plan].label}</dt>
+                          <dd style={{ margin: 0, fontWeight: 800, fontSize: 19, color: '#0D1B2A', fontVariantNumeric: 'tabular-nums' }}>{planPrice}</dd>
                         </div>
                       </dl>
 
