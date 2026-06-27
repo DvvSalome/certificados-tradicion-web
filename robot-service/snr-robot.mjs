@@ -106,7 +106,13 @@ export class SnrRobot {
     await p.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
     await p.waitForTimeout(2500);
     const ok = await p.getByText('Certificado Tradicion', { exact: false }).first().count().catch(() => 0);
-    if (!ok) throw new Error('login falló (no aparece el dashboard)');
+    if (!ok) {
+      // ¿el SNR mostró el bloqueo por "cantidad inusual de ingresos por día"? → código aparte para
+      // que el pool marque ESTA cuenta en cooldown y salte a la siguiente (no es un fallo transitorio).
+      const bloqueada = await p.getByText(/cantidad inusual de ingresos/i).first().count().catch(() => 0);
+      if (bloqueada) throw Object.assign(new Error('cuenta SNR bloqueada (cantidad inusual de ingresos por día)'), { code: 'ACCOUNT_BLOCKED' });
+      throw new Error('login falló (no aparece el dashboard)');
+    }
     await this._saveState();
     this.log('[snr] login OK');
   }
