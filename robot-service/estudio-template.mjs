@@ -9,6 +9,18 @@ export function estudioHtml(e, { matricula, oficina, fecha }) {
   const banderas = (e.banderas || []).map((b) => `<div class="flag ${nivelClass(b.nivel)}"><b>${esc(b.titulo)}</b><span>${esc(b.detalle)}</span></div>`).join('') || '<p class="muted">No se detectaron banderas de riesgo en el documento.</p>';
   const props = (e.propietarios || []).map((p) => `<li><b>${esc(p.nombre)}</b>${p.identificacion ? ' · ' + esc(p.identificacion) : ''} <span class="muted">${esc(p.modo || '')}${p.anotacion ? ' (' + esc(p.anotacion) + ')' : ''}</span></li>`).join('') || '<li class="muted">No identificados en el texto.</li>';
   const grav = (e.gravamenes || []).map((g) => `<li><b>${esc(g.tipo)}</b> ${g.vigente ? '<span class="tag v">VIGENTE</span>' : '<span class="tag">no vigente</span>'}<br><span class="muted">${esc(g.descripcion)}${g.anotacion ? ' · ' + esc(g.anotacion) : ''}</span></li>`).join('') || '<li class="muted">Sin gravámenes ni limitaciones vigentes encontrados.</li>';
+  // Alertas (listas restrictivas / lavado): verde si no hay coincidencias, rojo por cada posible coincidencia.
+  const A = e.alertas;
+  const alertasHtml = !A || A.ok === false
+    ? '<p class="muted">Tamizaje de listas restrictivas no disponible en esta emisión.</p>'
+    : (A.coincidencias && A.coincidencias.length)
+      ? A.coincidencias.map((c) => `<div class="flag rojo"><b>Posible coincidencia: ${esc(c.propietario)}</b><span>${esc(c.lista)} · ${esc(c.entrada)}${c.programa ? ' (' + esc(c.programa) + ')' : ''}. Es una coincidencia POSIBLE por nombre — requiere verificación manual, no es una determinación.</span></div>`).join('')
+      : '<div class="flag" style="border-left-color:#0F7A52;background:#E8F5EF"><b style="color:#0F7A52">Sin coincidencias en listas restrictivas</b><span>Los propietarios no aparecen en la Lista OFAC/SDN (Clinton) de lavado de activos.</span></div>';
+  // Avalúo comercial digital (referencial).
+  const V = e.avaluo;
+  const avaluoHtml = !V || !V.disponible
+    ? '<p class="muted">Estimado no disponible (no se identificó el área del inmueble en el CTL).</p>'
+    : `<div class="resumen"><b style="font-size:20px;color:#103A73">${esc(V.estimado)}</b> <span class="muted">(rango ${esc(V.min)} – ${esc(V.max)})</span><br><span class="muted" style="font-size:12px">Área ${esc(V.areaM2)} m²${V.ciudad ? ' · referencia ' + esc(V.ciudad) : ''}. ${esc(V.nota)}</span></div>`;
   return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><style>
   *{box-sizing:border-box;font-family:'Segoe UI',Arial,sans-serif} body{margin:0;color:#0D1B2A}
   .page{padding:40px 44px}
@@ -37,6 +49,8 @@ export function estudioHtml(e, { matricula, oficina, fecha }) {
     <h2>Propietarios y tradición</h2><ul>${props}</ul>
     <h2>Gravámenes y limitaciones</h2><ul>${grav}</ul>
     <h2>Banderas de riesgo</h2>${banderas}
+    <h2>Alertas — listas restrictivas (lavado de activos)</h2>${alertasHtml}
+    <h2>Avalúo comercial · estimado digital</h2>${avaluoHtml}
     <p class="disc">Análisis informativo automatizado generado a partir del Certificado de Tradición y Libertad. No constituye asesoría jurídica profesional ni reemplaza el estudio de un abogado.</p>
   </div></body></html>`;
 }

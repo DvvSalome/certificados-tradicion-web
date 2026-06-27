@@ -228,7 +228,7 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
                                 </div>
                                 <p style={{ margin: '7px 0 0', fontWeight: 800, fontSize: 18, color: '#103A73', fontVariantNumeric: 'tabular-nums' }}>{formatCOP(p.priceCop)}</p>
                                 <ul style={{ margin: '8px 0 0', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                  {p.features.slice(0, pid === 'express' ? 3 : 2).map((f) => (
+                                  {p.features.slice(0, pid === 'express' ? 4 : 2).map((f) => (
                                     <li key={f} style={{ display: 'flex', gap: 6, fontSize: 11.5, lineHeight: 1.35, color: '#5B6B7E' }}>
                                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0F7A52" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ marginTop: 2, flexShrink: 0 }}><path d="M20 6 9 17l-5-5" /></svg>
                                       <span>{f}</span>

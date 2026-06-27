@@ -17,9 +17,9 @@ export const PLANS: Record<PlanId, Plan> = {
     priceCop: Number(process.env.PRICE_EXPRESS_COP || 44900),
     features: [
       'Incluye el Certificado de Tradición y Libertad',
-      'Estudio de títulos: propietarios, hipotecas, embargos y banderas de riesgo',
-      'Semáforo de riesgo en lenguaje simple',
-      'Entrega por correo en minutos',
+      'Estudio de títulos: propietarios, gravámenes y banderas de riesgo',
+      'Alertas de lavado de activos (Lista Clinton / OFAC)',
+      'Avalúo comercial digital del inmueble',
     ],
   },
 };

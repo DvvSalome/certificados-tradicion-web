@@ -107,8 +107,13 @@ async function generarConCuenta(robot, cuenta, { reference, oficina, matricula, 
         const { renderEstudioPdf } = await import('./estudio-pdf.mjs');
         const fecha = new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date());
         const data = await generarEstudio(r.pdf, { matricula, oficina });
+        // Add-ons Express (best-effort cada uno; si uno falla, el resto + el estudio igual salen).
+        try { const { chequearAlertas } = await import('./alertas.mjs'); data.alertas = await chequearAlertas(data.propietarios); }
+        catch (ae) { console.error(`[alertas] ✕ ${matricula}: ${ae.message}`); }
+        try { const { estimarAvaluo } = await import('./avaluo.mjs'); data.avaluo = estimarAvaluo({ area: data.inmueble?.area, ciudad: oficina }); }
+        catch (ve) { console.error(`[avaluo] ✕ ${matricula}: ${ve.message}`); }
         estudioPdf = await renderEstudioPdf(data, { matricula, oficina, fecha });
-        console.error(`[estudio] ✅ ${matricula} (${estudioPdf.length} bytes, semáforo ${data.semaforo})`);
+        console.error(`[estudio] ✅ ${matricula} (${estudioPdf.length} bytes, semáforo ${data.semaforo}, alertas ${data.alertas?.coincidencias?.length ?? '-'}, avaluo ${data.avaluo?.disponible ? 'sí' : 'no'})`);
       } catch (ee) {
         // Best-effort: NO re-reportar como generación (duplicaría la bitácora). Solo alerta "estudio pendiente".
         console.error(`[estudio] ✕ ${matricula}: ${ee.message}`);

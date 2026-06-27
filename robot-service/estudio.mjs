@@ -16,6 +16,7 @@ atención: hipoteca vigente, patrimonio de familia). Devuelve EXCLUSIVAMENTE un 
   "semaforo": "verde"|"amarillo"|"rojo",
   "resumen": string
 }
+Para "area": extrae el área del inmueble en metros cuadrados si aparece (secciones "AREA Y COEFICIENTE", "AREA PRIVADA" o "AREA CONSTRUIDA"), en formato "NN m2"; usa null si no aparece.
 Reglas del semáforo: rojo si hay alguna bandera roja; amarillo si solo hay amarillas; verde si no hay banderas.
 "resumen": 2-4 frases en español simple, directo al comprador. No incluyas texto fuera del JSON.`;
 
