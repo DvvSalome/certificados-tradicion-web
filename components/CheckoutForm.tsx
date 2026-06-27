@@ -37,6 +37,11 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, loading]);
 
+  // Avisa al hero (typewriter) para que PAUSE su animación mientras el modal está abierto.
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('cz-modal', { detail: open }));
+  }, [open]);
+
   // mensajes de progreso mientras valida (para no preocupar al cliente)
   useEffect(() => {
     if (!validating) { setVStep(0); return; }
@@ -303,11 +308,16 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
                             </span>
                             <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: '#0F7A52' }}>Encontramos tu inmueble</p>
                           </div>
-                          {(vResult.direccion || vResult.circulo) && (
-                            <p style={{ margin: 0, padding: '10px 15px', borderTop: '1px solid rgba(15,122,82,.18)', fontSize: 13, color: '#5B6B7E' }}>
-                              {vResult.direccion}{vResult.direccion && vResult.circulo ? ' · ' : ''}{vResult.circulo}
-                            </p>
-                          )}
+                          {(() => {
+                            // El SNR a veces devuelve "SIN DIRECCION" (predios sin dirección registrada) → no lo mostramos crudo.
+                            const dir = vResult.direccion && !/sin\s*direcci/i.test(vResult.direccion) ? vResult.direccion : null;
+                            const text = dir
+                              ? `${dir}${vResult.circulo ? ' · ' + vResult.circulo : ''}`
+                              : vResult.circulo ? `Inmueble registrado en ${vResult.circulo}` : null;
+                            return text ? (
+                              <p style={{ margin: 0, padding: '10px 15px', borderTop: '1px solid rgba(15,122,82,.18)', fontSize: 13, color: '#5B6B7E' }}>{text}</p>
+                            ) : null;
+                          })()}
                         </div>
                       ) : null}
 
