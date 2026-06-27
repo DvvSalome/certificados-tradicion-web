@@ -6,6 +6,7 @@ import http from 'http';
 import { SnrRobot } from './snr-robot.mjs';
 import { entregarCorreo } from './deliver.mjs';
 import { consultaHttp } from './snr-consulta-http.mjs';
+import { pickAccount, marcarBloqueada, totalCuentas, estado as estadoCuentas } from './snr-accounts.mjs';
 
 const PORT = Number(process.env.PORT || 3000);
 const SECRET = process.env.N8N_WEBHOOK_SECRET || '';
@@ -28,32 +29,76 @@ async function reportPanel(body) {
 // Las generaciones se SERIALIZAN (genChain): comparten una sola página, una a la vez (a 50/día no hay cola).
 // Browserless soporta 5 sesiones concurrentes, así que esto convive con el robot de validación (sin login).
 let genRobot = null;
+let genAccount = null; // cuenta SNR activa del genRobot (del pool snr-accounts)
 let genChain = Promise.resolve();
 
 async function ensureGenRobot() {
-  if (genRobot && genRobot.browser?.isConnected()) return genRobot;
-  if (genRobot) await resetGenRobot(); // sesión muerta (Browserless la cerró por inactividad) → recrear
+  // Reusar la sesión SOLO si sigue viva Y su cuenta sigue siendo la preferida del pool (no bloqueada/sin saldo).
+  if (genRobot && genRobot.browser?.isConnected() && genAccount && pickAccount()?.user === genAccount.user) return genRobot;
+  if (genRobot) await resetGenRobot(); // sesión muerta o toca cambiar de cuenta → recrear
+  const acc = pickAccount();
+  if (!acc) throw Object.assign(new Error('sin cuentas SNR usables (todas bloqueadas o sin saldo)'), { code: 'NO_ACCOUNTS' });
+  genAccount = acc;
   const r = new SnrRobot({
-    user: process.env.SNR_USER, pass: process.env.SNR_PASS,
+    user: acc.user, pass: acc.pass,
     browserlessWs: BROWSERLESS_WS || null, headless: true, stateFile: null, log: (m) => console.error(m),
   });
   await r.start();
   genRobot = r;
+  console.error(`[robot] genRobot usando cuenta ${acc.user} (${totalCuentas()} en pool)`);
   return r;
 }
-async function resetGenRobot() { try { await genRobot?.stop(); } catch {} genRobot = null; }
+async function resetGenRobot() { try { await genRobot?.stop(); } catch {} genRobot = null; genAccount = null; }
 
 function generar(job) {
   genChain = genChain.catch(() => {}).then(() => generarOne(job));
   return genChain;
 }
 
-async function generarOne({ reference, oficina, matricula, email, plan }) {
-  try {
-    const robot = await ensureGenRobot();
-    const r = await robot.generar({ oficina, matricula }); // ensureLoggedIn() adentro REUSA la sesión
-    await reportPanel({ reference, matricula, oficina, status: 'OK', costCents: COST_CENTS });
-    console.error(`[robot] ✅ ${matricula} generado (${r.pdf?.length || 0} bytes)`);
+async function generarOne(job) {
+  const { reference, oficina, matricula, email, plan } = job;
+  // Loop de FALLBACK por cuenta: si la cuenta activa se BLOQUEA, salta a otra. Acotado por nº de cuentas
+  // (cada cuenta se intenta como máximo una vez). Los demás errores NO reintentan (igual que antes).
+  for (let intentoCuenta = 0; ; intentoCuenta++) {
+    let robot, cuenta;
+    try {
+      robot = await ensureGenRobot();
+      cuenta = genAccount?.user;
+    } catch (e) {
+      if (e.code === 'NO_ACCOUNTS') {
+        console.error(`[robot] ✕ ${matricula}: ${e.message}`);
+        await reportPanel({ reference, matricula, oficina, status: 'FAILED', errorCode: 'ERROR', error: 'sin cuentas SNR disponibles (todas bloqueadas o sin saldo) — recargar o agregar cuenta' });
+        return;
+      }
+      throw e;
+    }
+    try {
+      return await generarConCuenta(robot, cuenta, job);
+    } catch (e) {
+      // BLOQUEO de cuenta → marcar en cooldown y reintentar con la siguiente cuenta usable.
+      if (e.code === 'ACCOUNT_BLOCKED' && cuenta && intentoCuenta < totalCuentas()) {
+        marcarBloqueada(cuenta);
+        console.error(`[robot] cuenta ${cuenta} BLOQUEADA (cantidad inusual de ingresos) → fallback a otra cuenta`);
+        await resetGenRobot();
+        if (pickAccount()) continue; // hay otra cuenta usable → reintenta con ella
+        await reportPanel({ reference, matricula, oficina, status: 'FAILED', errorCode: 'ERROR', error: 'todas las cuentas SNR bloqueadas hoy — recargar o agregar cuenta' });
+        return;
+      }
+      // Otros errores: comportamiento de siempre (NO_DISPONIBLE no resetea; otro sí).
+      const errorCode = e.code === 'NO_DISPONIBLE' ? 'NO_DISPONIBLE' : 'ERROR';
+      await reportPanel({ reference, matricula, oficina, status: 'FAILED', errorCode, error: String(e.message || e).slice(0, 300) });
+      console.error(`[robot] ✕ ${matricula} ${errorCode}: ${e.message} [cuenta ${cuenta}]`);
+      if (errorCode !== 'NO_DISPONIBLE') await resetGenRobot();
+      return;
+    }
+  }
+}
+
+// Una generación con una cuenta ya elegida. Lanza si falla (el caller decide fallback/no según el código).
+async function generarConCuenta(robot, cuenta, { reference, oficina, matricula, email, plan }) {
+  const r = await robot.generar({ oficina, matricula }); // ensureLoggedIn() adentro REUSA la sesión
+  await reportPanel({ reference, matricula, oficina, status: 'OK', costCents: COST_CENTS });
+  console.error(`[robot] ✅ ${matricula} generado (${r.pdf?.length || 0} bytes) [cuenta ${cuenta}]`);
     // EXPRESS: Estudio de Títulos (best-effort — el CTL YA está reportado/entregado; si esto falla, el CTL igual sale).
     let estudioPdf = null;
     if (plan === 'express') {
@@ -77,14 +122,6 @@ async function generarOne({ reference, oficina, matricula, email, plan }) {
     } catch (de) {
       console.error(`[robot] ⚠ correo ${matricula} FALLÓ (cert OK, reenviar manual): ${de.message}`);
     }
-  } catch (e) {
-    const errorCode = e.code === 'NO_DISPONIBLE' ? 'NO_DISPONIBLE' : 'ERROR';
-    await reportPanel({ reference, matricula, oficina, status: 'FAILED', errorCode, error: String(e.message || e).slice(0, 300) });
-    console.error(`[robot] ✕ ${matricula} ${errorCode}: ${e.message}`);
-    // NO_DISPONIBLE: la sesión está sana (solo se consultó) → conservar. Otro error: puede estar sucia/muerta
-    // (carrito a medias, página rota) → resetear para que la próxima generación arranque limpia (re-loguea).
-    if (errorCode !== 'NO_DISPONIBLE') await resetGenRobot();
-  }
 }
 
 // ── VERIFICAR (rápido): CONSULTA PÚBLICA (sin login) con navegador persistente reusado entre consultas.
@@ -176,6 +213,11 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET' && req.url === '/health') {
     res.writeHead(200, { 'content-type': 'application/json' });
     return res.end(JSON.stringify({ ok: true, browserless: !!BROWSERLESS_WS }));
+  }
+  // Estado del pool de cuentas SNR (cuál está activa, disponibilidad, saldo conocido por cuenta).
+  if (req.method === 'GET' && req.url === '/cuentas') {
+    res.writeHead(200, { 'content-type': 'application/json' });
+    return res.end(JSON.stringify({ total: totalCuentas(), activa: genAccount?.user || null, cuentas: estadoCuentas() }));
   }
   if (req.method === 'POST' && req.url === '/generar') {
     if (!SECRET || req.headers['x-webhook-secret'] !== SECRET) { res.writeHead(401); return res.end('no autorizado'); }

@@ -113,9 +113,17 @@ El SNR bloquea una cuenta si recibe demasiados logins/día. Para resiliencia y m
 - **Por qué reactivo y no rotación:** el login es el recurso escaso (1 login/cuenta/día). Reactivo da N×
   capacidad sin gastar logins de más; rotar gastaría logins justo en lo que bloquea.
 
-> **Estado de rollout:** el módulo `snr-accounts.mjs` está construido y con self-test de su lógica; la
-> **detección de bloqueo** ya está en `login()`. Falta cablear `ensureGenRobot`/`generarOne` para que tomen la
-> cuenta del pool y reporten el saldo por cuenta, + probar con la 2ª cuenta real, antes de activarlo en prod.
+**Endpoint de estado:** `GET /cuentas` → `{ total, activa, cuentas: [{user, disponible, saldoCents, cooldownUntil, reason}] }`.
+
+> **Estado de rollout:**
+> - ✅ `snr-accounts.mjs` (pool, self-test) · detección de bloqueo en `login()` (`ACCOUNT_BLOCKED`) ·
+>   `ensureGenRobot` toma la cuenta del pool · `generarOne` hace **fallback automático al bloqueo** (marca
+>   cooldown + salta a otra cuenta) · `GET /cuentas`.
+> - ⏳ Pendiente (se cablea + verifica con la 2ª cuenta REAL): la **lectura de saldo** dentro de la sesión
+>   (leer 1 vez + descontar local), confirmando que vuelve a `generate.snr` **sin re-loguear** (clave para no
+>   gastar logins). Mientras tanto, el saldo-first usa el saldo *conocido* (cuando se cablee el read) y el
+>   fallback por **bloqueo** ya está activo.
+> - Activación: setear `SNR_ACCOUNTS` en EasyPanel + redeploy (bundleado con la key NIM).
 
 ---
 

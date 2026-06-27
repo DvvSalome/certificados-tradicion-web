@@ -65,6 +65,13 @@ export function marcarSinSaldo(user) {
 export function setSaldo(user, cents) {
   const st = state.get(user); if (st) { st.saldoCents = cents; if (cents >= COST_CENTS) st.reason = null; }
 }
+// "Forma fácil" de saber el saldo: se lee 1 vez al loguear (setSaldo) y luego se DESCUENTA local por cada
+// cert generado, sin re-navegar. Solo se re-lee cuando queda bajo (para corregir el estimado).
+export function descontarCert(user) {
+  const st = state.get(user); if (st && st.saldoCents != null) st.saldoCents = Math.max(0, st.saldoCents - COST_CENTS);
+}
+export function saldoCents(user) { const st = state.get(user); return st ? st.saldoCents : null; }
+export function saldoConocido(user) { const st = state.get(user); return !!st && st.saldoCents != null; }
 
 // Snapshot para el panel/alertas: cada cuenta con disponibilidad, saldo y motivo si no está disponible.
 export function estado(now = Date.now()) {
