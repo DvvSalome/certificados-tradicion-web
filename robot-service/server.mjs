@@ -99,6 +99,10 @@ async function generarConCuenta(robot, cuenta, { reference, oficina, matricula, 
   const r = await robot.generar({ oficina, matricula }); // ensureLoggedIn() adentro REUSA la sesión
   await reportPanel({ reference, matricula, oficina, status: 'OK', costCents: COST_CENTS });
   console.error(`[robot] ✅ ${matricula} generado (${r.pdf?.length || 0} bytes) [cuenta ${cuenta}]`);
+  // Guardar el PDF en el panel para poder reenviarlo por WhatsApp sin re-loguear al SNR (best-effort).
+  try {
+    if (PANEL && SECRET && r.pdf) await fetch(`${PANEL}/api/admin/cert`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-webhook-secret': SECRET }, body: JSON.stringify({ reference, pdfBase64: r.pdf.toString('base64') }) });
+  } catch (pe) { console.error('[robot] guardar PDF (WhatsApp) falló: ' + pe.message); }
     // EXPRESS: Estudio de Títulos (best-effort — el CTL YA está reportado/entregado; si esto falla, el CTL igual sale).
     let estudioPdf = null;
     if (plan === 'express') {

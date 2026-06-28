@@ -20,7 +20,7 @@ Vigencia: 30 días
 Servicio de gestión privado. No formamos parte del Gobierno de Colombia ni de GOV.CO; actuamos como intermediarios para facilitar tu solicitud ante la autoridad competente.`;
 }
 
-export function ctlEmailHtml({ matricula = '', oficina = '', fecha = '', sitioUrl = 'https://certitradicion.com', logoUrl = '', previewCid = '', descargaUrl = '', conEstudio = false } = {}) {
+export function ctlEmailHtml({ matricula = '', oficina = '', fecha = '', sitioUrl = 'https://certitradicion.com', logoUrl = '', previewCid = '', descargaUrl = '', conEstudio = false, waUrl = '' } = {}) {
   const brand = '#1B2A3A', brand600 = '#13202C', ink = '#0D1B2A', muted = '#5B6B7F', soft = '#8794a6', line = '#E7EDF5', green = '#0F7A52', bg = '#eef1f7';
   const font = "'Plus Jakarta Sans','Helvetica Neue',Arial,sans-serif";
 
@@ -30,6 +30,14 @@ export function ctlEmailHtml({ matricula = '', oficina = '', fecha = '', sitioUr
         <span style="color:${brand};font-size:16px;font-weight:800;font-family:${font};">&#128269;&nbsp; Incluye tu Estudio de Títulos</span>
         <span style="display:block;color:${muted};font-size:12px;margin-top:5px;font-family:${font};">Segundo PDF adjunto — propietarios, gravámenes y banderas de riesgo del inmueble</span>
       </td></tr></table>
+    </td></tr>` : '';
+
+  const waBtn = waUrl ? `
+    <tr><td style="padding:8px 28px 2px;" align="center">
+      <a href="${waUrl}" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;background:#25D366;color:#fff;font-weight:700;font-size:15px;font-family:${font};padding:13px 26px;border-radius:14px;">
+        <span style="font-size:18px;line-height:1;">&#128241;</span> Recíbelo también por WhatsApp
+      </a>
+      <p style="margin:7px 0 0;color:${muted};font-size:11.5px;font-family:${font};">Toca el botón, envíanos el mensaje y te lo mandamos al chat.</p>
     </td></tr>` : '';
 
   const header = `
@@ -77,6 +85,7 @@ export function ctlEmailHtml({ matricula = '', oficina = '', fecha = '', sitioUr
     ${preview}
     ${button}
     ${estudioNote}
+    ${waBtn}
 
     <tr><td style="padding:22px 28px 6px;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f9fc;border:1px solid ${line};border-radius:16px;"><tr><td style="padding:6px 20px;">

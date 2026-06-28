@@ -104,7 +104,7 @@ export async function entregarCorreo({ pdf, matricula, oficina, email, reference
     replyTo: SMTP_USER,
     subject: ctlSubject(matricula),
     text: ctlEmailText({ matricula, oficina, fecha, sitioUrl: SITE, conEstudio: !!estudio }),
-    html: ctlEmailHtml({ matricula, oficina, fecha, previewCid, sitioUrl: SITE, logoUrl, conEstudio: !!estudio }),
+    html: ctlEmailHtml({ matricula, oficina, fecha, previewCid, sitioUrl: SITE, logoUrl, conEstudio: !!estudio, waUrl: process.env.WHATSAPP_NUMBER ? `https://wa.me/${process.env.WHATSAPP_NUMBER}?text=${encodeURIComponent('Hola, quiero mi certificado ' + reference)}` : '' }),
     attachments,
   };
   await tx().sendMail(message);
