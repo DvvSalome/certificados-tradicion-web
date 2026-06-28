@@ -35,7 +35,7 @@ function nextMidnightColombiaMs(now = Date.now()) {
 }
 
 const accounts = parseAccounts();
-const state = new Map(accounts.map((a) => [a.user, { cooldownUntil: 0, saldoCents: null, reason: null }]));
+const state = new Map(accounts.map((a) => [a.user, { cooldownUntil: 0, saldoCents: null, reason: null, alerted: false }]));
 
 export function hayCuentas() { return accounts.length > 0; }
 export function totalCuentas() { return accounts.length; }
@@ -72,6 +72,15 @@ export function descontarCert(user) {
 }
 export function saldoCents(user) { const st = state.get(user); return st ? st.saldoCents : null; }
 export function saldoConocido(user) { const st = state.get(user); return !!st && st.saldoCents != null; }
+
+// Certificados que alcanza el saldo conocido (o null si no se conoce).
+export function certsRestantes(user) { const st = state.get(user); return st && st.saldoCents != null ? Math.floor(st.saldoCents / COST_CENTS) : null; }
+// ¿Disparar alerta de saldo bajo? true SOLO la 1ª vez que cae bajo el umbral (se rearma al recuperarse).
+export function debeAlertar(user, umbralCerts) {
+  const st = state.get(user); if (!st || st.saldoCents == null) return false;
+  if (Math.floor(st.saldoCents / COST_CENTS) < umbralCerts) { if (st.alerted) return false; st.alerted = true; return true; }
+  st.alerted = false; return false;
+}
 
 // Snapshot para el panel/alertas: cada cuenta con disponibilidad, saldo y motivo si no está disponible.
 export function estado(now = Date.now()) {

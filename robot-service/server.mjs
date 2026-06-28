@@ -4,9 +4,9 @@
 // NO_DISPONIBLE dispara la devolución automática; otro error queda FAILED + alerta.
 import http from 'http';
 import { SnrRobot } from './snr-robot.mjs';
-import { entregarCorreo } from './deliver.mjs';
+import { entregarCorreo, enviarAlerta } from './deliver.mjs';
 import { consultaHttp } from './snr-consulta-http.mjs';
-import { pickAccount, marcarBloqueada, totalCuentas, estado as estadoCuentas } from './snr-accounts.mjs';
+import { pickAccount, marcarBloqueada, totalCuentas, estado as estadoCuentas, setSaldo, descontarCert, saldoConocido, debeAlertar, certsRestantes } from './snr-accounts.mjs';
 
 const PORT = Number(process.env.PORT || 3000);
 const SECRET = process.env.N8N_WEBHOOK_SECRET || '';
@@ -131,6 +131,18 @@ async function generarConCuenta(robot, cuenta, { reference, oficina, matricula, 
     } catch (de) {
       console.error(`[robot] ⚠ correo ${matricula} FALLÓ (cert OK, reenviar manual): ${de.message}`);
     }
+    // SALDO: leer 1× por sesión (anclado en "Saldo Actual", confiable) y descontar local por cert.
+    // Alerta por correo al admin la 1ª vez que cae bajo el umbral (rearmable). Best-effort.
+    try {
+      const UMBRAL = Number(process.env.SNR_ALERTA_CERTS || 5);
+      if (!saldoConocido(cuenta)) { const cop = await robot.leerSaldo(); if (cop != null) setSaldo(cuenta, cop * 100); }
+      else descontarCert(cuenta);
+      if (debeAlertar(cuenta, UMBRAL)) {
+        const n = certsRestantes(cuenta);
+        console.error(`[saldo] ⚠ ALERTA: cuenta ${cuenta} con saldo para ~${n} certificado(s)`);
+        await enviarAlerta(`⚠ Saldo bajo SNR (${cuenta})`, `La cuenta SNR ${cuenta} tiene saldo para ~${n} certificado(s). Recárgala en el portal del SNR para no interrumpir el servicio.\n\n— Sistema Certitradición`).catch(() => {});
+      }
+    } catch (se) { console.error('[saldo] lectura/alerta falló (no crítico): ' + se.message); }
 }
 
 // ── VERIFICAR (rápido): CONSULTA PÚBLICA (sin login) con navegador persistente reusado entre consultas.

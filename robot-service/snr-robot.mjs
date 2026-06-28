@@ -265,10 +265,12 @@ export class SnrRobot {
       await p.waitForTimeout(2000);
     }
     const txt = await p.evaluate(() => document.body.innerText || '');
-    const montos = (txt.match(/\$\s?[\d.]{3,}/g) || []).map((s) => Number(s.replace(/[^\d]/g, ''))).filter((v) => v > 0);
-    if (!montos.length) { this.log('[snr] saldo: no se detectó monto'); return null; }
-    const saldoCOP = Math.max(...montos);
-    this.log('[snr] saldo detectado (heurística): ' + saldoCOP);
+    // Anclar en la etiqueta "Saldo Actual (COP)" → el monto $ que le sigue (formato US: $206,000.00).
+    const m = txt.match(/Saldo Actual[^$]*\$\s*([\d.,]+)/i);
+    if (!m) { this.log('[snr] saldo: no se encontró "Saldo Actual" en la página'); return null; }
+    const saldoCOP = Math.round(Number(m[1].replace(/,/g, ''))); // coma=miles, punto=decimal
+    if (!Number.isFinite(saldoCOP)) { this.log('[snr] saldo: monto no parseable: ' + m[1]); return null; }
+    this.log('[snr] saldo: $' + saldoCOP.toLocaleString('es-CO'));
     return saldoCOP;
   }
 

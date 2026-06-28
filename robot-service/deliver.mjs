@@ -84,6 +84,13 @@ async function guardarEnEnviados(message) {
   }
 }
 
+// Alerta operativa al admin (saldo bajo, etc.). Best-effort: si falla, solo loguea.
+export async function enviarAlerta(subject, text) {
+  const to = process.env.ADMIN_EMAIL || SMTP_USER;
+  if (!SMTP_PASS) { console.error('[alerta] sin SMTP_PASS, no se envía: ' + subject); return; }
+  await tx().sendMail({ from: `"Certitradición · Sistema" <${SMTP_USER}>`, to, subject, text });
+}
+
 export async function entregarCorreo({ pdf, matricula, oficina, email, reference, estudio }) {
   if (!email) return { sent: false, reason: 'sin email' };
   if (!SMTP_PASS) return { sent: false, reason: 'sin SMTP_PASS' };
