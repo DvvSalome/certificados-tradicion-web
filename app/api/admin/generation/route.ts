@@ -62,12 +62,15 @@ export async function POST(req: Request) {
   }
 
   // Otro fallo (red/robot/SNR): es problema NUESTRO, no se devuelve solo → alerta para reintentar/gestionar.
+  const ord = b.reference ? await orders.get(b.reference) : null;
+  const contacto = ord ? ([ord.phone ? `WhatsApp +${ord.phone}` : null, ord.email].filter(Boolean).join(' · ') || 'sin datos de contacto') : 'sin datos de contacto';
+  const panel = (process.env.APP_BASE_URL || 'https://certitradicion.com') + '/admin';
   if (b.reference) await orders.transition(b.reference, ['GENERATING', 'PAID'], 'FAILED');
   await sendAlert({
     kind: 'generacion_fallida',
     title: '🔴 Falló la generación de un certificado',
-    message: `No se pudo generar la matrícula ${b.matricula} (${b.oficina}). ${b.error ? 'Error: ' + b.error : ''} Revisa el robot/saldo. (El cliente pagó — gestionar reintento o devolución.)`,
-    data: { matricula: b.matricula, oficina: b.oficina, referencia: b.reference ?? null, error: b.error ?? null },
+    message: `No se pudo generar ${b.reference ? b.reference + ' — ' : ''}matrícula ${b.matricula} (${b.oficina}). ${b.error ? 'Error: ' + b.error + '. ' : ''}\n📞 Contactar al cliente: ${contacto}\n🔧 Panel: ${panel} — revisar robot/saldo y gestionar reintento o devolución. El cliente PAGÓ.`,
+    data: { matricula: b.matricula, oficina: b.oficina, referencia: b.reference ?? null, email: ord?.email ?? null, phone: ord?.phone ?? null, error: b.error ?? null },
   });
   return NextResponse.json({ ok: true });
 }

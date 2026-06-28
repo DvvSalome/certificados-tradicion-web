@@ -20,21 +20,23 @@ export async function POST(req: Request) {
   const minutes = Number(process.env.REAPER_STUCK_MIN || 15);
   // UPDATE...RETURNING = claim atómico: marca attempts=1 al seleccionarlas, así dos llamadas concurrentes
   // (o cíclicas) NO re-alertan la misma orden. Solo toma las que pagaron pero llevan >N min sin terminar.
-  const { rows } = await getPool().query<{ reference: string; matricula: string; oficina: string; status: string }>(
+  const { rows } = await getPool().query<{ reference: string; matricula: string; oficina: string; status: string; email: string | null; phone: string | null }>(
     `UPDATE orders SET attempts = attempts + 1, updated_at = now()
        WHERE status IN ('GENERATING', 'PAID')
          AND attempts = 0
          AND updated_at < now() - (($1 || ' minutes')::interval)
-     RETURNING reference, matricula, oficina, status`,
+     RETURNING reference, matricula, oficina, status, email, phone`,
     [String(minutes)],
   );
 
+  const panel = (process.env.APP_BASE_URL || 'https://certitradicion.com') + '/admin';
   for (const o of rows) {
+    const contacto = [o.phone ? `WhatsApp +${o.phone}` : null, o.email].filter(Boolean).join(' · ') || 'sin datos de contacto';
     await sendAlert({
       kind: 'generacion_fallida',
       title: '🔴 Pedido pagado ATASCADO sin certificado',
-      message: `El pedido ${o.reference} (matrícula ${o.matricula}, ${o.oficina}) lleva más de ${minutes} min en ${o.status} sin completarse. El cliente PAGÓ — revisar el robot y reintentar la generación o devolver.`,
-      data: { referencia: o.reference, matricula: o.matricula, oficina: o.oficina },
+      message: `Pedido ${o.reference} — matrícula ${o.matricula} (${o.oficina}) lleva más de ${minutes} min en ${o.status} sin completarse.\n📞 Contactar al cliente: ${contacto}\n🔧 Revisar en el panel: ${panel} — reintentar la generación o devolver. El cliente PAGÓ.`,
+      data: { referencia: o.reference, matricula: o.matricula, oficina: o.oficina, email: o.email, phone: o.phone },
     });
   }
 
