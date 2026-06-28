@@ -38,5 +38,15 @@ export async function POST(req: Request) {
     });
   }
 
-  return NextResponse.json({ ok: true, alertados: rows.length });
+  // Purga de privacidad (minimización de datos, Ley 1581): el cert_pdf se guarda SOLO para reenviarlo por
+  // WhatsApp dentro de la ventana de uso; tras CERT_PDF_TTL_HOURS (48h) se borra. El certificado sigue en el
+  // historial de la cuenta SNR si alguna vez hace falta re-descargarlo. Somos enviadores, no archivadores.
+  const ttlH = Number(process.env.CERT_PDF_TTL_HOURS || 48);
+  const purged = await getPool().query(
+    `UPDATE orders SET cert_pdf = NULL
+       WHERE cert_pdf IS NOT NULL AND cert_pdf_at < now() - (($1 || ' hours')::interval)`,
+    [String(ttlH)],
+  );
+
+  return NextResponse.json({ ok: true, alertados: rows.length, pdfPurgados: purged.rowCount ?? 0 });
 }
