@@ -51,11 +51,13 @@ async function buildPreview(pdfBuffer) {
     const svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
       <rect width="100%" height="100%" fill="#0d1b2a" opacity="0.5"/>
       <circle cx="${cx}" cy="${cy - 60}" r="68" fill="#ffffff" opacity="0.10"/>
-      <g transform="translate(${cx},${cy - 60}) scale(2) translate(-32,-32)">
-        <circle cx="32" cy="32" r="29.5" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-dasharray="1.6 3.8" stroke-linecap="round"/>
-        <circle cx="32" cy="32" r="21" fill="none" stroke="#ffffff" stroke-width="1.1" opacity="0.25"/>
-        <path d="M42 24.5 A 12 12 0 1 0 42 39.5" fill="none" stroke="#ffffff" stroke-width="5.6" stroke-linecap="round"/>
-        <path d="M37.6 32 l 2.4 2.4 l 5.4 -6.3" fill="none" stroke="#34D399" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"/>
+      <g transform="translate(${cx},${cy - 60}) scale(1.35) translate(-48,-48)" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M34 9 H57 a7 7 0 0 1 7 7 V80 a7 7 0 0 1 -7 7 H23 a7 7 0 0 1 -7 -7 V26 Z"/>
+        <path d="M16 26 H29 a5 5 0 0 0 5 -5 V9"/>
+        <path d="M25 34 H53"/><path d="M25 43 H49"/><path d="M25 52 H53"/><path d="M25 61 H46"/>
+        <path d="M25 75 c 4 -7 8 -5 9 1 c 1 5 5 5 7 -1 c 1 -4 5 -3 6 1 c 1 3 4 4 8 -1" stroke-width="4"/>
+        <path d="M25 84 H50"/>
+        <path d="M75.5 13.4 A 5.8 5.8 0 0 1 86 18.2 L 67.6 59.8 L 55 75.5 L 57 55.2 Z" fill="#ffffff" stroke="none"/>
       </g>
       <text x="${cx}" y="${cy + 52}" text-anchor="middle" font-family="Arial,sans-serif" font-size="40" font-weight="bold" fill="#ffffff" letter-spacing="2">VISTA PROTEGIDA</text>
       <text x="${cx}" y="${cy + 98}" text-anchor="middle" font-family="Arial,sans-serif" font-size="25" fill="#cfe0f2">Descarga el PDF adjunto para ver tu certificado completo</text>

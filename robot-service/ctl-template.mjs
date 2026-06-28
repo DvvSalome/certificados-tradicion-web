@@ -59,8 +59,8 @@ export function ctlEmailHtml({ matricula = '', oficina = '', fecha = '', sitioUr
   // El certificado va ADJUNTO (PDF). Solo un aviso claro — sin botones ni links inútiles
   // (el cliente ya tiene su certificado en el adjunto).
   const button = `
-    <tr><td style="padding:20px 28px 4px;" align="center">
-      <table role="presentation" cellpadding="0" cellspacing="0" align="center"><tr><td align="center" style="background:#e6f4ee;border:1px solid #bfe3d2;border-radius:16px;padding:16px 24px;">
+    <tr><td style="padding:14px 28px 2px;" align="center">
+      <table role="presentation" cellpadding="0" cellspacing="0" align="center"><tr><td align="center" style="background:#e6f4ee;border:1px solid #bfe3d2;border-radius:16px;padding:13px 22px;">
         <span style="color:${green};font-size:16px;font-weight:800;font-family:${font};">&#128206;&nbsp; Tu certificado va adjunto a este correo</span>
         <span style="display:block;color:${muted};font-size:12px;margin-top:5px;font-family:${font};">Archivo <strong>PDF oficial</strong> — descárgalo e imprímelo · validez 30 días</span>
       </td></tr></table>
@@ -76,10 +76,10 @@ export function ctlEmailHtml({ matricula = '', oficina = '', fecha = '', sitioUr
 
     <tr><td style="background:${brand};background-image:linear-gradient(135deg,${brand},${brand600});padding:24px 32px;">${header}</td></tr>
 
-    <tr><td style="padding:34px 32px 0;" align="center">
+    <tr><td style="padding:22px 32px 0;" align="center">
       <span style="display:inline-block;background:#e6f4ee;color:${green};font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;padding:6px 14px;border-radius:999px;">&#10003;&nbsp; Certificado emitido</span>
-      <h1 style="margin:16px 0 0;color:${ink};font-size:26px;font-weight:800;letter-spacing:-.5px;">Tu certificado está listo</h1>
-      <p style="margin:10px auto 0;max-width:400px;color:${muted};font-size:15px;line-height:1.55;">Aquí tienes tu <strong style="color:${ink};">Certificado de Tradición y Libertad</strong>, oficial y vigente. Lo encuentras <strong style="color:${ink};">adjunto a este correo</strong>, listo para descargar e imprimir.</p>
+      <h1 style="margin:12px 0 0;color:${ink};font-size:23px;font-weight:800;letter-spacing:-.5px;">Tu certificado está listo</h1>
+      <p style="margin:7px auto 0;max-width:400px;color:${muted};font-size:14px;line-height:1.5;">Aquí tienes tu <strong style="color:${ink};">Certificado de Tradición y Libertad</strong>, oficial y vigente. Lo encuentras <strong style="color:${ink};">adjunto a este correo</strong>, listo para descargar e imprimir.</p>
     </td></tr>
 
     ${preview}
@@ -87,19 +87,19 @@ export function ctlEmailHtml({ matricula = '', oficina = '', fecha = '', sitioUr
     ${estudioNote}
     ${waBtn}
 
-    <tr><td style="padding:22px 28px 6px;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f9fc;border:1px solid ${line};border-radius:16px;"><tr><td style="padding:6px 20px;">
+    <tr><td style="padding:16px 28px 4px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f7f9fc;border:1px solid ${line};border-radius:16px;"><tr><td style="padding:4px 20px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-          <tr><td style="color:${muted};font-size:13px;padding:12px 0;">Matrícula inmobiliaria</td><td align="right" style="color:${ink};font-size:14px;font-weight:700;font-family:'Courier New',monospace;">${matricula}</td></tr>
-          <tr><td style="color:${muted};font-size:13px;padding:12px 0;border-top:1px solid ${line};">Oficina de Registro</td><td align="right" style="color:${ink};font-size:14px;font-weight:700;border-top:1px solid ${line};">${oficina}</td></tr>
-          <tr><td style="color:${muted};font-size:13px;padding:12px 0;border-top:1px solid ${line};">Fecha de emisión</td><td align="right" style="color:${ink};font-size:14px;border-top:1px solid ${line};">${fecha}</td></tr>
+          <tr><td style="color:${muted};font-size:13px;padding:9px 0;">Matrícula inmobiliaria</td><td align="right" style="color:${ink};font-size:14px;font-weight:700;font-family:'Courier New',monospace;">${matricula}</td></tr>
+          <tr><td style="color:${muted};font-size:13px;padding:9px 0;border-top:1px solid ${line};">Oficina de Registro</td><td align="right" style="color:${ink};font-size:14px;font-weight:700;border-top:1px solid ${line};">${oficina}</td></tr>
+          <tr><td style="color:${muted};font-size:13px;padding:9px 0;border-top:1px solid ${line};">Fecha de emisión</td><td align="right" style="color:${ink};font-size:14px;border-top:1px solid ${line};">${fecha}</td></tr>
         </table>
       </td></tr></table>
     </td></tr>
 
-    <tr><td style="padding:24px 32px 32px;" align="center">
+    <tr><td style="padding:16px 32px 24px;" align="center">
       <p style="margin:0;color:${muted};font-size:13px;">¿Dudas? Responde este correo o escríbenos a <a href="mailto:certificados@certitradicion.com" style="color:${brand};text-decoration:none;font-weight:700;">certificados@certitradicion.com</a></p>
-      <div style="height:1px;background:${line};margin:18px 0;"></div>
+      <div style="height:1px;background:${line};margin:14px 0;"></div>
       <p style="margin:0;color:${soft};font-size:11px;line-height:1.6;">Certitradición · Servicio de gestión privado. No somos canal oficial de la Superintendencia de Notariado y Registro (SNR); facilitamos el trámite en tu nombre.<br><a href="${sitioUrl}" style="color:${brand};text-decoration:none;font-weight:600;">certitradicion.com</a></p>
     </td></tr>
   </table>
