@@ -35,11 +35,16 @@ export async function enviarDocumento(to: string, pdf: Buffer, filename: string,
   if (!res.ok) throw new Error('WA send doc: ' + JSON.stringify(await res.json().catch(() => ({}))).slice(0, 200));
 }
 
-// Texto simple (para respuestas de ayuda/error dentro de la ventana). Best-effort.
+// Texto simple (para respuestas de ayuda/error dentro de la ventana). Best-effort, pero loguea si falla.
 export async function enviarTexto(to: string, body: string): Promise<void> {
-  await fetch(`${BASE}/${PHONE_ID()}/messages`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${TOKEN()}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messaging_product: 'whatsapp', to, type: 'text', text: { body } }),
-  }).catch(() => {});
+  try {
+    const res = await fetch(`${BASE}/${PHONE_ID()}/messages`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${TOKEN()}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messaging_product: 'whatsapp', to, type: 'text', text: { body } }),
+    });
+    if (!res.ok) console.error('[wa] enviarTexto falló:', JSON.stringify(await res.json().catch(() => ({}))).slice(0, 200));
+  } catch (e) {
+    console.error('[wa] enviarTexto error:', (e as Error).message);
+  }
 }

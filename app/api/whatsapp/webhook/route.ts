@@ -43,18 +43,26 @@ export async function POST(req: Request) {
 }
 
 async function procesar(raw: string) {
-  if (!whatsappConfigured()) return;
+  if (!whatsappConfigured()) { console.error('[wa webhook] whatsapp NO configurado (faltan envs)'); return; }
   let body: unknown;
   try { body = JSON.parse(raw); } catch { return; }
-  const value = (body as { entry?: { changes?: { value?: { messages?: unknown[] } }[] }[] })?.entry?.[0]?.changes?.[0]?.value;
+  const value = (body as { entry?: { changes?: { value?: { messages?: unknown[]; statuses?: unknown[] } }[] }[] })?.entry?.[0]?.changes?.[0]?.value;
   const msgs = value?.messages;
-  if (!Array.isArray(msgs)) return;
+  if (!Array.isArray(msgs)) {
+    // statuses = recibos de entrega/lectura (no son mensajes del cliente). Lo logueamos suave.
+    if (Array.isArray(value?.statuses)) console.error('[wa webhook] evento status (entrega/lectura), no es mensaje entrante');
+    else console.error('[wa webhook] evento sin messages:', JSON.stringify(value).slice(0, 200));
+    return;
+  }
   for (const m of msgs as { type?: string; from?: string; text?: { body?: string } }[]) {
-    if (m.type !== 'text' || !m.from) continue;
+    if (m.type !== 'text' || !m.from) { console.error('[wa webhook] mensaje no-texto, ignorado:', m.type); continue; }
     const from = m.from;
-    const ref = (m.text?.body || '').match(/CTL-[A-Za-z0-9]+/i)?.[0];
+    const texto = m.text?.body || '';
+    const ref = texto.match(/CTL-[A-Za-z0-9]+/i)?.[0];
+    console.error(`[wa webhook] ENTRANTE de ${from}: "${texto.slice(0, 80)}"${ref ? ` (ref ${ref})` : ' (sin ref)'}`);
     if (!ref) {
       await enviarTexto(from, 'Hola 👋 Para enviarte tu certificado necesito el número de referencia (empieza por CTL-), lo ves en el correo de confirmación.');
+      console.error(`[wa webhook] respondida solicitud de referencia a ${from}`);
       continue;
     }
     const { rows } = await getPool().query<{ cert_pdf: Buffer | null; matricula: string }>(
@@ -73,6 +81,7 @@ async function procesar(raw: string) {
         `Certificado-Tradicion-${row.matricula}.pdf`,
         `Aquí tienes tu Certificado de Tradición y Libertad (matrícula ${row.matricula}). ¡Gracias por usar Certitradición!`,
       );
+      console.error(`[wa webhook] ✅ PDF (${ref}, matrícula ${row.matricula}) enviado a ${from}`);
     } catch (e) {
       console.error('[wa webhook] envío doc falló:', (e as Error).message);
       await enviarTexto(from, 'Tuvimos un problema enviando tu PDF por aquí, pero ya te llegó por correo. Si necesitas ayuda, respóndenos.');
