@@ -44,7 +44,7 @@ export function ctlEmailHtml({ matricula = '', oficina = '', fecha = '', sitioUr
     <table role="presentation" cellpadding="0" cellspacing="0"><tr>
       ${logoUrl ? `<td valign="middle" style="padding-right:13px;"><img src="${logoUrl}" alt="" width="42" height="42" style="display:block;border:0;"></td>` : ''}
       <td valign="middle">
-        <span style="color:#fff;font-size:21px;font-weight:800;letter-spacing:-.4px;font-family:${font};">Certitradición</span>
+        <span style="color:#fffffe;font-size:21px;font-weight:800;letter-spacing:-.4px;font-family:${font};">Certitradición</span>
         <span style="color:#9DB0C4;font-size:10px;display:block;margin-top:3px;letter-spacing:.18em;font-family:${font};">CERTIFICADOS DE TRADICIÓN · COLOMBIA</span>
       </td>
     </tr></table>`;
@@ -54,6 +54,7 @@ export function ctlEmailHtml({ matricula = '', oficina = '', fecha = '', sitioUr
       <table role="presentation" cellpadding="0" cellspacing="0" style="background:#f1f4f9;border-radius:18px;"><tr><td style="padding:8px;">
         <img src="cid:${previewCid}" alt="Tu certificado (vista protegida)" width="520" style="width:100%;max-width:520px;height:auto;display:block;border-radius:12px;">
       </td></tr></table>
+      <p style="margin:9px 0 0;color:${muted};font-size:11.5px;font-family:${font};">&#128274; <strong style="color:${ink};">Vista protegida</strong> — descarga el PDF adjunto para ver tu certificado completo.</p>
     </td></tr>` : '';
 
   // El certificado va ADJUNTO (PDF). Solo un aviso claro — sin botones ni links inútiles
@@ -68,6 +69,8 @@ export function ctlEmailHtml({ matricula = '', oficina = '', fecha = '', sitioUr
 
   return `<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light only">
+<style>:root{color-scheme:light only;supported-color-schemes:light only;}</style>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet"></head>
 <body style="margin:0;padding:0;background:${bg};font-family:${font};-webkit-font-smoothing:antialiased;">
 <span style="display:none;max-height:0;overflow:hidden;opacity:0;">Tu Certificado de Tradición y Libertad está listo para descargar.</span>

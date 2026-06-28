@@ -59,8 +59,6 @@ async function buildPreview(pdfBuffer) {
         <path d="M25 84 H50"/>
         <path d="M75.5 13.4 A 5.8 5.8 0 0 1 86 18.2 L 67.6 59.8 L 55 75.5 L 57 55.2 Z" fill="#ffffff" stroke="none"/>
       </g>
-      <text x="${cx}" y="${cy + 52}" text-anchor="middle" font-family="Arial,sans-serif" font-size="40" font-weight="bold" fill="#ffffff" letter-spacing="2">VISTA PROTEGIDA</text>
-      <text x="${cx}" y="${cy + 98}" text-anchor="middle" font-family="Arial,sans-serif" font-size="25" fill="#cfe0f2">Descarga el PDF adjunto para ver tu certificado completo</text>
     </svg>`;
     return await sharp(blurred).composite([{ input: Buffer.from(svg), top: 0, left: 0 }]).png().toBuffer();
   } catch (e) {
