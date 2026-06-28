@@ -5,7 +5,19 @@ import { getPool } from './db';
 // ── Auth: cookie firmada con HMAC, 2 roles. Sin DB de usuarios (YAGNI): contraseña por rol vía env. ──
 export type Role = 'cliente' | 'superadmin';
 export const COOKIE = 'ctl_admin';
-const SECRET = process.env.ADMIN_SESSION_SECRET || 'dev-insecure-change-me';
+const DEFAULT_SECRET = 'dev-insecure-change-me';
+const SECRET = process.env.ADMIN_SESSION_SECRET || DEFAULT_SECRET;
+
+// En producción, si el secreto no está bien configurado, NEGAMOS todo acceso admin (fail-closed).
+// Con el default, la cookie superadmin sería forjable por cualquiera; preferimos bloquear el panel
+// (el operador lo nota y configura ADMIN_SESSION_SECRET) antes que exponer ingresos/PII y /api/admin/batch.
+function secretInseguro(): boolean {
+  if (process.env.NODE_ENV === 'production' && SECRET === DEFAULT_SECRET) {
+    console.error('[admin] ⛔ ADMIN_SESSION_SECRET no configurado en producción → acceso admin DENEGADO. Configúralo.');
+    return true;
+  }
+  return false;
+}
 
 const PASSWORDS: Record<Role, string | undefined> = {
   cliente: process.env.ADMIN_PASS_CLIENTE,
@@ -18,6 +30,7 @@ function sign(role: Role): string {
 }
 
 export function verify(token: string | undefined): Role | null {
+  if (secretInseguro()) return null;
   if (!token) return null;
   const [role, mac] = token.split('.');
   if ((role !== 'cliente' && role !== 'superadmin') || !mac) return null;
@@ -29,6 +42,7 @@ export function verify(token: string | undefined): Role | null {
 
 // Valida contraseña y devuelve el token de sesión, o null si no coincide.
 export function login(role: Role, password: string): string | null {
+  if (secretInseguro()) return null;
   const expected = PASSWORDS[role];
   if (!expected || !password) return null;
   const a = Buffer.from(password), b = Buffer.from(expected);

@@ -65,12 +65,15 @@ async function generarOne(job) {
       robot = await ensureGenRobot();
       cuenta = genAccount?.user;
     } catch (e) {
-      if (e.code === 'NO_ACCOUNTS') {
-        console.error(`[robot] ✕ ${matricula}: ${e.message}`);
-        await reportPanel({ reference, matricula, oficina, status: 'FAILED', errorCode: 'ERROR', error: 'sin cuentas SNR disponibles (todas bloqueadas o sin saldo) — recargar o agregar cuenta' });
-        return;
-      }
-      throw e;
+      // CUALQUIER error al arrancar el robot (Browserless caído, etc.) → FAILED + alerta. NUNCA dejar
+      // que escape en silencio: el cliente pagó y la orden quedaría colgada en GENERATING para siempre.
+      const msg = e.code === 'NO_ACCOUNTS'
+        ? 'sin cuentas SNR disponibles (todas bloqueadas o sin saldo) — recargar o agregar cuenta'
+        : `no se pudo iniciar el robot (¿Browserless caído?): ${String(e.message || e).slice(0, 200)}`;
+      console.error(`[robot] ✕ ${matricula}: ${msg}`);
+      await reportPanel({ reference, matricula, oficina, status: 'FAILED', errorCode: 'ERROR', error: msg }).catch(() => {});
+      await enviarAlerta('🔴 Robot no pudo arrancar', `Pedido ${reference} (matrícula ${matricula}, ${oficina}): ${msg}\nEl cliente PAGÓ — gestionar reintento o devolución.`).catch(() => {});
+      return;
     }
     try {
       return await generarConCuenta(robot, cuenta, job);
@@ -130,6 +133,7 @@ async function generarConCuenta(robot, cuenta, { reference, oficina, matricula, 
       console.error(`[robot] correo ${matricula}: ${d.sent ? 'ENVIADO a ' + email + (d.withPreview ? ' (con preview)' : '') : 'NO enviado (' + d.reason + ')'}`);
     } catch (de) {
       console.error(`[robot] ⚠ correo ${matricula} FALLÓ (cert OK, reenviar manual): ${de.message}`);
+      await enviarAlerta('🟠 Correo del certificado falló', `El CTL de la matrícula ${matricula} (${oficina}) SE GENERÓ pero el correo a ${email} falló: ${de.message}\nReenviar manual. El cliente igual puede pedirlo por WhatsApp.`).catch(() => {});
     }
     // SALDO: leer 1× por sesión (anclado en "Saldo Actual", confiable) y descontar local por cert.
     // Alerta por correo al admin la 1ª vez que cae bajo el umbral (rearmable). Best-effort.
@@ -265,4 +269,10 @@ server.listen(PORT, () => {
   chain = chain.then(() => ensureVerifyRobot()).catch((e) => console.error('[verify] warm-boot falló: ' + e.message));
   // heartbeat cada 5 min: mantiene vivo el navegador/Browserless (consulta pública, sin login)
   setInterval(() => { chain = chain.then(keepAlive).catch(() => {}); }, 5 * 60 * 1000);
+  // barredora cada 10 min: pide al panel detectar+alertar órdenes pagadas atascadas (red de seguridad final).
+  if (PANEL && SECRET) setInterval(() => {
+    fetch(`${PANEL}/api/admin/reaper`, { method: 'POST', headers: { 'x-webhook-secret': SECRET } })
+      .then((r) => { if (!r.ok) console.error('[reaper] HTTP ' + r.status); })
+      .catch((e) => console.error('[reaper] ' + e.message));
+  }, 10 * 60 * 1000);
 });

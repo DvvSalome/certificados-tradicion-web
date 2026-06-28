@@ -46,8 +46,8 @@ export async function GET(req: Request) {
 function firmaValida(raw: string, sig: string): boolean {
   const secret = process.env.WHATSAPP_APP_SECRET || '';
   if (!secret) {
-    console.warn('[wa webhook] WHATSAPP_APP_SECRET no seteado → firma NO verificada (configúralo antes de producción)');
-    return true;
+    console.error('[wa webhook] ⛔ WHATSAPP_APP_SECRET no seteado → rechazo el evento (fail-closed). Configúralo.');
+    return false;
   }
   const expected = 'sha256=' + crypto.createHmac('sha256', secret).update(raw).digest('hex');
   const a = Buffer.from(sig);

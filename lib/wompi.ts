@@ -4,7 +4,10 @@ const PUB = process.env.WOMPI_PUBLIC_KEY ?? '';
 const INTEGRITY = process.env.WOMPI_INTEGRITY_SECRET ?? '';
 const EVENTS = process.env.WOMPI_EVENTS_SECRET ?? '';
 const PRIVATE = process.env.WOMPI_PRIVATE_KEY ?? '';
-const EVENT_MAX_AGE_S = 300;
+// Ventana anti-replay amplia (24h): Wompi reintenta el MISMO evento (timestamp congelado) si una entrega
+// falla, y 5 min rechazaba esos reintentos legítimos → orden colgada. El replay real ya está neutralizado
+// aguas abajo: el claim es idempotente (orden ya GENERATING → no-op) y getTransaction revalida la tx real.
+const EVENT_MAX_AGE_S = 86400;
 const CHECKOUT_BASE = process.env.WOMPI_CHECKOUT_URL || 'https://checkout.wompi.co/p/';
 
 // Firma de integridad para el Web Checkout: SHA256(reference + amountInCents + currency + secret)

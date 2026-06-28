@@ -114,4 +114,17 @@ const pgStore: Store = {
   },
 };
 
-export const orders: Store = process.env.DATABASE_URL ? pgStore : memStore;
+// En producción, caer al store en memoria es un BUG silencioso: cada redeploy borra las órdenes en vuelo
+// y el webhook responde "unknownRef" a un pago aprobado. Si falta DATABASE_URL en prod, fallamos fuerte
+// al primer uso (request time, no build time) en vez de degradar en silencio.
+function memStoreOrFail(): Store {
+  if (process.env.NODE_ENV === 'production') {
+    const fail = async (): Promise<never> => {
+      throw new Error('DATABASE_URL no configurado en producción: el store en memoria perdería las órdenes. Configura DATABASE_URL.');
+    };
+    return { create: fail, get: fail, update: fail, claimForGeneration: fail, transition: fail } as unknown as Store;
+  }
+  return memStore;
+}
+
+export const orders: Store = process.env.DATABASE_URL ? pgStore : memStoreOrFail();

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { verifyEvent, getTransaction } from '@/lib/wompi';
 import { orders } from '@/lib/orders';
 import { triggerGenerarCTL } from '@/lib/n8n';
+import { sendAlert } from '@/lib/alerts';
 
 export const runtime = 'nodejs';
 
@@ -41,7 +42,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Verificación de transacción falló' }, { status: 400 });
     }
 
-    await triggerGenerarCTL({
+    const trig = await triggerGenerarCTL({
       reference,
       matricula: claimed.matricula,
       oficina: claimed.oficina,
@@ -50,6 +51,17 @@ export async function POST(req: Request) {
       transactionId: String(tx.id),
       plan: claimed.plan ?? order.plan,
     });
+    // Si el disparo al robot falló o está en modo MOCK, el cliente pagó pero NADIE generará el cert y la
+    // orden quedaría colgada en GENERATING. Alertar de inmediato (la barredora es el respaldo final).
+    if (!trig.ok || trig.mocked) {
+      console.error('[wompi webhook] disparo de generación no efectivo', { reference, trig });
+      await sendAlert({
+        kind: 'generacion_fallida',
+        title: '🔴 Pago aprobado pero NO se disparó la generación',
+        message: `El pago de ${reference} (matrícula ${claimed.matricula}, ${claimed.oficina}) fue APROBADO, pero el disparo al robot ${trig.mocked ? 'está en MODO MOCK (N8N_GENERAR_CTL_URL sin configurar)' : 'falló (robot/n8n caído)'}. La orden quedó en GENERATING. Revisar y reintentar — el cliente ya pagó.`,
+        data: { referencia: reference, matricula: claimed.matricula, oficina: claimed.oficina },
+      });
+    }
   } else if (tx.status && ['DECLINED', 'ERROR', 'VOIDED'].includes(tx.status)) {
     if (order.status === 'PENDING_PAYMENT') await orders.update(reference, { status: 'FAILED', transactionId: String(tx.id) });
   }
