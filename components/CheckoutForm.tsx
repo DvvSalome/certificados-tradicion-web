@@ -64,6 +64,11 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
     if (!matricula.trim()) { setError('Ingresa tu matrícula inmobiliaria'); return; }
     if (!email.trim()) { setError('Ingresa tu correo electrónico'); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError('Revisa tu correo, parece inválido'); return; }
+    // WhatsApp obligatorio: a ese número (verificado) entregamos el certificado. Celular colombiano.
+    const waD = phone.replace(/\D/g, '');
+    if (!((waD.length === 10 && waD.startsWith('3')) || (waD.length === 12 && waD.startsWith('573')))) {
+      setError('Ingresa tu número de WhatsApp (celular colombiano)'); return;
+    }
     setStep('review'); setVResult(null); setValidating(true);
     fetch('/api/validar', {
       method: 'POST', headers: { 'content-type': 'application/json' },
@@ -260,8 +265,8 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
                           <input value={email} onChange={(e) => { setEmail(e.target.value); setError(null); }} type="email" autoComplete="email" placeholder="tucorreo@ejemplo.com" className={inputCls} />
                         </label>
                         <label style={{ flex: '1 1 150px', display: 'flex', flexDirection: 'column', gap: 7 }}>
-                          <span style={{ fontWeight: 600, fontSize: 13.5, color: '#0D1B2A' }}>WhatsApp <span style={{ fontWeight: 400, color: '#8593A3' }}>(opc.)</span></span>
-                          <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" autoComplete="tel" placeholder="+57 300…" className={inputCls} />
+                          <span style={{ fontWeight: 600, fontSize: 13.5, color: '#0D1B2A' }}>WhatsApp</span>
+                          <input value={phone} onChange={(e) => { setPhone(e.target.value); setError(null); }} inputMode="tel" autoComplete="tel" placeholder="+57 300…" className={inputCls} />
                         </label>
                       </div>
                       {error && (
