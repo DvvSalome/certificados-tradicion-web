@@ -64,10 +64,12 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
     if (!matricula.trim()) { setError('Ingresa tu matrícula inmobiliaria'); return; }
     if (!email.trim()) { setError('Ingresa tu correo electrónico'); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError('Revisa tu correo, parece inválido'); return; }
-    // WhatsApp obligatorio: a ese número (verificado) entregamos el certificado. Celular colombiano.
-    const waD = phone.replace(/\D/g, '');
-    if (!((waD.length === 10 && waD.startsWith('3')) || (waD.length === 12 && waD.startsWith('573')))) {
-      setError('Ingresa tu número de WhatsApp (celular colombiano)'); return;
+    // WhatsApp obligatorio: a ese número (verificado) entregamos el certificado. Acepta cualquier país.
+    let waD = phone.replace(/\D/g, '');
+    if (waD.startsWith('00')) waD = waD.slice(2);
+    if (waD.length === 10 && waD.startsWith('3')) waD = '57' + waD; // colombiano local → +57
+    if (waD.length < 8 || waD.length > 15) {
+      setError('Ingresa tu WhatsApp con indicativo de país (ej: +57 300…)'); return;
     }
     setStep('review'); setVResult(null); setValidating(true);
     fetch('/api/validar', {

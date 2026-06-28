@@ -8,14 +8,16 @@ import { verificar } from '@/lib/verify';
 
 export const runtime = 'nodejs';
 
-// Normaliza un celular colombiano al formato wa_id de WhatsApp (57 + 10 dígitos, sin +/espacios) para que
-// coincida con el `from` que manda Meta. Así el webhook entrega el certificado SOLO al número que pagó.
+// Normaliza al formato wa_id de WhatsApp (dígitos con indicativo de país, sin +/espacios) para que coincida
+// con el `from` que manda Meta. Así el webhook entrega el certificado SOLO al número que pagó.
+// ponytail: heurística simple (Colombia local → +57, resto se asume con indicativo). Para los quirks de
+// trunk-0 de otros países (UK/AR/etc.) no es perfecta, pero el correo siempre es el respaldo de entrega.
 function normalizeWa(raw: string | null): string | null {
   if (!raw) return null;
-  const d = raw.replace(/\D/g, '');
-  if (d.length === 10 && d.startsWith('3')) return '57' + d;
-  if (d.length === 12 && d.startsWith('573')) return d;
-  return null;
+  let d = raw.replace(/\D/g, '');
+  if (d.startsWith('00')) d = d.slice(2); // prefijo de marcación internacional → fuera
+  if (d.length === 10 && d.startsWith('3')) d = '57' + d; // celular colombiano local sin indicativo → +57
+  return d.length >= 8 && d.length <= 15 ? d : null; // E.164: cualquier país
 }
 
 export async function POST(req: Request) {
@@ -32,7 +34,7 @@ export async function POST(req: Request) {
   if (!email) return NextResponse.json({ error: 'El correo electrónico es obligatorio' }, { status: 400 });
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: 'Correo inválido' }, { status: 400 });
   // WhatsApp obligatorio: es a dónde (y a quién) entregamos el certificado de forma autorizada.
-  if (!phone) return NextResponse.json({ error: 'Ingresa un número de WhatsApp válido (celular colombiano)' }, { status: 400 });
+  if (!phone) return NextResponse.json({ error: 'Ingresa un número de WhatsApp válido con indicativo de país (ej: +57 300…)' }, { status: 400 });
 
   // VALIDAR ANTES DE COBRAR: si la consulta es conclusiva y la matrícula NO está disponible, no se crea
   // la orden ni se redirige a Wompi (evita cobrar por una matrícula inexistente). Pega caché (el modal ya
