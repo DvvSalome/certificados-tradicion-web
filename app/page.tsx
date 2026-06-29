@@ -3,6 +3,7 @@ import SiteFooter from '@/components/SiteFooter';
 import { Seal } from '@/components/Brand';
 import { PLANS, formatCOP } from '@/lib/config';
 import { RotatingTail } from '@/components/RotatingTail';
+import { ClickToCheckout } from '@/components/ClickToCheckout';
 
 // Diseño Home (Claude Design · "Certitradicion Home"). Hero con sello animado + panel de checkout.
 export default function Home() {
@@ -126,7 +127,7 @@ export default function Home() {
 
           {/* right: animated certificate */}
           <div style={{ flex: '1 1 340px', minWidth: 280, position: 'relative', height: 400 }}>
-            <div
+            <ClickToCheckout
               style={{
                 position: 'absolute',
                 right: 0,
@@ -139,6 +140,7 @@ export default function Home() {
                 boxShadow: '0 34px 64px -22px rgba(0,0,0,.5)',
                 overflow: 'hidden',
                 animation: 'cz-bob 6s ease-in-out infinite',
+                cursor: 'pointer',
               }}
             >
               {/* documento real (muestra) — formato SNR con datos 100% de muestra */}
@@ -170,7 +172,7 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-            </div>
+            </ClickToCheckout>
           </div>
         </div>
       </div>

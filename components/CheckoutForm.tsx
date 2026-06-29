@@ -42,6 +42,13 @@ export default function CheckoutForm({ priceLabel }: { priceLabel: string }) {
     window.dispatchEvent(new CustomEvent('cz-modal', { detail: open }));
   }, [open]);
 
+  // Abrir el modal cuando se hace clic en el certificado del hero (evento de ClickToCheckout).
+  useEffect(() => {
+    const abrir = () => openModal();
+    window.addEventListener('cz-open-checkout', abrir);
+    return () => window.removeEventListener('cz-open-checkout', abrir);
+  }, []);
+
   // mensajes de progreso mientras valida (para no preocupar al cliente)
   useEffect(() => {
     if (!validating) { setVStep(0); return; }
