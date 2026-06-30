@@ -71,9 +71,7 @@ export default function Home() {
             <video
               src="/certificado-demo.mp4"
               className="absolute inset-0 h-full w-full object-cover"
-              autoPlay
-              loop
-              muted
+              controls
               playsInline
             />
             {/* Gradiente sutil encima del video */}
