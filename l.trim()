@@ -1,0 +1,1 @@
+const { execSync } = require('child_process'); const fs = require('fs'); const env = fs.readFileSync('.env.local', 'utf-8').split('\n').filter(l = 

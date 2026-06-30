@@ -31,9 +31,8 @@ export default function AnimatedCertificate() {
         {/* header tipo documento oficial */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, paddingBottom: 10, borderBottom: '1.5px solid #103A73' }}>
           <svg width="24" height="24" viewBox="0 0 64 64" fill="none">
-            <circle cx="32" cy="32" r="29" fill="#103A73" />
-            <path d="M42 24.5 A 12 12 0 1 0 42 39.5" stroke="#fff" strokeWidth="6" fill="none" strokeLinecap="round" />
-            <path d="M37.6 32 l 2.4 2.4 l 5.4 -6.3" stroke="#34D399" strokeWidth="3.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M32 4 L56 12 V30 C56 46 32 60 32 60 C32 60 8 46 8 30 V12 L32 4 Z" fill="#103A73" />
+            <text x="32" y="38" fill="white" fontSize="18" fontWeight="bold" fontFamily="sans-serif" textAnchor="middle">SNR</text>
           </svg>
           <div style={{ flex: 1, minWidth: 0 }}>
             <p style={{ margin: 0, fontWeight: 800, fontSize: 6, letterSpacing: '.09em', color: '#8593A3', whiteSpace: 'nowrap' }}>REPÚBLICA DE COLOMBIA · DOCUMENTO PÚBLICO</p>
