@@ -293,9 +293,9 @@ export default function CheckoutForm() {
                 {validating ? (
                   'Verificando...'
                 ) : (
-                  <>
-                    Pagar seguro con <WompiLogo className="h-4 brightness-0 invert" />
-                  </>
+                  <span className="flex items-center gap-2">
+                    Pagar seguro con <WompiLogo className="text-xl ml-1" />
+                  </span>
                 )}
               </button>
             )}

@@ -39,12 +39,10 @@ export function BrandLockup({ size = 38, tone = 'onDark' }: { size?: number; ton
 }
 
 // Logo de Wompi oficial cargado directamente desde la documentación oficial para mayor credibilidad
-export function WompiLogo({ className = "h-4" }: { className?: string }) {
+export function WompiLogo({ className = "text-base" }: { className?: string }) {
   return (
-    <img 
-      src="https://docs.wompi.co/img/wompi_logo_azul.svg" 
-      alt="Wompi" 
-      className={className} 
-    />
+    <span className={`font-sans font-black tracking-tighter ${className}`}>
+      wompi
+    </span>
   );
 }
