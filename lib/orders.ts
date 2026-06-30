@@ -1,5 +1,3 @@
-
-
 export type OrderStatus = 'PENDING_PAYMENT' | 'PAID' | 'GENERATING' | 'DELIVERED' | 'FAILED' | 'REFUND_PENDING' | 'REFUNDED';
 
 export interface Order {
@@ -58,11 +56,9 @@ const memStore: Store = {
 const PROXY_URL = 'https://certificados.fourgsolutions.com/api/orders';
 const SECRET = process.env.N8N_WEBHOOK_SECRET || '';
 
-// Evitar error DEPTH_ZERO_SELF_SIGNED_CERT cuando Vercel contacta al VPS
-if (process.env.NODE_ENV === 'production') {
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-}
-
+// (Antes aquí se desactivaba TLS GLOBAL con NODE_TLS_REJECT_UNAUTHORIZED='0' por un cert self-signed; el cert
+//  de certificados.fourgsolutions.com ya es válido (Let's Encrypt) → se quitó. Así getTransaction() a Wompi
+//  mantiene TLS estricto y no se puede falsificar un pago por MITM.)
 async function callProxy(action: string, payload: any): Promise<any> {
   const res = await fetch(PROXY_URL, {
     method: 'POST',
