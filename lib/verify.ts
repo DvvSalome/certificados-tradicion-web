@@ -52,36 +52,26 @@ async function setCached(oficina: string, matricula: string, r: VerifyResult): P
   );
 }
 
-async function consultarViaN8n(oficina: string, matricula: string): Promise<VerifyResult> {
-  if (!N8N_VERIFY_URL) return { disponible: null, estado: null, direccion: null, circulo: null, cached: false, mocked: true };
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 40_000);
-  try {
-    const res = await fetch(N8N_VERIFY_URL, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', ...(SECRET ? { 'X-Webhook-Secret': SECRET } : {}) },
-      body: JSON.stringify({ oficina, matricula }),
-      signal: ctrl.signal,
-    });
-    if (!res.ok) return { disponible: null, estado: null, direccion: null, circulo: null, cached: false, error: `n8n ${res.status}` };
-    const d = await res.json();
-    return {
-      disponible: typeof d.disponible === 'boolean' ? d.disponible : /disponible/i.test(d.estado || ''),
-      estado: d.estado ?? null, direccion: d.direccion ?? null, circulo: d.circulo ?? null, cached: false,
-    };
-  } catch (e) {
-    return { disponible: null, estado: null, direccion: null, circulo: null, cached: false, error: String(e).slice(0, 120) };
-  } finally {
-    clearTimeout(t);
-  }
-}
+// @ts-ignore
+import { consultaHttp } from '../robot-service/snr-consulta-http.mjs';
 
-// Caché primero; si no, consulta el robot vía n8n y cachea SOLO resultados conclusivos.
+// Caché primero; si no, consulta directa por HTTP.
 export async function verificar(oficina: string, matricula: string): Promise<VerifyResult> {
   const cached = await getCached(oficina, matricula);
   if (cached) return cached;
-  const fresh = await consultarViaN8n(oficina, matricula);
-  // cachear solo si fue conclusivo (encontró estado). "No encontrada" / error NO se cachea (puede ser transitorio).
-  if (!fresh.error && !fresh.mocked && fresh.estado) await setCached(oficina, matricula, fresh).catch(() => {});
-  return fresh;
+  
+  try {
+    const info = await consultaHttp(oficina, matricula);
+    const fresh: VerifyResult = {
+      disponible: !!info.disponible,
+      estado: info.estado ?? null,
+      direccion: info.direccion ?? null,
+      circulo: info.circulo ?? null,
+      cached: false
+    };
+    if (fresh.estado && fresh.disponible) await setCached(oficina, matricula, fresh).catch(() => {});
+    return fresh;
+  } catch (e) {
+    return { disponible: null, estado: null, direccion: null, circulo: null, cached: false, error: String(e).slice(0, 120) };
+  }
 }
