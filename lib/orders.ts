@@ -1,4 +1,4 @@
-import { getPool } from './db';
+
 
 export type OrderStatus = 'PENDING_PAYMENT' | 'PAID' | 'GENERATING' | 'DELIVERED' | 'FAILED' | 'REFUND_PENDING' | 'REFUNDED';
 
@@ -55,76 +55,34 @@ const memStore: Store = {
   },
 };
 
-// ── Backend Postgres (producción) ──
-type Row = {
-  reference: string; matricula: string; oficina: string; email: string | null; phone: string | null;
-  amount_in_cents: string | number; status: OrderStatus; transaction_id: string | null; plan?: string | null; created_at: Date | string;
-};
-function toOrder(row: Row): Order {
-  return {
-    reference: row.reference,
-    matricula: row.matricula,
-    oficina: row.oficina,
-    email: row.email,
-    phone: row.phone,
-    amountInCents: Number(row.amount_in_cents), // pg devuelve BIGINT como string
-    status: row.status,
-    transactionId: row.transaction_id ?? undefined,
-    plan: (row.plan === 'express' ? 'express' : 'basico'),
-    createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at),
-  };
-}
-const pgStore: Store = {
-  async create(o) {
-    const { rows } = await getPool().query<Row>(
-      `INSERT INTO orders (reference, matricula, oficina, email, phone, amount_in_cents, status, plan)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-      [o.reference, o.matricula, o.oficina, o.email, o.phone, o.amountInCents, o.status, o.plan ?? 'basico'],
-    );
-    return toOrder(rows[0]);
-  },
-  async get(r) {
-    const { rows } = await getPool().query<Row>('SELECT * FROM orders WHERE reference = $1', [r]);
-    return rows[0] ? toOrder(rows[0]) : null;
-  },
-  async update(r, patch) {
-    const { rows } = await getPool().query<Row>(
-      `UPDATE orders SET status = COALESCE($2, status), transaction_id = COALESCE($3, transaction_id), updated_at = now()
-       WHERE reference = $1 RETURNING *`,
-      [r, patch.status ?? null, patch.transactionId ?? null],
-    );
-    return rows[0] ? toOrder(rows[0]) : null;
-  },
-  async claimForGeneration(r, txId) {
-    const { rows } = await getPool().query<Row>(
-      `UPDATE orders SET status = 'GENERATING', transaction_id = $2, updated_at = now()
-       WHERE reference = $1 AND status = 'PENDING_PAYMENT' RETURNING *`,
-      [r, txId],
-    );
-    return rows[0] ? toOrder(rows[0]) : null;
-  },
-  async transition(r, from, to) {
-    // UPDATE condicional = atómico: solo una request concurrente gana la transición.
-    const { rows } = await getPool().query<Row>(
-      `UPDATE orders SET status = $3, updated_at = now()
-       WHERE reference = $1 AND status = ANY($2) RETURNING *`,
-      [r, from, to],
-    );
-    return rows[0] ? toOrder(rows[0]) : null;
-  },
-};
+const PROXY_URL = 'http://72.60.124.121/api/orders';
+const SECRET = process.env.N8N_WEBHOOK_SECRET || '';
 
-// En producción, caer al store en memoria es un BUG silencioso: cada redeploy borra las órdenes en vuelo
-// y el webhook responde "unknownRef" a un pago aprobado. Si falta DATABASE_URL en prod, fallamos fuerte
-// al primer uso (request time, no build time) en vez de degradar en silencio.
-function memStoreOrFail(): Store {
-  if (process.env.NODE_ENV === 'production') {
-    const fail = async (): Promise<never> => {
-      throw new Error('DATABASE_URL no configurado en producción: el store en memoria perdería las órdenes. Configura DATABASE_URL.');
-    };
-    return { create: fail, get: fail, update: fail, claimForGeneration: fail, transition: fail } as unknown as Store;
+async function callProxy(action: string, payload: any): Promise<any> {
+  const res = await fetch(PROXY_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-webhook-secret': SECRET,
+      'Host': 'certitradicion.com'
+    },
+    body: JSON.stringify({ action, payload })
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => '');
+    throw new Error(`Proxy error ${res.status}: ${txt}`);
   }
-  return memStore;
+  const json = await res.json();
+  if (json.error) throw new Error(`Proxy error: ${json.error}`);
+  return json.result;
 }
 
-export const orders: Store = process.env.DATABASE_URL ? pgStore : memStoreOrFail();
+const proxyStore: Store = {
+  async create(o) { return await callProxy('create', o); },
+  async get(r) { return await callProxy('get', { reference: r }); },
+  async update(r, patch) { return await callProxy('update', { reference: r, patch }); },
+  async claimForGeneration(r, txId) { return await callProxy('claimForGeneration', { reference: r, transactionId: txId }); },
+  async transition(r, from, to) { return await callProxy('transition', { reference: r, from, to }); },
+};
+
+export const orders: Store = process.env.NODE_ENV === 'production' ? proxyStore : memStore;

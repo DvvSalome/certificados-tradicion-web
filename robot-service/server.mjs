@@ -213,7 +213,16 @@ async function doVerify(oficina, matricula) {
   return browserVerify(oficina, matricula);
 }
 
+import { handleDbProxy } from './db-proxy.mjs';
+
 const server = http.createServer((req, res) => {
+  if (req.method === 'POST' && req.url === '/api/orders') {
+    if (!SECRET || req.headers['x-webhook-secret'] !== SECRET) { res.writeHead(401); return res.end('no autorizado'); }
+    let body = '';
+    req.on('data', (c) => { body += c; if (body.length > 1e6) req.destroy(); });
+    req.on('end', () => handleDbProxy(req, res, body));
+    return;
+  }
   if (req.method === 'POST' && req.url === '/verificar') {
     if (!SECRET || req.headers['x-webhook-secret'] !== SECRET) { res.writeHead(401); return res.end('no autorizado'); }
     let body = '';
