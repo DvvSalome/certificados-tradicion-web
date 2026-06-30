@@ -24,6 +24,8 @@ export default function CheckoutForm() {
   const [validating, setValidating] = useState(false);
   const [vStep, setVStep] = useState(0);
   const [vResult, setVResult] = useState<VResult | null>(null);
+  const [showTerms, setShowTerms] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
 
   // Cargar datos previos para no hacer al usuario llenar todo de nuevo
   useEffect(() => {
@@ -201,7 +203,7 @@ export default function CheckoutForm() {
             <div className="flex items-center gap-2 pt-2">
               <input type="checkbox" id="terms" className="size-4 rounded border-gray-300 text-[var(--brand)] focus:ring-[var(--brand)]" defaultChecked />
               <label htmlFor="terms" className="text-xs text-[var(--muted-2)]">
-                Acepto los <a href="/terminos" target="_blank" rel="noopener noreferrer" className="underline">Términos y Condiciones</a> y autorizo el tratamiento de mis <a href="/privacidad" target="_blank" rel="noopener noreferrer" className="underline">datos personales</a>.
+                Acepto los <button type="button" onClick={() => setShowTerms(true)} className="underline text-[var(--brand)]">Términos y Condiciones</button> y autorizo el tratamiento de mis <button type="button" onClick={() => setShowPrivacy(true)} className="underline text-[var(--brand)]">datos personales</button>.
               </label>
             </div>
 
@@ -310,6 +312,58 @@ export default function CheckoutForm() {
           <div>
             <p className="text-lg font-bold text-[var(--foreground)]">Conectando con pasarela segura...</p>
             <p className="text-sm text-[var(--muted)]">Serás redirigido a Wompi en unos segundos.</p>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL TERMINOS */}
+      {showTerms && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+          <div className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b p-4">
+              <h3 className="text-lg font-bold">Términos y Condiciones</h3>
+              <button type="button" onClick={() => setShowTerms(false)} className="rounded-full p-1.5 hover:bg-gray-100">
+                <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="overflow-y-auto p-4 text-sm text-gray-600">
+              <p className="mb-4">Al utilizar este servicio, el usuario acepta que Certitradición actúa como un intermediario tecnológico para la gestión y obtención del Certificado de Tradición y Libertad emitido por la Superintendencia de Notariado y Registro (SNR).</p>
+              <p className="mb-4">1. <strong>Tiempos de entrega:</strong> El tiempo estimado depende de la disponibilidad del sistema de la SNR. No nos hacemos responsables por caídas en la plataforma oficial que retrasen la entrega.</p>
+              <p className="mb-4">2. <strong>Exactitud de datos:</strong> Es responsabilidad del usuario proporcionar el número de matrícula y la oficina de registro correctos. No hay devoluciones por errores de digitación por parte del usuario.</p>
+              <p className="mb-4">3. <strong>Validez:</strong> El certificado entregado es el documento oficial en formato PDF expedido directamente por la SNR, con toda su validez legal y PIN de verificación.</p>
+              <p>4. <strong>Reembolsos:</strong> Solo se procesarán reembolsos si, por motivos de fuerza mayor, no logramos expedir el documento en un plazo máximo de 48 horas hábiles tras el pago.</p>
+            </div>
+            <div className="border-t p-4">
+              <button type="button" onClick={() => setShowTerms(false)} className="w-full rounded-xl bg-[var(--brand)] py-3 font-bold text-white hover:bg-[var(--brand-600)]">
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL PRIVACIDAD */}
+      {showPrivacy && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+          <div className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b p-4">
+              <h3 className="text-lg font-bold">Tratamiento de Datos Personales</h3>
+              <button type="button" onClick={() => setShowPrivacy(false)} className="rounded-full p-1.5 hover:bg-gray-100">
+                <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="overflow-y-auto p-4 text-sm text-gray-600">
+              <p className="mb-4">En cumplimiento de la Ley 1581 de 2012 (Ley de Protección de Datos Personales de Colombia), le informamos lo siguiente:</p>
+              <p className="mb-4">1. <strong>Recolección:</strong> Recolectamos su correo electrónico, teléfono/WhatsApp y número de identificación exclusivamente para la expedición y envío del certificado solicitado.</p>
+              <p className="mb-4">2. <strong>Uso de datos:</strong> Sus datos no serán vendidos ni compartidos con terceros para fines publicitarios. Solo se usarán para comunicación transaccional relacionada con su solicitud.</p>
+              <p className="mb-4">3. <strong>Seguridad:</strong> Utilizamos pasarelas de pago reguladas (Wompi). En ningún momento almacenamos los datos de sus tarjetas de crédito o débito.</p>
+              <p>4. <strong>Derechos del Titular:</strong> Usted puede solicitar la eliminación, actualización o rectificación de sus datos personales en cualquier momento a través de nuestros canales de atención al cliente.</p>
+            </div>
+            <div className="border-t p-4">
+              <button type="button" onClick={() => setShowPrivacy(false)} className="w-full rounded-xl bg-[var(--brand)] py-3 font-bold text-white hover:bg-[var(--brand-600)]">
+                Entendido
+              </button>
+            </div>
           </div>
         </div>
       )}
