@@ -2,7 +2,7 @@ import { Seal } from '@/components/Brand';
 
 export default function AnimatedCertificate() {
   return (
-    <div style={{ position: 'relative', height: 400, width: '100%', maxWidth: 340, margin: '0 auto' }}>
+    <div style={{ position: 'relative', height: 480, width: '100%', maxWidth: 340, margin: '0 auto' }}>
       <div
         style={{
           position: 'absolute',
@@ -16,7 +16,7 @@ export default function AnimatedCertificate() {
           border: '1px solid var(--border)'
         }}
       >
-        <img src="/cert-sample.png" alt="Muestra" style={{ width: '100%', height: '100%', display: 'block', objectFit: 'fill', opacity: 0.95 }} />
+        <img src="/cert-sample.png" alt="Muestra" style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover', objectPosition: 'top center', opacity: 0.95 }} />
         
         {/* scan beam */}
         <div
