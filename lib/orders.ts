@@ -11,6 +11,12 @@ export interface Order {
   transactionId?: string;
   plan?: 'basico' | 'express';
   createdAt: string;
+  // Comprador + consentimiento (Habeas Data). Opcionales (órdenes viejas no los tienen).
+  nombres?: string | null;
+  apellidos?: string | null;
+  tipoId?: string | null;
+  cedula?: string | null;
+  consentAt?: string | null;
 }
 
 interface Store {

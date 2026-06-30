@@ -132,16 +132,18 @@ export default function CheckoutForm() {
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ 
-          matricula: matricula.trim(), 
-          oficina, 
-          email: email.trim(), 
-          phone: phone.trim(), 
-          plan, 
+        body: JSON.stringify({
+          matricula: matricula.trim(),
+          oficina,
+          email: email.trim(),
+          phone: phone.trim(),
+          plan,
           cedula: cedula.trim(),
           nombres: nombres.trim(),
           apellidos: apellidos.trim(),
-          tipoId
+          tipoId,
+          termsAccepted,
+          privacyAccepted
         }),
       });
       const j = await res.json();
@@ -159,7 +161,7 @@ export default function CheckoutForm() {
   const sectionTitleCls = "text-[11px] sm:text-xs font-bold uppercase tracking-widest text-[var(--foreground)] mb-6 mt-10 border-b pb-2";
 
   return (
-    <div className="w-full relative pb-40 sm:pb-10">
+    <div className="w-full relative pb-40 sm:pb-0">
       <div className="rounded-[24px] sm:rounded-[28px] border border-[var(--border)] bg-[#fafafa] p-5 sm:p-8 shadow-sm">
         
         <p className="text-center text-sm sm:text-base text-gray-500 mb-2">
@@ -408,8 +410,8 @@ export default function CheckoutForm() {
 
       </div>
 
-      {/* FOOTER STICKY */}
-      <div className="fixed inset-x-0 bottom-0 z-40 sm:absolute sm:-bottom-24">
+      {/* FOOTER: fijo abajo en móvil (CTA siempre visible); en flujo normal en desktop (no flota/se sale). */}
+      <div className="fixed inset-x-0 bottom-0 z-40 sm:static sm:mt-6">
         <div className="w-full rounded-t-3xl sm:rounded-[28px] border-t sm:border border-gray-200 bg-white p-4 sm:p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.08)] sm:shadow-sm">
           <div className="mx-auto flex max-w-7xl flex-col sm:flex-row sm:items-center justify-between gap-4">
             

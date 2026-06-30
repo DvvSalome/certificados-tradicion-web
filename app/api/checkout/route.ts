@@ -36,6 +36,16 @@ export async function POST(req: Request) {
   // WhatsApp obligatorio: es a dónde (y a quién) entregamos el certificado de forma autorizada.
   if (!phone) return NextResponse.json({ error: 'Ingresa un número de WhatsApp válido con indicativo de país (ej: +57 300…)' }, { status: 400 });
 
+  // Datos del comprador (registro/facturación) + CONSENTIMIENTO explícito (Ley 1581, Habeas Data).
+  // Se exige en el SERVIDOR: la casilla del form gatea la UI, pero el registro real de la autorización va acá.
+  const nombres = body.nombres ? String(body.nombres).trim() : null;
+  const apellidos = body.apellidos ? String(body.apellidos).trim() : null;
+  const tipoId = body.tipoId ? String(body.tipoId).trim() : null;
+  const cedula = body.cedula ? String(body.cedula).replace(/\D/g, '') : null;
+  if (body.termsAccepted !== true || body.privacyAccepted !== true) {
+    return NextResponse.json({ error: 'Debes aceptar los términos y la política de tratamiento de datos para continuar.' }, { status: 400 });
+  }
+
   // VALIDAR ANTES DE COBRAR: si la consulta es conclusiva y la matrícula NO está disponible, no se crea
   // la orden ni se redirige a Wompi (evita cobrar por una matrícula inexistente). Pega caché (el modal ya
   // validó) → instantáneo. Si la validación no es concluyente (mock/timeout) se deja pasar (fail-open):
@@ -50,7 +60,7 @@ export async function POST(req: Request) {
   const amountInCents = planAmountCents(plan);
 
   const reference = 'CTL-' + randomUUID().replace(/-/g, '').slice(0, 20);
-  await orders.create({ reference, matricula, oficina, email, phone, amountInCents, status: 'PENDING_PAYMENT', plan, createdAt: new Date().toISOString() });
+  await orders.create({ reference, matricula, oficina, email, phone, amountInCents, status: 'PENDING_PAYMENT', plan, createdAt: new Date().toISOString(), nombres, apellidos, tipoId, cedula, consentAt: new Date().toISOString() });
 
   // URL pública del sitio. Detrás de un proxy (Traefik/Vercel) NO usar req.url (da el origen interno localhost).
   // Prioridad: APP_BASE_URL (fijo y seguro) -> X-Forwarded-Host -> req.url.

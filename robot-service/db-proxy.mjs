@@ -63,9 +63,9 @@ export async function handleDbProxy(req, res, bodyStr) {
     if (action === 'create') {
       const o = payload;
       const { rows } = await p.query(
-        `INSERT INTO orders (reference, matricula, oficina, email, phone, amount_in_cents, status, plan)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-        [o.reference, o.matricula, o.oficina, o.email, o.phone, o.amountInCents, o.status, o.plan ?? 'basico']
+        `INSERT INTO orders (reference, matricula, oficina, email, phone, amount_in_cents, status, plan, comprador_nombres, comprador_apellidos, comprador_tipo_id, comprador_cedula, consent_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
+        [o.reference, o.matricula, o.oficina, o.email, o.phone, o.amountInCents, o.status, o.plan ?? 'basico', o.nombres ?? null, o.apellidos ?? null, o.tipoId ?? null, o.cedula ?? null, o.consentAt ?? null]
       );
       result = toOrder(rows[0]);
     } else if (action === 'get') {
