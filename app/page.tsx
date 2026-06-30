@@ -87,7 +87,7 @@ export default function Home() {
               Tu Certificado de Tradición y Libertad, <span className="text-[var(--brand)]"><RotatingTail phrases={['listo en minutos.', '100% oficial y al día.', 'directo a tu WhatsApp.', 'sin hacer filas.']} /></span>
             </h1>
             <p className="max-w-lg text-base sm:text-[17px] leading-relaxed text-[var(--muted)]">
-              Obtén el documento oficial de tu inmueble sin filas ni trámites. Te lo enviamos directamente a tu correo y WhatsApp.
+              Descarga tu certificado de libertad expedido por la <span className="font-semibold text-[var(--brand)]">Superintendencia de Notariado y Registro</span> en segundos. Entrega por WhatsApp y correo, pago seguro por PSE.
             </p>
           </div>
           
