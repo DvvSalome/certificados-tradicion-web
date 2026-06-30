@@ -301,44 +301,8 @@ export class SnrRobot {
   // Flujo completo. dryRun=true se detiene ANTES de Pagar (gratis, validable).
   async generar({ oficina, matricula, dryRun = false }) {
     await this.ensureLoggedIn();
-    
-    // --- NUEVO PASO DE SEGURIDAD: CHECK HISTORY ANTES DE COMPRAR ---
-    if (!dryRun) {
-      try {
-        const p = this.page;
-        await p.goto(URL_HIST, { waitUntil: 'networkidle', timeout: 30000 }).catch(() => {});
-        await p.waitForSelector(S.dlCertLink, { timeout: 15000 }).catch(() => {});
-        
-        const today = new Date();
-        const dd = String(today.getDate()).padStart(2, '0');
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const yyyy = today.getFullYear();
-        const dateStr = `${dd}/${mm}/${yyyy}`;
-
-        const hasToday = await p.evaluate(({mat, dateStr}) => {
-          const rows = Array.from(document.querySelectorAll('tr'));
-          for (const r of rows) {
-            if (r.innerText.includes(String(mat)) && r.innerText.includes(dateStr)) {
-              return true;
-            }
-          }
-          return false;
-        }, { mat: matricula, dateStr });
-
-        if (hasToday) {
-          this.log(`[snr] cert ${matricula} ya fue pagado hoy (${dateStr}). Omitiendo cobro, descargando del historial...`);
-          const pdf = await this.descargarDesdeHistorial(matricula);
-          return {
-            dryRun: false,
-            info: { disponible: true, estado: "Recuperado de historial (protección anti-duplicados)" },
-            pdf
-          };
-        }
-      } catch (e) {
-        this.log(`[snr] ⚠️ warning revisando historial: ${e.message}`);
-      }
-    }
-    // -------------------------------------------------------------
+    // (Anti-doble-cobro: ya NO se hace "check history" aquí — era fail-open y frágil. El guardia real es la
+    //  idempotencia por referencia en el robot: claimGenerationJob() antes de encolar /generar.)
 
     // CONSULTAR ANTES DE GENERAR: si no está disponible, no se cobra nada (ni al SNR ni se sigue).
     // Error con code NO_DISPONIBLE → el backend dispara la DEVOLUCIÓN automática al cliente.

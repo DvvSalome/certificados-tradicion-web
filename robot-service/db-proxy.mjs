@@ -18,6 +18,20 @@ function getPool() {
   return pool;
 }
 
+// IDEMPOTENCIA POR REFERENCIA — el guardia decisivo contra el doble cobro.
+// INSERT con PRIMARY KEY + ON CONFLICT DO NOTHING = atómico: solo el PRIMER /generar de una referencia gana.
+// Devuelve true SOLO si este proceso reclamó la referencia por primera vez. false = ya reclamada, o sin
+// referencia, o sin DB → en todos esos casos NO se debe cobrar (fail-CLOSED: ante la duda, no cobrar).
+export async function claimGenerationJob(reference) {
+  const p = getPool();
+  if (!p || !reference) return false;
+  const { rows } = await p.query(
+    `INSERT INTO generation_jobs (reference) VALUES ($1) ON CONFLICT (reference) DO NOTHING RETURNING reference`,
+    [reference],
+  );
+  return rows.length > 0;
+}
+
 // Convert Row to Order format exactly as Next.js expects
 function toOrder(row) {
   if (!row) return null;
