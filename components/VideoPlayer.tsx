@@ -8,8 +8,15 @@ export default function VideoPlayer() {
 
   const toggleMute = () => {
     if (videoRef.current) {
-      videoRef.current.muted = !videoRef.current.muted;
-      setIsMuted(videoRef.current.muted);
+      const currentlyMuted = videoRef.current.muted;
+      videoRef.current.muted = !currentlyMuted;
+      setIsMuted(!currentlyMuted);
+      
+      if (currentlyMuted) {
+        // Al quitarle el mute, lo reiniciamos para que escuche todo desde el principio
+        videoRef.current.currentTime = 0;
+        videoRef.current.play().catch(() => {});
+      }
     }
   };
 
@@ -25,7 +32,25 @@ export default function VideoPlayer() {
         playsInline
       />
       
-      {/* Indicador de sonido */}
+      {/* Botón central animado para incitar al clic si está muteado */}
+      {isMuted && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/20 transition-opacity hover:bg-black/30">
+          <div className="flex flex-col items-center gap-2 animate-bounce">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--brand)] text-white shadow-xl ring-4 ring-white/30">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                <line x1="23" y1="9" x2="17" y2="15"></line>
+                <line x1="17" y1="9" x2="23" y2="15"></line>
+              </svg>
+            </div>
+            <span className="rounded-full bg-black/60 px-3 py-1 text-xs font-bold tracking-wide text-white backdrop-blur-md">
+              TOCA PARA ESCUCHAR
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Indicador de sonido en la esquina */}
       <div className="absolute bottom-4 right-4 z-10 rounded-full bg-black/50 p-2 backdrop-blur-md transition-opacity group-hover:bg-black/70">
         {isMuted ? (
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
