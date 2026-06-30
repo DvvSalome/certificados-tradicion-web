@@ -1,7 +1,7 @@
 import { Seal } from '@/components/Brand';
 
 // Header compartido de las sub-páginas (precio, FAQ, guías, etc.): logo nuevo + botón claro "Volver al inicio".
-export function SiteHeader() {
+export function SiteHeader({ hideCTA = false }: { hideCTA?: boolean }) {
   return (
     <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-white/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-3xl items-center justify-between gap-2 px-5 py-3">
@@ -22,12 +22,14 @@ export function SiteHeader() {
             <span className="text-[15px] font-semibold tracking-tight text-[var(--foreground)]">Certitradición</span>
           </a>
         </div>
-        <a
-          href="/"
-          className="hidden rounded-full bg-[var(--brand)] px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-[var(--brand-600)] sm:inline-flex"
-        >
-          Solicitar certificado
-        </a>
+        {!hideCTA && (
+          <a
+            href="/"
+            className="hidden rounded-full bg-[var(--brand)] px-4 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-[var(--brand-600)] sm:inline-flex"
+          >
+            Solicitar certificado
+          </a>
+        )}
       </div>
     </header>
   );

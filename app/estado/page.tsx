@@ -5,7 +5,7 @@ import { SiteHeader } from '@/components/SiteHeader';
 export default function Page() {
   return (
     <div className="min-h-screen">
-      <SiteHeader />
+      <SiteHeader hideCTA={true} />
 
       <main className="mx-auto flex max-w-2xl flex-col gap-7 px-5 py-12">
         <div className="flex flex-col gap-2">
