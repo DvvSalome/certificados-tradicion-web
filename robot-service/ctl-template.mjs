@@ -21,7 +21,7 @@ Servicio de gestión privado. No formamos parte del Gobierno de Colombia ni de G
 }
 
 export function ctlEmailHtml({ matricula = '', oficina = '', fecha = '', sitioUrl = 'https://certitradicion.com', logoUrl = '', previewCid = '', descargaUrl = '', conEstudio = false, waUrl = '' } = {}) {
-  const brand = '#1B2A3A', brand600 = '#13202C', ink = '#0D1B2A', muted = '#5B6B7F', soft = '#8794a6', line = '#E7EDF5', green = '#0F7A52', bg = '#eef1f7';
+  const brand = '#6B21A8', brand600 = '#4C1D95', ink = '#2E1065', muted = '#6B7280', soft = '#9CA3AF', line = '#E5E7EB', green = '#059669', bg = '#F5F3FF';
   const font = "'Plus Jakarta Sans','Helvetica Neue',Arial,sans-serif";
 
   const estudioNote = conEstudio ? `
