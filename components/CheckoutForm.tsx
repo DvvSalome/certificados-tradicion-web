@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import OficinaSelect from './OficinaSelect';
-import { Seal } from './Brand';
+import { Seal, WompiLogo } from './Brand';
 import { PLANS, formatCOP, type PlanId } from '@/lib/config';
 
 const VERIFY_STEPS = ['Conectando con el registro…', 'Buscando tu matrícula…', 'Confirmando la información…'];
@@ -264,8 +264,14 @@ export default function CheckoutForm() {
               Volver
             </button>
             {!blocked && (
-              <button type="button" onClick={confirmAndPay} disabled={validating} className="order-1 flex w-full items-center justify-center gap-2 rounded-2xl bg-[var(--brand)] py-3.5 text-[16px] font-bold text-white shadow-[0_8px_20px_-6px_rgba(119,75,120,0.5)] transition hover:bg-[var(--brand-600)] disabled:opacity-50 sm:order-2 sm:w-2/3">
-                {validating ? 'Verificando...' : 'Confirmar y Pagar'}
+              <button type="button" onClick={confirmAndPay} disabled={validating} className="order-1 flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[var(--brand)] py-3.5 text-[16px] font-bold text-white shadow-[0_8px_20px_-6px_rgba(119,75,120,0.5)] transition hover:bg-[var(--brand-600)] disabled:opacity-50 sm:order-2 sm:w-2/3">
+                {validating ? (
+                  'Verificando...'
+                ) : (
+                  <>
+                    Pagar seguro con <WompiLogo className="h-4 brightness-0 invert" />
+                  </>
+                )}
               </button>
             )}
           </div>

@@ -33,7 +33,17 @@ export function BrandLockup({ size = 38, tone = 'onDark' }: { size?: number; ton
         <p style={{ margin: '4px 0 0', fontWeight: 600, fontSize: 9.5, letterSpacing: '0.18em', color: sub }}>
           CERTIFICADOS DE TRADICIÓN · COLOMBIA
         </p>
-      </div>
     </div>
+  );
+}
+
+// Logo de Wompi oficial cargado directamente desde la documentación oficial para mayor credibilidad
+export function WompiLogo({ className = "h-4" }: { className?: string }) {
+  return (
+    <img 
+      src="https://docs.wompi.co/img/wompi_logo_azul.svg" 
+      alt="Wompi" 
+      className={className} 
+    />
   );
 }

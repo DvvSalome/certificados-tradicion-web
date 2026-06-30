@@ -1,6 +1,6 @@
 import CheckoutForm from '@/components/CheckoutForm';
 import SiteFooter from '@/components/SiteFooter';
-import { Seal } from '@/components/Brand';
+import { Seal, WompiLogo } from '@/components/Brand';
 
 export default function Home() {
   return (
@@ -27,19 +27,19 @@ export default function Home() {
       </header>
 
       {/* ===== MAIN CONTENT ===== */}
-      <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 lg:flex-row lg:items-start lg:gap-10 lg:px-6 lg:py-16">
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 lg:flex-row lg:items-start lg:gap-10 lg:px-6 lg:py-10">
         
         {/* Columna Izquierda: Formulario y Copia */}
-        <div className="flex w-full flex-col gap-5 lg:w-7/12 lg:gap-8 lg:pr-8">
-          <div className="flex flex-col gap-3 lg:gap-4">
+        <div className="flex w-full flex-col gap-5 lg:w-7/12 lg:gap-5 lg:pr-8">
+          <div className="flex flex-col gap-3 lg:gap-3">
             <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[var(--brand-ring)] bg-[var(--brand-50)] px-3 py-1.5 text-xs font-semibold text-[var(--brand)]">
               <span className="size-2 rounded-full bg-[var(--accent)]" /> 
               Documento oficial · validez 30 días
             </span>
-            <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-[var(--foreground)] sm:text-5xl lg:text-6xl">
+            <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-[var(--foreground)] sm:text-5xl lg:text-[3.25rem] lg:leading-[1.1]">
               Tu Certificado de Tradición y Libertad, <span className="text-[var(--brand)]">listo en minutos.</span>
             </h1>
-            <p className="max-w-lg text-lg leading-relaxed text-[var(--muted)]">
+            <p className="max-w-lg text-base sm:text-[17px] leading-relaxed text-[var(--muted)]">
               Obtén el documento oficial de tu inmueble sin filas ni trámites. Te lo enviamos directamente a tu correo y WhatsApp.
             </p>
           </div>
@@ -54,9 +54,10 @@ export default function Home() {
               <svg className="size-4 text-[var(--accent)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
               Cifrado SSL
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-white px-3 py-2 shadow-sm">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-white px-3 py-2 shadow-sm">
               <svg className="size-4 text-[var(--accent)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-              Pago seguro Wompi
+              <span className="font-semibold text-gray-500 text-[11px] uppercase tracking-wider">Pago seguro</span>
+              <WompiLogo className="h-3 ml-0.5" />
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-white px-3 py-2 shadow-sm">
               <svg className="size-4 text-[var(--accent)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
