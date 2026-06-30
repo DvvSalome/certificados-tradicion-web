@@ -26,9 +26,14 @@ export async function triggerGenerarCTL(payload: GenerarCTLPayload): Promise<N8n
     return { ok: true, mocked: true };
   }
   try {
+    const isIP = /^https?:\/\/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/.test(N8N_URL);
     const res = await fetch(N8N_URL, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', ...(SECRET ? { 'X-Webhook-Secret': SECRET } : {}) },
+      headers: {
+        'content-type': 'application/json',
+        ...(SECRET ? { 'X-Webhook-Secret': SECRET } : {}),
+        ...(isIP ? { 'Host': 'certitradicion.com' } : {})
+      },
       body: JSON.stringify(payload),
     });
     return { ok: res.ok, mocked: false, status: res.status };
