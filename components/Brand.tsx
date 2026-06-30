@@ -33,6 +33,7 @@ export function BrandLockup({ size = 38, tone = 'onDark' }: { size?: number; ton
         <p style={{ margin: '4px 0 0', fontWeight: 600, fontSize: 9.5, letterSpacing: '0.18em', color: sub }}>
           CERTIFICADOS DE TRADICIÓN · COLOMBIA
         </p>
+      </div>
     </div>
   );
 }
