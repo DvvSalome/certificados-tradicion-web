@@ -58,6 +58,11 @@ const memStore: Store = {
 const PROXY_URL = 'https://certificados.fourgsolutions.com/api/orders';
 const SECRET = process.env.N8N_WEBHOOK_SECRET || '';
 
+// Evitar error DEPTH_ZERO_SELF_SIGNED_CERT cuando Vercel contacta al VPS
+if (process.env.NODE_ENV === 'production') {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
+
 async function callProxy(action: string, payload: any): Promise<any> {
   const res = await fetch(PROXY_URL, {
     method: 'POST',
