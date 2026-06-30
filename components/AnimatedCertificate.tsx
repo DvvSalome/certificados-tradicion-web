@@ -2,7 +2,7 @@ import { Seal } from '@/components/Brand';
 
 export default function AnimatedCertificate() {
   return (
-    <div style={{ position: 'relative', height: 480, width: '100%', maxWidth: 340, margin: '0 auto' }}>
+    <div style={{ position: 'relative', width: '100%', maxWidth: 340, aspectRatio: '1660/1164', margin: '0 auto' }}>
       <div
         style={{
           position: 'absolute',
