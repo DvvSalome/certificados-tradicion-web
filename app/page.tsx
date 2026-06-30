@@ -68,18 +68,14 @@ export default function Home() {
         {/* Columna Derecha: Video Caso de Vida Real */}
         <div className="flex w-full flex-col lg:sticky lg:top-8 lg:w-5/12">
           <div className="relative aspect-[9/16] w-full overflow-hidden rounded-3xl bg-[var(--brand-700)] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] border-[6px] border-white ring-1 ring-[var(--border)]">
-            {/* Placeholder de Video */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
-              <div className="mb-4 flex size-20 items-center justify-center rounded-full bg-white/10 backdrop-blur-md">
-                <svg className="ml-1 size-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              </div>
-              <p className="text-xl font-bold text-white">Mira cómo funciona</p>
-              <p className="mt-2 text-sm font-medium text-white/70">
-                Caso de la vida real (Espacio para video vertical)
-              </p>
-            </div>
+            <video
+              src="/certificado-demo.mp4"
+              className="absolute inset-0 h-full w-full object-cover"
+              autoPlay
+              loop
+              muted
+              playsInline
+            />
             {/* Gradiente sutil encima del video */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
           </div>
