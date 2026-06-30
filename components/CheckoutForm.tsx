@@ -201,7 +201,7 @@ export default function CheckoutForm() {
             <div className="flex items-center gap-2 pt-2">
               <input type="checkbox" id="terms" className="size-4 rounded border-gray-300 text-[var(--brand)] focus:ring-[var(--brand)]" defaultChecked />
               <label htmlFor="terms" className="text-xs text-[var(--muted-2)]">
-                Acepto los <a href="#" className="underline">Términos y Condiciones</a> y autorizo el tratamiento de mis datos personales.
+                Acepto los <a href="/terminos" target="_blank" rel="noopener noreferrer" className="underline">Términos y Condiciones</a> y autorizo el tratamiento de mis <a href="/privacidad" target="_blank" rel="noopener noreferrer" className="underline">datos personales</a>.
               </label>
             </div>
 
