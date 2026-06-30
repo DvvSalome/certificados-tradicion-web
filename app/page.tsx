@@ -1,4 +1,5 @@
 import CheckoutForm from '@/components/CheckoutForm';
+import HowToFindMatricula from '@/components/HowToFindMatricula';
 import SiteFooter from '@/components/SiteFooter';
 import { Seal, WompiLogo } from '@/components/Brand';
 import VideoPlayer from '@/components/VideoPlayer';
@@ -90,8 +91,20 @@ export default function Home() {
               Descarga tu certificado de libertad expedido por la <span className="font-semibold text-[var(--brand)]">Superintendencia de Notariado y Registro</span> en segundos. Entrega por WhatsApp y correo, pago seguro por PSE.
             </p>
           </div>
+          <div className="mt-4 w-full">
+            <a 
+              href="#formulario-pago" 
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-black px-10 py-4 text-[17px] font-bold text-white shadow-xl transition-all hover:scale-[1.02] active:scale-95"
+            >
+              Pagar <span aria-hidden="true" className="text-xl leading-none">→</span>
+            </a>
+          </div>
+
+          <div className="w-full mt-4">
+            <HowToFindMatricula />
+          </div>
           
-          <div className="w-full">
+          <div id="formulario-pago" className="w-full mt-8 scroll-mt-24">
             <CheckoutForm />
           </div>
 
