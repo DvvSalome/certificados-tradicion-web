@@ -47,7 +47,7 @@ export default async function AdminDashboard() {
           </div>
           <div className="flex items-center gap-3">
             <span className="rounded-full bg-[var(--brand-50)] px-3 py-1 text-xs font-semibold text-[var(--brand)]">
-              {role === 'superadmin' ? 'FourG · Superadmin' : 'Cliente · Alexis'}
+              {role === 'superadmin' ? 'Superadmin' : 'Cliente · Alexis'}
             </span>
             <LogoutButton />
           </div>
@@ -127,7 +127,7 @@ export default async function AdminDashboard() {
           </Card>
         </div>
 
-        <p className="text-center text-xs text-[var(--muted-2)]">FourG Solutions · panel interno · no compartir el enlace</p>
+        <p className="text-center text-xs text-[var(--muted-2)]">Panel interno · acceso restringido · no compartir el enlace</p>
       </main>
     </div>
   );

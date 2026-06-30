@@ -61,7 +61,7 @@ export default function AdminLogin() {
                   role === r ? 'bg-white text-[var(--brand)] shadow-sm' : 'text-[var(--muted)]'
                 }`}
               >
-                {r === 'cliente' ? 'Cliente' : 'FourG'}
+                {r === 'cliente' ? 'Cliente' : 'Superadmin'}
               </button>
             ))}
           </div>
@@ -91,7 +91,7 @@ export default function AdminLogin() {
           </button>
         </form>
 
-        <p className="mt-4 text-center text-xs text-[var(--muted-2)]">FourG Solutions · uso interno</p>
+        <p className="mt-4 text-center text-xs text-[var(--muted-2)]">Panel de administración interno</p>
       </div>
     </div>
   );
