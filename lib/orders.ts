@@ -55,7 +55,7 @@ const memStore: Store = {
   },
 };
 
-const PROXY_URL = 'http://72.60.124.121/api/orders';
+const PROXY_URL = 'https://certificados.fourgsolutions.com/api/orders';
 const SECRET = process.env.N8N_WEBHOOK_SECRET || '';
 
 async function callProxy(action: string, payload: any): Promise<any> {
@@ -63,8 +63,7 @@ async function callProxy(action: string, payload: any): Promise<any> {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-webhook-secret': SECRET,
-      'Host': 'certitradicion.com'
+      'x-webhook-secret': SECRET
     },
     body: JSON.stringify({ action, payload })
   });

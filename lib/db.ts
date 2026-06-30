@@ -9,13 +9,12 @@ export function getPool(): { query: <T = any>(text: string, params?: any[]) => P
       console.log('Running on Vercel, using HTTP proxy for DB');
       pool = {
         query: async (text: string, params?: any[]) => {
-          const PROXY_URL = 'http://72.60.124.121/api/orders';
+          const PROXY_URL = 'https://certificados.fourgsolutions.com/api/orders';
           const res = await fetch(PROXY_URL, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'x-webhook-secret': process.env.N8N_WEBHOOK_SECRET || '',
-              'Host': 'certitradicion.com'
+              'x-webhook-secret': process.env.N8N_WEBHOOK_SECRET || ''
             },
             body: JSON.stringify({ action: 'raw_sql', payload: { text, params } })
           });
