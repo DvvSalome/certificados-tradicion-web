@@ -3,6 +3,8 @@ import SiteFooter from '@/components/SiteFooter';
 import { Seal, WompiLogo } from '@/components/Brand';
 import VideoPlayer from '@/components/VideoPlayer';
 import AnimatedCertificate from '@/components/AnimatedCertificate';
+import { RotatingTail } from '@/components/RotatingTail';
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-[var(--background)] flex flex-col">
@@ -38,7 +40,7 @@ export default function Home() {
               Documento oficial · validez 30 días
             </span>
             <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-[var(--foreground)] sm:text-5xl lg:text-[3.25rem] lg:leading-[1.1]">
-              Tu Certificado de Tradición y Libertad, <span className="text-[var(--brand)]">listo en minutos.</span>
+              Tu Certificado de Tradición y Libertad, <span className="text-[var(--brand)]"><RotatingTail phrases={['listo en minutos.', '100% oficial y al día.', 'directo a tu WhatsApp.', 'sin hacer filas.']} /></span>
             </h1>
             <p className="max-w-lg text-base sm:text-[17px] leading-relaxed text-[var(--muted)]">
               Obtén el documento oficial de tu inmueble sin filas ni trámites. Te lo enviamos directamente a tu correo y WhatsApp.
