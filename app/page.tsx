@@ -57,10 +57,10 @@ export default function Home() {
       {/* ===== HEADER ===== */}
       <header className="sticky top-0 z-50 w-full bg-[var(--brand)] shadow-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
+          <a href="#" className="flex items-center gap-3 transition-opacity hover:opacity-90">
             <Seal size={38} tone="onDark" />
             <p className="text-xl font-extrabold tracking-tight text-white">Certitradición</p>
-          </div>
+          </a>
           <nav className="hidden items-center gap-6 text-sm font-medium text-white/80 sm:flex">
             <a href="#como-funciona" className="transition-colors hover:text-white">Cómo funciona</a>
             <a href="#precio" className="transition-colors hover:text-white">Precio</a>
