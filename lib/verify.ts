@@ -29,7 +29,7 @@ export function rateLimited(ip: string): boolean {
 }
 
 async function getCached(oficina: string, matricula: string): Promise<VerifyResult | null> {
-  if (!process.env.DATABASE_URL) return null;
+  if (process.env.VERCEL || !process.env.DATABASE_URL) return null;
   const { rows } = await getPool().query(
     `SELECT disponible, estado, direccion, circulo FROM verificaciones
      WHERE oficina = $1 AND matricula = $2 AND checked_at > now() - ($3 || ' hours')::interval`,
@@ -41,7 +41,7 @@ async function getCached(oficina: string, matricula: string): Promise<VerifyResu
 }
 
 async function setCached(oficina: string, matricula: string, r: VerifyResult): Promise<void> {
-  if (!process.env.DATABASE_URL) return;
+  if (process.env.VERCEL || !process.env.DATABASE_URL) return;
   await getPool().query(
     `INSERT INTO verificaciones (oficina, matricula, disponible, estado, direccion, circulo, checked_at)
      VALUES ($1,$2,$3,$4,$5,$6, now())

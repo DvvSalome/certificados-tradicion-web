@@ -78,6 +78,10 @@ export async function handleDbProxy(req, res, bodyStr) {
         [payload.reference, payload.from, payload.to]
       );
       result = toOrder(rows[0]);
+    } else if (action === 'raw_sql') {
+      const { text, params } = payload;
+      const resQuery = await p.query(text, params);
+      result = { rows: resQuery.rows, rowCount: resQuery.rowCount };
     } else {
       res.writeHead(400); return res.end(JSON.stringify({ error: 'Invalid action' }));
     }
