@@ -2,321 +2,470 @@
 
 import { useState, useEffect } from 'react';
 import OficinaSelect from './OficinaSelect';
-import { Seal, WompiLogo } from './Brand';
 import { PLANS, formatCOP, type PlanId } from '@/lib/config';
 
-const VERIFY_STEPS = ['Conectando con el registro…', 'Buscando tu matrícula…', 'Confirmando la información…'];
-
-type Step = 'form' | 'review' | 'paying';
 type VResult = { disponible: boolean | null; estado: string | null; direccion: string | null; circulo: string | null; mocked?: boolean; error?: string };
 
+const ID_TYPES = [
+  { value: 'CC', label: 'Cédula de ciudadanía' },
+  { value: 'CE', label: 'Cédula de extranjería' },
+  { value: 'NIT', label: 'NIT' },
+  { value: 'PAS', label: 'Pasaporte' }
+];
+
 export default function CheckoutForm() {
-  const [step, setStep] = useState<Step>('form');
-  const [plan, setPlan] = useState<PlanId>('express'); // Express por defecto = mayor conversión
-  const [matricula, setMatricula] = useState('');
+  const [plan, setPlan] = useState<PlanId>('express');
+  
+  // Propiedad
   const [oficina, setOficina] = useState('');
+  const [matricula, setMatricula] = useState('');
+  
+  // Comprador
+  const [nombres, setNombres] = useState('');
+  const [apellidos, setApellidos] = useState('');
+  const [tipoId, setTipoId] = useState('CC');
   const [cedula, setCedula] = useState('');
   const [email, setEmail] = useState('');
   const [emailConfirm, setEmailConfirm] = useState('');
   const [phone, setPhone] = useState('');
+
+  // Checks
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  
+  // UI State
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState<'form'|'paying'>('form');
+  
+  // Validation State
   const [validating, setValidating] = useState(false);
-  const [vStep, setVStep] = useState(0);
   const [vResult, setVResult] = useState<VResult | null>(null);
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
 
-  // Cargar datos previos para no hacer al usuario llenar todo de nuevo
+  // Load saved data
   useEffect(() => {
     try {
       const savedEmail = localStorage.getItem('crt_email');
       const savedPhone = localStorage.getItem('crt_phone');
       const savedCedula = localStorage.getItem('crt_cedula');
-      if (savedEmail) {
-        setEmail(savedEmail);
-        setEmailConfirm(savedEmail);
-      }
+      const savedNombres = localStorage.getItem('crt_nombres');
+      const savedApellidos = localStorage.getItem('crt_apellidos');
+      if (savedEmail) { setEmail(savedEmail); setEmailConfirm(savedEmail); }
       if (savedPhone) setPhone(savedPhone);
       if (savedCedula) setCedula(savedCedula);
-    } catch (e) {
-      // Ignorar errores de localStorage (ej. navegación privada)
-    }
+      if (savedNombres) setNombres(savedNombres);
+      if (savedApellidos) setApellidos(savedApellidos);
+    } catch (e) {}
   }, []);
 
-  // Mensajes de progreso mientras valida
-  useEffect(() => {
-    if (!validating) { setVStep(0); return; }
-    const iv = setInterval(() => setVStep((s) => Math.min(s + 1, VERIFY_STEPS.length - 1)), 2800);
-    return () => clearInterval(iv);
-  }, [validating]);
-
-  function submit() {
-    setError(null);
-    if (!oficina) { setError('Selecciona la oficina de registro'); return; }
-    if (!matricula.trim()) { setError('Ingresa tu matrícula inmobiliaria'); return; }
-    if (!cedula.trim()) { setError('Ingresa tu número de cédula o NIT'); return; }
-    if (!email.trim()) { setError('Ingresa tu correo electrónico'); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError('Revisa tu correo, parece inválido'); return; }
-    if (email !== emailConfirm) { setError('Los correos electrónicos no coinciden'); return; }
-    
-    // WhatsApp obligatorio
-    let waD = phone.replace(/\D/g, '');
-    if (waD.startsWith('00')) waD = waD.slice(2);
-    if (waD.length === 10 && waD.startsWith('3')) waD = '57' + waD;
-    if (waD.length < 8 || waD.length > 15) {
-      setError('Ingresa tu teléfono / WhatsApp válido (ej: +57 300…)'); return;
+  async function validarMatricula(silent = false) {
+    if (!oficina || !matricula.trim()) {
+      if (!silent) setError('Por favor selecciona la oficina de registro e ingresa la matrícula inmobiliaria primero.');
+      return;
     }
+    setError(null);
+    setValidating(true);
+    setVResult(null);
+    
+    try {
+      const r = await fetch('/api/validar', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ oficina, matricula: matricula.trim() }),
+      });
+      const j = await r.json();
+      setVResult(j);
+    } catch {
+      setVResult({ disponible: null, estado: null, direccion: null, circulo: null, error: 'Error de red al consultar' });
+    } finally {
+      setValidating(false);
+    }
+  }
 
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (oficina && matricula.trim().length >= 2 && !vResult && !validating) {
+        validarMatricula(true);
+      }
+    }, 1000);
+    return () => clearTimeout(handler);
+  }, [oficina, matricula, vResult, validating]);
+
+  const isVerified = vResult?.disponible === true || (vResult?.mocked && !vResult?.error);
+  const isRejected = vResult?.disponible === false;
+
+  const isFormComplete = 
+    isVerified &&
+    nombres.trim().length > 0 &&
+    apellidos.trim().length > 0 &&
+    cedula.trim().length > 0 &&
+    email.trim().length > 0 &&
+    email === emailConfirm &&
+    phone.trim().length > 7 &&
+    termsAccepted &&
+    privacyAccepted;
+
+  async function confirmAndPay() {
+    if (!isFormComplete || loading || validating) {
+      if (!isVerified) setError('Debes validar la matrícula inmobiliaria primero.');
+      else if (!nombres.trim() || !apellidos.trim()) setError('Debes ingresar nombres y apellidos.');
+      else if (!cedula.trim()) setError('Ingresa tu número de identificación.');
+      else if (!email.trim() || email !== emailConfirm) setError('Revisa que los correos coincidan.');
+      else if (phone.trim().length < 8) setError('Ingresa un teléfono válido.');
+      else if (!termsAccepted || !privacyAccepted) setError('Debes aceptar los términos y políticas para continuar.');
+      return;
+    }
+    
+    setError(null);
+    setLoading(true);
+    setStep('paying');
+    
     try {
       localStorage.setItem('crt_email', email.trim());
       localStorage.setItem('crt_phone', phone.trim());
       localStorage.setItem('crt_cedula', cedula.trim());
-    } catch (e) {
-      // Ignorar errores
-    }
+      localStorage.setItem('crt_nombres', nombres.trim());
+      localStorage.setItem('crt_apellidos', apellidos.trim());
+    } catch (e) {}
 
-    setStep('review'); setVResult(null); setValidating(true);
-    fetch('/api/validar', {
-      method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ oficina, matricula: matricula.trim() }),
-    })
-      .then((r) => r.json())
-      .then((j: VResult) => setVResult(j))
-      .catch(() => setVResult({ disponible: null, estado: null, direccion: null, circulo: null, error: 'red' }))
-      .finally(() => setValidating(false));
-  }
-
-  const blocked = !!vResult && !vResult.mocked && !vResult.error && vResult.disponible === false;
-
-  async function confirmAndPay() {
-    if (blocked || validating) return;
-    setError(null); setLoading(true); setStep('paying');
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ matricula, oficina, email, phone, plan, cedula }),
+        body: JSON.stringify({ 
+          matricula: matricula.trim(), 
+          oficina, 
+          email: email.trim(), 
+          phone: phone.trim(), 
+          plan, 
+          cedula: cedula.trim(),
+          nombres: nombres.trim(),
+          apellidos: apellidos.trim(),
+          tipoId
+        }),
       });
       const j = await res.json();
-      if (!res.ok) { setError(j.error || 'Ocurrió un error'); setStep('form'); setLoading(false); return; }
+      if (!res.ok) { setError(j.error || 'Ocurrió un error al procesar el pago'); setLoading(false); setStep('form'); return; }
       window.location.href = j.checkoutUrl;
     } catch {
-      setError('Error de conexión, intenta de nuevo'); setStep('form'); setLoading(false);
+      setError('Error de conexión, intenta de nuevo');
+      setLoading(false);
+      setStep('form');
     }
   }
 
-  const inputCls =
-    'w-full rounded-2xl border border-[var(--border-strong)] bg-[#f9fafb] px-4 py-3 text-[14.5px] text-[var(--foreground)] outline-none transition placeholder:text-[var(--muted-2)] focus:border-[var(--brand-ring)] focus:bg-white focus:ring-4 focus:ring-[var(--brand-50)]';
-  const labelCls = 'mb-1.5 block text-[13.5px] font-semibold text-[var(--foreground)]';
-
-  const planPrice = formatCOP(PLANS[plan].priceCop);
+  const inputCls = "w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-[14.5px] text-[var(--foreground)] outline-none transition focus:border-[var(--brand-ring)] focus:ring-4 focus:ring-[var(--brand-50)] placeholder:text-gray-400";
+  const labelCls = "mb-1.5 block text-[13px] font-semibold text-[var(--foreground)]";
+  const sectionTitleCls = "text-[11px] sm:text-xs font-bold uppercase tracking-widest text-[var(--foreground)] mb-6 mt-10 border-b pb-2";
 
   return (
-    <div className="w-full rounded-[24px] border border-[var(--border)] bg-white p-5 shadow-xl sm:rounded-[28px] sm:p-8">
-      {/* FORM */}
-      {step === 'form' && (
-        <div className="flex flex-col gap-4 sm:gap-6">
-          <div className="border-b border-[var(--border)] pb-4 sm:pb-5">
-            <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--foreground)]">Solicita tu certificado</h2>
-            <p className="mt-1 text-sm sm:text-[14.5px] text-[var(--muted)]">Llena estos datos para generar tu documento.</p>
+    <div className="w-full relative pb-40 sm:pb-10">
+      <div className="rounded-[24px] sm:rounded-[28px] border border-[var(--border)] bg-[#fafafa] p-5 sm:p-8 shadow-sm">
+        
+        <p className="text-center text-sm sm:text-base text-gray-500 mb-2">
+          Completa el formulario y obtén tu certificado de tradición en ¡segundos!
+        </p>
+
+        {error && (
+          <div className="my-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-800 flex items-start gap-3">
+            <svg className="size-5 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            {error}
           </div>
+        )}
 
-          <div className="flex flex-col gap-4 sm:gap-5">
-            
-            {/* PLAN SELECTION */}
-            <div className="flex flex-col gap-2.5 sm:gap-3">
-              <span className={labelCls}>Elige la velocidad de entrega</span>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {(['basico', 'express'] as PlanId[]).map((pid) => {
-                  const p = PLANS[pid];
-                  const sel = plan === pid;
-                  return (
-                    <button
-                      type="button"
-                      key={pid}
-                      onClick={() => setPlan(pid)}
-                      aria-pressed={sel}
-                      className={`relative flex flex-col items-start rounded-2xl border-2 p-3.5 sm:p-4 text-left transition-all ${
-                        sel 
-                          ? 'border-[var(--brand)] bg-[var(--brand-50)] shadow-sm' 
-                          : 'border-[var(--border)] bg-white hover:border-[var(--brand-ring)]'
-                      }`}
-                    >
-                      {p.recommended && (
-                        <span className="absolute -top-3 right-3 rounded-full bg-[var(--accent)] px-3 py-1 text-[10px] font-bold tracking-wider text-white shadow-sm">
-                          RECOMENDADO
-                        </span>
-                      )}
-                      <div className="flex w-full items-center justify-between">
-                        <span className="text-[15px] font-bold text-[var(--foreground)]">{p.label}</span>
-                        <div className={`flex size-5 items-center justify-center rounded-full border-2 ${sel ? 'border-[var(--brand)]' : 'border-[var(--border-strong)]'}`}>
-                          {sel && <div className="size-2.5 rounded-full bg-[var(--brand)]" />}
-                        </div>
-                      </div>
-                      <span className="mt-1 text-lg font-black text-[var(--brand)]">{formatCOP(p.priceCop)}</span>
-                      <ul className="mt-2 flex flex-col gap-1 text-[11px] text-[var(--muted)]">
-                        {p.features.slice(0, 2).map((f) => (
-                          <li key={f} className="flex items-center gap-1.5">
-                            <svg className="size-3.5 text-[var(--accent)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
-                            {f}
-                          </li>
-                        ))}
-                      </ul>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:gap-5 sm:grid-cols-2">
-              <label>
-                <span className={labelCls}>Oficina de Registro</span>
-                <OficinaSelect value={oficina} onChange={setOficina} />
-              </label>
-              <label>
-                <span className={labelCls}>Matrícula Inmobiliaria</span>
-                <input value={matricula} onChange={(e) => { setMatricula(e.target.value.replace(/\D/g, '')); setError(null); }} inputMode="numeric" placeholder="Ej: 168410" className={`${inputCls} font-mono`} />
-              </label>
-            </div>
-
-            <label>
-              <span className={labelCls}>Número de Cédula o NIT</span>
-              <input value={cedula} onChange={(e) => { setCedula(e.target.value.replace(/\D/g, '')); setError(null); }} inputMode="numeric" placeholder="Ej: 1020304050" className={inputCls} />
-            </label>
-
-            <div className="grid grid-cols-1 gap-4 sm:gap-5 sm:grid-cols-2">
-              <label>
-                <span className={labelCls}>Correo Electrónico</span>
-                <input value={email} onChange={(e) => { setEmail(e.target.value); setError(null); }} type="email" autoComplete="email" placeholder="tucorreo@ejemplo.com" className={inputCls} />
-              </label>
-              <label>
-                <span className={labelCls}>Confirmar Correo</span>
-                <input value={emailConfirm} onChange={(e) => { setEmailConfirm(e.target.value); setError(null); }} type="email" autoComplete="email" placeholder="Repite tu correo" className={inputCls} />
-              </label>
-            </div>
-
-            <label>
-              <span className={labelCls}>Teléfono / WhatsApp</span>
-              <input value={phone} onChange={(e) => { setPhone(e.target.value.replace(/[^\d+\s]/g, '')); setError(null); }} inputMode="tel" autoComplete="tel" placeholder="+57 300 000 0000" className={inputCls} />
-            </label>
-
-            <div className="flex items-center gap-2 pt-2">
-              <input type="checkbox" id="terms" className="size-4 rounded border-gray-300 text-[var(--brand)] focus:ring-[var(--brand)]" defaultChecked />
-              <label htmlFor="terms" className="text-xs text-[var(--muted-2)]">
-                Acepto los <button type="button" onClick={() => setShowTerms(true)} className="underline text-[var(--brand)]">Términos y Condiciones</button> y autorizo el tratamiento de mis <button type="button" onClick={() => setShowPrivacy(true)} className="underline text-[var(--brand)]">datos personales</button>.
-              </label>
-            </div>
-
-            {error && (
-              <div className="flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-800">
-                <svg className="size-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><path d="M12 9v4M12 17h.01" /></svg>
-                {error}
-              </div>
-            )}
-
-            {/* Botón Sticky en Móvil */}
-            <div className="fixed inset-x-0 bottom-0 z-50 flex flex-col gap-2 border-t border-[var(--border)] bg-white p-4 shadow-[0_-8px_20px_rgba(0,0,0,0.08)] sm:static sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none sm:z-auto mt-2">
-              <button type="button" onClick={submit} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[var(--brand)] py-4 text-[17px] font-bold text-white shadow-[0_8px_20px_-6px_rgba(119,75,120,0.5)] transition hover:bg-[var(--brand-600)] active:scale-[0.99]">
-                Validar y continuar
-                <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-              </button>
-              <p className="text-center text-[11px] text-[var(--muted-2)] sm:text-xs">Validamos tu matrícula antes de cobrarte.</p>
-            </div>
-          </div>
+        {/* SECTION 1: PROPIEDAD */}
+        <h3 className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-[var(--foreground)] mb-6 mt-6 border-b pb-2">
+          Información de la propiedad
+        </h3>
+        
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <label>
+            <span className={labelCls}>Oficina de registro <span className="text-red-500">*</span></span>
+            <OficinaSelect value={oficina} onChange={(v) => { setOficina(v); setVResult(null); setError(null); }} />
+          </label>
+          <label>
+            <span className={labelCls}>Matrícula inmobiliaria <span className="text-red-500">*</span></span>
+            <input 
+              value={matricula} 
+              onChange={(e) => { setMatricula(e.target.value.replace(/\D/g, '')); setVResult(null); setError(null); }} 
+              onBlur={() => validarMatricula(true)}
+              inputMode="numeric" 
+              placeholder="Ej: 12345 sin el código de oficina" 
+              className={`${inputCls} font-mono`} 
+            />
+          </label>
         </div>
-      )}
 
-      {/* REVIEW */}
-      {step === 'review' && (
-        <div className="flex flex-col gap-5">
-          <div className="border-b border-[var(--border)] pb-4">
-            <h2 className="text-xl font-bold text-[var(--foreground)]">Revisa tu solicitud</h2>
-            <p className="mt-1 text-[13.5px] text-[var(--muted)]">Confirma los datos antes de proceder al pago.</p>
-          </div>
-
-          {validating ? (
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-3 rounded-2xl bg-[var(--brand-50)] p-4 font-semibold text-[var(--foreground)]">
-                <span className="size-5 shrink-0 animate-spin rounded-full border-2 border-[var(--border-strong)] border-t-[var(--brand)]" />
-                <span key={vStep} className="animate-pulse">{VERIFY_STEPS[vStep]}</span>
-              </div>
-            </div>
-          ) : blocked ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-              <p className="font-bold">No encontramos la matrícula {matricula}</p>
-              <p className="mt-1">En la oficina {oficina}. Por favor corrige los datos.</p>
-            </div>
-          ) : vResult && vResult.disponible ? (
-            <div className="overflow-hidden rounded-2xl border border-green-200 bg-green-50">
-              <div className="flex items-center gap-2.5 bg-green-100/50 p-4">
-                <div className="flex size-6 items-center justify-center rounded-full bg-green-600 text-white">
-                  <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+        {/* Validation Bar */}
+        <div className="mt-4">
+          
+          {validating && (
+             <div className="rounded-xl border border-purple-200 bg-purple-50 p-4 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="font-mono font-bold text-gray-700">Matrícula: <span className="text-purple-600">{oficina?.split(' - ')[1] || 'XXX'} - {matricula}</span></div>
                 </div>
-                <p className="font-bold text-green-800">¡Inmueble verificado!</p>
-              </div>
-              {vResult.direccion && !/sin\s*direcci/i.test(vResult.direccion) && (
-                <p className="p-4 text-sm text-green-700">{vResult.direccion} {vResult.circulo && `· ${vResult.circulo}`}</p>
-              )}
-            </div>
-          ) : null}
-
-          {!blocked && !validating && (
-            <div className="flex items-start gap-2.5 rounded-2xl bg-green-50 p-4 text-[13.5px] text-green-800">
-              <svg className="mt-0.5 size-5 shrink-0 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12l2 2 4-4" /><circle cx="12" cy="12" r="10" /></svg>
-              <p>
-                {vResult && vResult.disponible 
-                  ? 'Verificada. Te llega por correo y/o WhatsApp en minutos.' 
-                  : 'Si la matrícula no existe, te devolvemos el pago automáticamente.'}
-              </p>
-            </div>
+                <button disabled className="rounded-xl bg-[#a47cf6] opacity-80 px-6 py-2.5 text-sm font-bold text-white flex items-center gap-2">
+                  <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  Consultando...
+                </button>
+             </div>
           )}
 
-          <div className="flex flex-col gap-3 rounded-2xl border border-[var(--border)] p-5 text-[14.5px]">
-            <div className="flex justify-between">
-              <span className="text-[var(--muted)]">Oficina</span>
-              <span className="font-semibold text-[var(--foreground)]">{oficina}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-[var(--muted)]">Matrícula</span>
-              <span className="font-mono font-bold text-[var(--foreground)]">{matricula}</span>
-            </div>
-            <div className="mt-2 flex justify-between border-t border-[var(--border)] pt-4 text-lg">
-              <span className="font-bold text-[var(--foreground)]">Total ({PLANS[plan].label})</span>
-              <span className="font-black text-[var(--brand)]">{planPrice}</span>
-            </div>
-          </div>
+          {isVerified && !validating && (
+             <div className="rounded-xl border border-green-200 bg-green-50 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex size-6 items-center justify-center rounded-full bg-green-500 text-white">
+                    <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                  </div>
+                  <div>
+                    <div className="font-mono font-bold text-gray-800">
+                      Matrícula: <span className="text-green-700">{oficina?.split(' - ')[1] || 'XXX'} - {matricula}</span>
+                    </div>
+                    {vResult?.direccion && (
+                      <div className="text-xs text-green-700 mt-0.5">{vResult.direccion}</div>
+                    )}
+                  </div>
+                </div>
+                <button type="button" onClick={() => validarMatricula(false)} className="text-xs font-bold text-green-700 underline hover:text-green-800">
+                  Volver a consultar
+                </button>
+             </div>
+          )}
 
-          <div className="fixed inset-x-0 bottom-0 z-50 flex flex-col gap-3 border-t border-[var(--border)] bg-white p-4 shadow-[0_-8px_20px_rgba(0,0,0,0.08)] sm:static sm:flex-row sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none sm:z-auto">
-            <button type="button" onClick={() => setStep('form')} className="order-2 w-full rounded-2xl border border-[var(--border-strong)] bg-white py-3.5 text-[15px] font-bold text-[var(--muted)] hover:bg-gray-50 transition sm:order-1 sm:w-1/3">
-              Volver
-            </button>
-            {!blocked && (
-              <button type="button" onClick={confirmAndPay} disabled={validating} className="order-1 flex w-full items-center justify-center gap-2.5 rounded-2xl bg-[var(--brand)] py-3.5 text-[16px] font-bold text-white shadow-[0_8px_20px_-6px_rgba(119,75,120,0.5)] transition hover:bg-[var(--brand-600)] disabled:opacity-50 sm:order-2 sm:w-2/3">
-                {validating ? (
-                  'Verificando...'
-                ) : (
-                  <span className="flex items-center gap-2">
-                    Pagar seguro con <WompiLogo className="text-xl ml-1" />
+          {isRejected && !validating && (
+             <div className="rounded-xl border border-red-200 bg-red-50 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex size-6 items-center justify-center rounded-full bg-red-500 text-white">
+                    <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  </div>
+                  <div>
+                    <div className="font-mono font-bold text-red-800">
+                      No encontrada: {oficina?.split(' - ')[1] || 'XXX'} - {matricula}
+                    </div>
+                    <div className="text-xs text-red-600 mt-0.5">Verifica los datos e intenta de nuevo.</div>
+                  </div>
+                </div>
+                <button type="button" onClick={() => validarMatricula(false)} className="text-xs font-bold text-red-700 underline hover:text-red-800">
+                  Reintentar
+                </button>
+             </div>
+          )}
+        </div>
+
+        {/* SECTION 2: COMPRADOR */}
+        <h3 className={sectionTitleCls}>Información del comprador</h3>
+        
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 mb-5">
+          <label>
+            <span className={labelCls}>Nombres <span className="text-red-500">*</span></span>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                <svg className="size-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>
+              </div>
+              <input value={nombres} onChange={(e) => { setNombres(e.target.value); setError(null); }} placeholder="Nombres" className={`${inputCls} pl-10`} />
+            </div>
+          </label>
+          <label>
+            <span className={labelCls}>Apellidos <span className="text-red-500">*</span></span>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                <svg className="size-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>
+              </div>
+              <input value={apellidos} onChange={(e) => { setApellidos(e.target.value); setError(null); }} placeholder="Apellidos" className={`${inputCls} pl-10`} />
+            </div>
+          </label>
+        </div>
+
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 mb-5">
+          <label>
+            <span className={labelCls}>Tipo de identificación <span className="text-red-500">*</span></span>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                 <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" strokeWidth="2"/><line x1="16" y1="2" x2="16" y2="6" strokeWidth="2"/><line x1="8" y1="2" x2="8" y2="6" strokeWidth="2"/><line x1="3" y1="10" x2="21" y2="10" strokeWidth="2"/></svg>
+              </div>
+              <select value={tipoId} onChange={(e) => setTipoId(e.target.value)} className={`${inputCls} pl-10 appearance-none`}>
+                {ID_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </select>
+            </div>
+          </label>
+          <label>
+            <span className={labelCls}>Número de identificación <span className="text-red-500">*</span></span>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                 <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" strokeWidth="2"/><line x1="16" y1="2" x2="16" y2="6" strokeWidth="2"/><line x1="8" y1="2" x2="8" y2="6" strokeWidth="2"/><line x1="3" y1="10" x2="21" y2="10" strokeWidth="2"/></svg>
+              </div>
+              <input value={cedula} onChange={(e) => { setCedula(e.target.value.replace(/\D/g, '')); setError(null); }} inputMode="numeric" placeholder="Número del documento" className={`${inputCls} pl-10`} />
+            </div>
+          </label>
+        </div>
+
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 mb-5">
+          <label>
+            <span className={labelCls}>Correo electrónico <span className="text-red-500">*</span></span>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+              </div>
+              <input value={email} onChange={(e) => { setEmail(e.target.value); setError(null); }} type="email" placeholder="ejemplo@correo.com" className={`${inputCls} pl-10`} />
+            </div>
+          </label>
+          <label>
+            <span className={labelCls}>Confirma tu correo <span className="text-red-500">*</span></span>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+              </div>
+              <input value={emailConfirm} onChange={(e) => { setEmailConfirm(e.target.value); setError(null); }} type="email" placeholder="Repite tu correo" className={`${inputCls} pl-10`} />
+            </div>
+          </label>
+        </div>
+
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 mb-8">
+           <label>
+            <span className={labelCls}>Teléfono / WhatsApp <span className="text-red-500">*</span></span>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                 <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+              </div>
+              <input value={phone} onChange={(e) => { setPhone(e.target.value.replace(/[^\d+\s]/g, '')); setError(null); }} inputMode="tel" placeholder="+57 300 000 0000" className={`${inputCls} pl-10`} />
+            </div>
+          </label>
+        </div>
+
+        {/* SECTION 3: CHECKBOXES AND PLAN */}
+        <div className="flex flex-col gap-4 mb-10 pt-4 border-t border-gray-100">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input 
+              type="checkbox" 
+              checked={termsAccepted} 
+              onChange={(e) => setTermsAccepted(e.target.checked)} 
+              className="mt-0.5 size-5 rounded border-gray-300 text-[#0066ff] focus:ring-[#0066ff]" 
+            />
+            <span className="text-[14.5px] text-[var(--foreground)]">
+              Acepto los <button type="button" onClick={(e) => { e.preventDefault(); setShowTerms(true); }} className="underline font-semibold hover:text-[#0066ff]">términos y condiciones</button>
+            </span>
+          </label>
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input 
+              type="checkbox" 
+              checked={privacyAccepted} 
+              onChange={(e) => setPrivacyAccepted(e.target.checked)} 
+              className="mt-0.5 size-5 rounded border-gray-300 text-[#0066ff] focus:ring-[#0066ff]" 
+            />
+            <span className="text-[14.5px] text-[var(--foreground)]">
+              Acepto la <button type="button" onClick={(e) => { e.preventDefault(); setShowPrivacy(true); }} className="underline font-semibold hover:text-[#0066ff]">política de privacidad de datos</button> y autorizo recibir comunicaciones por WhatsApp.
+            </span>
+          </label>
+        </div>
+
+        <h3 className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-[var(--foreground)] mb-4">
+          Selecciona tu plan
+        </h3>
+        
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-6 sm:mb-0">
+          {(['basico', 'express'] as PlanId[]).map((pid) => {
+            const p = PLANS[pid];
+            const sel = plan === pid;
+            return (
+              <label
+                key={pid}
+                className={`relative flex flex-col items-start rounded-2xl border-2 p-4 text-left transition-all cursor-pointer ${
+                  sel 
+                    ? 'border-[#84cc16] bg-[#f7fee7] shadow-sm' 
+                    : 'border-gray-200 bg-white hover:border-[#bde875]'
+                }`}
+              >
+                <input type="radio" name="plan" className="sr-only" checked={sel} onChange={() => setPlan(pid)} />
+                {p.recommended && (
+                  <span className="absolute -top-3 right-3 rounded-full bg-[#84cc16] px-3 py-1 text-[10px] font-bold tracking-wider text-white shadow-sm">
+                    RECOMENDADO
                   </span>
                 )}
+                <div className="flex w-full items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <svg className="size-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <span className="text-[16px] font-bold text-[var(--foreground)]">{p.label}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg font-black text-[#15803d]">{formatCOP(p.priceCop)}</span>
+                    <div className={`flex size-5 items-center justify-center rounded-full border-2 ${sel ? 'border-[#15803d]' : 'border-gray-300'}`}>
+                      {sel && <div className="size-2.5 rounded-full bg-[#15803d]" />}
+                    </div>
+                  </div>
+                </div>
+                <ul className="mt-1 flex flex-col gap-1.5 text-xs text-gray-600 w-full">
+                  {p.features.map((f, i) => (
+                    <li key={i} className="flex items-center gap-1.5">
+                      <svg className="size-3.5 text-[#84cc16]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+              </label>
+            );
+          })}
+        </div>
+
+      </div>
+
+      {/* FOOTER STICKY */}
+      <div className="fixed inset-x-0 bottom-0 z-40 sm:absolute sm:-bottom-24">
+        <div className="w-full rounded-t-3xl sm:rounded-[28px] border-t sm:border border-gray-200 bg-white p-4 sm:p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.08)] sm:shadow-sm">
+          <div className="mx-auto flex max-w-7xl flex-col sm:flex-row sm:items-center justify-between gap-4">
+            
+            <div className="hidden sm:flex items-center gap-8">
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Plan Seleccionado</div>
+                <div className="text-lg font-black text-[#15803d]">{PLANS[plan].label}</div>
+              </div>
+              <div className="h-10 w-px bg-gray-200"></div>
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Total a pagar</div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-black text-black">{formatCOP(PLANS[plan].priceCop)}</span>
+                  <span className="text-[10px] text-gray-500">IVA incluido</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex sm:hidden items-center justify-between px-2">
+              <div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-gray-500">{PLANS[plan].label}</div>
+                <div className="text-xl font-black text-black">{formatCOP(PLANS[plan].priceCop)}</div>
+              </div>
+              <div className="text-[10px] text-gray-500">IVA incluido</div>
+            </div>
+
+            <div className="flex flex-col sm:items-end w-full sm:w-auto">
+              <button 
+                type="button" 
+                onClick={confirmAndPay}
+                disabled={!isFormComplete || loading || validating}
+                className="w-full sm:w-[300px] rounded-xl bg-[#e0f8b8] px-6 py-4 text-center font-bold text-[#3f6212] transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed hover:bg-[#d4f39e]"
+              >
+                {loading || step === 'paying' ? (
+                  <span className="flex items-center gap-2">
+                    <span className="size-4 animate-spin rounded-full border-2 border-[#3f6212]/30 border-t-[#3f6212]" />
+                    Conectando...
+                  </span>
+                ) : (
+                  <>
+                    <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                    Comprar ahora
+                  </>
+                )}
               </button>
-            )}
+              <div className="mt-2 flex items-center justify-center gap-1.5 text-[11px] text-gray-500">
+                 <svg className="size-3 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                 Compra 100% segura y en pocos minutos
+              </div>
+            </div>
+            
           </div>
         </div>
-      )}
+      </div>
 
-      {/* PAYING */}
-      {step === 'paying' && (
-        <div className="flex flex-col items-center justify-center gap-5 py-12 text-center">
-          <span className="size-10 animate-spin rounded-full border-4 border-[var(--border)] border-t-[var(--brand)]" />
-          <div>
-            <p className="text-lg font-bold text-[var(--foreground)]">Conectando con pasarela segura...</p>
-            <p className="text-sm text-[var(--muted)]">Serás redirigido a Wompi en unos segundos.</p>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL TERMINOS */}
+      {/* MODALS */}
       {showTerms && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
           <div className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
@@ -342,7 +491,6 @@ export default function CheckoutForm() {
         </div>
       )}
 
-      {/* MODAL PRIVACIDAD */}
       {showPrivacy && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
           <div className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
@@ -354,7 +502,7 @@ export default function CheckoutForm() {
             </div>
             <div className="overflow-y-auto p-4 text-sm text-gray-600">
               <p className="mb-4">En cumplimiento de la Ley 1581 de 2012 (Ley de Protección de Datos Personales de Colombia), le informamos lo siguiente:</p>
-              <p className="mb-4">1. <strong>Recolección:</strong> Recolectamos su correo electrónico, teléfono/WhatsApp y número de identificación exclusivamente para la expedición y envío del certificado solicitado.</p>
+              <p className="mb-4">1. <strong>Recolección:</strong> Recolectamos su correo electrónico, teléfono/WhatsApp, número de identificación y nombres exclusivamente para la expedición y envío del certificado solicitado.</p>
               <p className="mb-4">2. <strong>Uso de datos:</strong> Sus datos no serán vendidos ni compartidos con terceros para fines publicitarios. Solo se usarán para comunicación transaccional relacionada con su solicitud.</p>
               <p className="mb-4">3. <strong>Seguridad:</strong> Utilizamos pasarelas de pago reguladas (Wompi). En ningún momento almacenamos los datos de sus tarjetas de crédito o débito.</p>
               <p>4. <strong>Derechos del Titular:</strong> Usted puede solicitar la eliminación, actualización o rectificación de sus datos personales en cualquier momento a través de nuestros canales de atención al cliente.</p>
