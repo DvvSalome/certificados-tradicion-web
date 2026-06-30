@@ -1,7 +1,8 @@
 import CheckoutForm from '@/components/CheckoutForm';
 import SiteFooter from '@/components/SiteFooter';
 import { Seal, WompiLogo } from '@/components/Brand';
-
+import VideoPlayer from '@/components/VideoPlayer';
+import AnimatedCertificate from '@/components/AnimatedCertificate';
 export default function Home() {
   return (
     <div className="min-h-screen bg-[var(--background)] flex flex-col">
@@ -65,21 +66,22 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Columna Derecha: Video Caso de Vida Real */}
-        <div className="flex w-full flex-col lg:sticky lg:top-8 lg:w-5/12">
-          <div className="relative aspect-[9/16] w-full overflow-hidden rounded-3xl bg-[var(--brand-700)] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] border-[6px] border-white ring-1 ring-[var(--border)]">
-            <video
-              src="/certificado-demo.mp4"
-              className="absolute inset-0 h-full w-full object-cover"
-              controls
-              playsInline
-            />
-            {/* Gradiente sutil encima del video */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+        {/* Columna Derecha: Video y Animación */}
+        <div className="flex w-full flex-col gap-10 lg:sticky lg:top-8 lg:w-5/12">
+          
+          <div className="flex flex-col gap-2">
+            <VideoPlayer />
+            <p className="mt-4 text-center text-sm leading-relaxed text-[var(--muted-2)] px-4">
+              Haz clic en el video para escuchar
+            </p>
           </div>
-          <p className="mt-6 text-center text-sm leading-relaxed text-[var(--muted-2)] px-4">
-            Servicio de gestión privado. No somos canal oficial de la Superintendencia de Notariado y Registro (SNR); facilitamos el trámite en tu nombre.
-          </p>
+
+          <div className="flex flex-col gap-2 hidden lg:flex">
+            <div className="w-full scale-90 origin-top">
+              <AnimatedCertificate />
+            </div>
+          </div>
+          
         </div>
 
       </main>
