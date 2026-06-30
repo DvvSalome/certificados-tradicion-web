@@ -4,6 +4,7 @@ import { Seal, WompiLogo } from '@/components/Brand';
 import VideoPlayer from '@/components/VideoPlayer';
 import AnimatedCertificate from '@/components/AnimatedCertificate';
 import { RotatingTail } from '@/components/RotatingTail';
+import { PLANS, formatCOP, type PlanId } from '@/lib/config';
 
 const COMPARISON = [
   { feature: 'Entrega', official: 'Según disponibilidad del portal', us: 'En minutos, garantizada' },
@@ -170,27 +171,49 @@ export default function Home() {
               Precios 2026
             </span>
             <h2 className="text-3xl font-extrabold tracking-tight text-[var(--foreground)] sm:text-4xl">
-              ¿Cuánto cuesta un Certificado?
+              ¿Qué plan necesitas?
             </h2>
             <p className="max-w-2xl text-[17px] leading-relaxed text-[var(--muted)]">
-              Nuestro servicio de gestión tiene un <strong className="text-[var(--foreground)]">precio único de $39.800</strong>, todo incluido. Sin suscripciones ni cobros ocultos.
+              Elige el nivel de servicio que mejor se adapte a ti. Todos nuestros planes incluyen la gestión, expedición y entrega del documento oficial.
             </p>
           </div>
           
-          <div className="w-full max-w-md rounded-2xl border-2 border-[var(--brand)] bg-[var(--brand-50)] p-8 shadow-sm relative text-left">
-            <span className="absolute -top-3 left-6 rounded-full bg-[var(--brand)] px-3 py-1 text-[11px] font-semibold text-white shadow-sm">
-              Precio único
-            </span>
-            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--brand)]">
-              Servicio Certitradición
-            </p>
-            <p className="text-4xl font-extrabold tracking-tight text-[var(--foreground)] mt-2">
-              $39.800
-              <span className="ml-2 align-middle text-sm font-medium text-[var(--muted)]">todo incluido</span>
-            </p>
-            <p className="mt-4 text-[15px] leading-relaxed text-[var(--muted)]">
-              Incluye la gestión completa, entrega en minutos por correo y WhatsApp, soporte humano y pago 100% seguro con Wompi.
-            </p>
+          <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl text-left">
+            {(['basico', 'express'] as PlanId[]).map((pid) => {
+              const p = PLANS[pid];
+              return (
+                <div key={pid} className={`relative flex flex-col items-start rounded-3xl border-2 p-6 sm:p-8 transition-all ${
+                  p.recommended 
+                    ? 'border-[var(--brand)] bg-[var(--brand-50)] shadow-md' 
+                    : 'border-[var(--border)] bg-white'
+                }`}>
+                  {p.recommended && (
+                    <span className="absolute -top-3 right-6 rounded-full bg-[var(--accent)] px-4 py-1.5 text-[11px] font-bold tracking-wider text-white shadow-sm">
+                      RECOMENDADO
+                    </span>
+                  )}
+                  
+                  <p className={`text-xs font-bold uppercase tracking-wide ${p.recommended ? 'text-[var(--brand)]' : 'text-[var(--muted-2)]'}`}>
+                    Plan {p.label}
+                  </p>
+                  <p className="mt-2 text-[15px] font-medium text-[var(--muted)] min-h-[44px]">
+                    {p.tagline}
+                  </p>
+                  <p className="mt-4 text-4xl font-extrabold tracking-tight text-[var(--foreground)]">
+                    {formatCOP(p.priceCop)}
+                  </p>
+                  
+                  <div className="mt-6 flex flex-col gap-3 w-full border-t border-black/5 pt-6">
+                    {p.features.map((f, i) => (
+                      <div key={i} className="flex items-start gap-2.5">
+                        <svg className={`mt-0.5 size-4 shrink-0 ${p.recommended ? 'text-[var(--brand)]' : 'text-[var(--muted-2)]'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                        <span className="text-[14px] leading-snug text-[var(--muted)]">{f}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
           
           <div className="w-full mt-4 text-left overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-sm">
