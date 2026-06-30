@@ -10,7 +10,7 @@ import { pickAccount, marcarBloqueada, totalCuentas, estado as estadoCuentas, se
 
 const PORT = Number(process.env.PORT || 3000);
 const SECRET = process.env.N8N_WEBHOOK_SECRET || '';
-const PANEL = 'https://certificados.fourgsolutions.com';
+const PANEL = 'https://certitradicion.com';
 const COST_CENTS = Number(process.env.SNR_COST_COP || 23000) * 100;
 const BROWSERLESS_WS = process.env.BROWSERLESS_WS || '';
 
