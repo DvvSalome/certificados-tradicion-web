@@ -11,11 +11,13 @@
   --border-strong: #cfd9e6;
 
   /* Brand — institutional deep blue (confianza) + verde válido */
-  --brand: #1B2A3A;
-  --brand-600: #15222f;
-  --brand-700: #13202C;
-  --brand-50: #eef3fb;
-  --brand-ring: #2563c9;
+  --brand: #774b78;
+  --brand-600: #623e63;
+  --brand-700: #4e324f;
+  --brand-50: #f5f0f6;
+  --brand-ring: #946296;
+  --brand-900: #3b253c;
+  --brand-950: #251626;
   --accent: #0f7a52;
   --accent-50: #e8f5ef;
 

@@ -217,6 +217,26 @@ export default function EstadoView() {
         </a>
       )}
 
+      {status === 'DELIVERED' && (
+        <a
+          href={`/api/order/${ref}/download`}
+          download
+          className="flex flex-col items-center gap-1.5 rounded-2xl border border-[var(--border)] bg-white px-5 py-4 text-center shadow-sm transition hover:bg-[var(--brand-50)] active:scale-[0.99]"
+        >
+          <span className="inline-flex items-center justify-center gap-2.5 rounded-xl bg-[var(--brand)] px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_20px_-6px_rgba(119,75,120,0.5)]">
+            <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" x2="12" y1="15" y2="3" />
+            </svg>
+            Descargar Certificado PDF
+          </span>
+          <span className="text-xs text-[var(--muted)]">
+            Descarga tu documento oficial al instante.
+          </span>
+        </a>
+      )}
+
       {/* Recibir por WhatsApp (post-pago). Abre el chat con nuestro número; al escribir desde el número
           registrado, el bot responde el PDF (phone-auth). */}
       {SHOW_WA.includes(status ?? '') && (

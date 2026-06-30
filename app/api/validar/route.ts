@@ -11,7 +11,8 @@ function clientIp(req: Request): string {
 
 // Valida una matrícula ANTES de pagar (lo usa el modal del checkout para mostrar la dirección).
 export async function POST(req: Request) {
-  if (rateLimited(clientIp(req))) {
+  const isBypass = req.headers.get('x-webhook-secret') === process.env.N8N_WEBHOOK_SECRET;
+  if (!isBypass && rateLimited(clientIp(req))) {
     return NextResponse.json({ error: 'Demasiadas consultas. Espera un momento.' }, { status: 429 });
   }
   const { oficina, matricula } = (await req.json().catch(() => ({}))) as { oficina?: string; matricula?: string };

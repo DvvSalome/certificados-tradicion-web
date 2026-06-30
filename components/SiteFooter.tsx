@@ -4,7 +4,7 @@ import { Seal } from './Brand';
 // + enlaces legales. El descargo deja claro que somos privados, no el Gobierno.
 export default function SiteFooter() {
   return (
-    <footer style={{ background: '#13202C' }}>
+    <footer className="bg-[var(--brand-950)]">
       <div className="mx-auto max-w-5xl px-6 py-10">
         <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
           <div className="flex items-center gap-3">
