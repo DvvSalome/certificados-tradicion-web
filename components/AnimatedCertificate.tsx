@@ -35,7 +35,7 @@ export default function AnimatedCertificate() {
         {/* fade inferior: el documento se funde para resaltar el estado del análisis */}
         <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 152, background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.5) 36%, rgba(255,255,255,.97) 78%)', pointerEvents: 'none' }} />
 
-        <div style={{ position: 'absolute', top: 12, left: 16, display: 'flex', alignItems: 'center', gap: 6, zIndex: 10 }}>
+        <div style={{ position: 'absolute', bottom: 16, left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, zIndex: 10 }}>
           <Seal size={24} tone="onLight" />
           <span style={{ fontWeight: 800, fontSize: 10, color: '#0D1B2A', letterSpacing: '-0.02em' }}>Certitradición</span>
         </div>
