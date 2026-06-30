@@ -25,6 +25,23 @@ export default function CheckoutForm() {
   const [vStep, setVStep] = useState(0);
   const [vResult, setVResult] = useState<VResult | null>(null);
 
+  // Cargar datos previos para no hacer al usuario llenar todo de nuevo
+  useEffect(() => {
+    try {
+      const savedEmail = localStorage.getItem('crt_email');
+      const savedPhone = localStorage.getItem('crt_phone');
+      const savedCedula = localStorage.getItem('crt_cedula');
+      if (savedEmail) {
+        setEmail(savedEmail);
+        setEmailConfirm(savedEmail);
+      }
+      if (savedPhone) setPhone(savedPhone);
+      if (savedCedula) setCedula(savedCedula);
+    } catch (e) {
+      // Ignorar errores de localStorage (ej. navegación privada)
+    }
+  }, []);
+
   // Mensajes de progreso mientras valida
   useEffect(() => {
     if (!validating) { setVStep(0); return; }
@@ -47,6 +64,14 @@ export default function CheckoutForm() {
     if (waD.length === 10 && waD.startsWith('3')) waD = '57' + waD;
     if (waD.length < 8 || waD.length > 15) {
       setError('Ingresa tu teléfono / WhatsApp válido (ej: +57 300…)'); return;
+    }
+
+    try {
+      localStorage.setItem('crt_email', email.trim());
+      localStorage.setItem('crt_phone', phone.trim());
+      localStorage.setItem('crt_cedula', cedula.trim());
+    } catch (e) {
+      // Ignorar errores
     }
 
     setStep('review'); setVResult(null); setValidating(true);
@@ -170,7 +195,7 @@ export default function CheckoutForm() {
 
             <label>
               <span className={labelCls}>Teléfono / WhatsApp</span>
-              <input value={phone} onChange={(e) => { setPhone(e.target.value); setError(null); }} inputMode="tel" autoComplete="tel" placeholder="+57 300 000 0000" className={inputCls} />
+              <input value={phone} onChange={(e) => { setPhone(e.target.value.replace(/[^\d+\s]/g, '')); setError(null); }} inputMode="tel" autoComplete="tel" placeholder="+57 300 000 0000" className={inputCls} />
             </label>
 
             <div className="flex items-center gap-2 pt-2">
