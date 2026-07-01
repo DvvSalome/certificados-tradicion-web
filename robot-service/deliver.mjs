@@ -120,3 +120,32 @@ export async function entregarCorreo({ pdf, matricula, oficina, email, reference
   await guardarEnEnviados(message).catch((e) => console.error('[deliver] IMAP append (Enviados) falló — no crítico: ' + e.message));
   return { sent: true, withPreview: !!preview };
 }
+
+// 2º correo (solo Express): entrega el Estudio de Títulos aparte, cuando ya está listo. Va SEPARADO del CTL
+// para que el certificado llegue de inmediato (el estudio puede tardar por la cola de NIM). Best-effort.
+export async function entregarEstudio({ estudio, matricula, oficina, email }) {
+  if (!estudio) return { sent: false, reason: 'sin estudio' };
+  if (!email || !SMTP_PASS) return { sent: false, reason: 'sin email/SMTP' };
+  const fecha = new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date());
+  const logo = await brandLogoPng();
+  const attachments = [{ filename: `Estudio-Titulos-${matricula}.pdf`, content: estudio }];
+  let logoTag = '';
+  if (logo) { attachments.push({ filename: 'certitradicion.png', content: logo, cid: 'estlogo' }); logoTag = `<img src="cid:estlogo" width="38" height="38" alt="" style="vertical-align:middle"/>`; }
+  const html = `<div style="background:#f6f8fb;padding:24px 12px;font-family:Arial,Helvetica,sans-serif">
+    <div style="max-width:560px;margin:0 auto;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 14px rgba(13,27,42,.08)">
+      <div style="background:#774b78;padding:20px 28px">${logoTag}<span style="color:#fff;font-size:19px;font-weight:800;letter-spacing:-.3px;margin-left:8px;vertical-align:middle">Certitradición</span></div>
+      <div style="padding:28px">
+        <h1 style="margin:0 0 10px;font-size:20px;color:#0d1b2a">Tu Estudio de Títulos está listo 📋</h1>
+        <p style="margin:0 0 14px;color:#5b6b7e;font-size:15px;line-height:1.6">Terminamos el análisis del inmueble con matrícula <b>${matricula}</b> (${oficina}). Lo encuentras <b>adjunto en PDF</b>: propietarios actuales, gravámenes y limitaciones <b>vigentes</b>, banderas de riesgo y un semáforo con el estado jurídico.</p>
+        <p style="margin:0 0 18px;color:#5b6b7e;font-size:15px;line-height:1.6">Este análisis complementa el Certificado de Tradición y Libertad que ya te enviamos.</p>
+        <div style="background:#f5f0f6;border-radius:10px;padding:13px 16px;color:#4e324f;font-size:12.5px;line-height:1.55">⚖️ Análisis informativo automatizado generado a partir del Certificado de Tradición y Libertad. No constituye asesoría jurídica profesional ni reemplaza el estudio de un abogado.</div>
+      </div>
+      <div style="padding:14px 28px;border-top:1px solid #e3e9f1;color:#8593a3;font-size:12px;text-align:center">Certitradición · ${fecha} · <a href="${SITE}" style="color:#774b78;text-decoration:none">certitradicion.com</a></div>
+    </div>
+  </div>`;
+  const text = `Tu Estudio de Títulos del inmueble (matrícula ${matricula}, ${oficina}) ya está listo — adjunto en PDF: propietarios, gravámenes/limitaciones vigentes, banderas de riesgo y semáforo. Complementa el Certificado que ya te enviamos.\n\n⚖️ Análisis informativo automatizado; no constituye asesoría jurídica ni reemplaza a un abogado.\n\n— Certitradición · ${SITE}`;
+  const message = { from: `"Certitradición" <${SMTP_USER}>`, to: email, replyTo: SMTP_USER, subject: `Tu Estudio de Títulos está listo · Matrícula ${matricula}`, text, html, attachments };
+  await tx().sendMail(message);
+  await guardarEnEnviados(message).catch((e) => console.error('[deliver] IMAP append (estudio) falló — no crítico: ' + e.message));
+  return { sent: true };
+}
