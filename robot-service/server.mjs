@@ -316,6 +316,18 @@ const server = http.createServer((req, res) => {
     req.on('end', async () => {
       let p;
       try { p = JSON.parse(body); } catch { res.writeHead(400); return res.end('JSON inválido'); }
+      // DIAGNÓSTICO: estructura de la página del historial (para arreglar la descarga de CTLs viejos).
+      if (p.histDebug) {
+        try {
+          const robot = await ensureGenRobot();
+          const info = await robot.debugHistorial();
+          res.writeHead(200, { 'content-type': 'application/json' });
+          return res.end(JSON.stringify({ ok: true, info }));
+        } catch (e) {
+          res.writeHead(500, { 'content-type': 'application/json' });
+          return res.end(JSON.stringify({ ok: false, error: String(e.message || e).slice(0, 300) }));
+        }
+      }
       // BYPASS TEST: descarga del historial + estudio en lote (síncrono). No genera, no cobra SNR.
       if (Array.isArray(p.testHistorial)) {
         try {

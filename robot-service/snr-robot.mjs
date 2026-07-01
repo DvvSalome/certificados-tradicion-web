@@ -298,6 +298,20 @@ export class SnrRobot {
     return buf;
   }
 
+  // DIAGNÓSTICO del historial: muestra la estructura real de la página (inputs de búsqueda, nº de links de
+  // descarga, filas, texto y HTML de las primeras filas) para entender cómo descargar CTLs viejos.
+  async debugHistorial() {
+    const p = this.page;
+    await p.goto(URL_HIST, { waitUntil: 'networkidle', timeout: 30000 });
+    await p.waitForTimeout(2500);
+    const dlLinks = await p.locator(S.dlCertLink).count().catch(() => -1);
+    const rows = await p.locator('tr').count().catch(() => -1);
+    const inputs = await p.locator('input, select, button').evaluateAll((els) => els.map((e) => ({ tag: e.tagName, id: e.id, name: e.name, type: e.type, ph: e.placeholder, title: e.title, txt: (e.textContent || '').trim().slice(0, 30) })).filter((x) => x.id || x.name || x.title).slice(0, 40)).catch(() => []);
+    const bodyText = await p.locator('body').innerText().then((t) => t.replace(/\s+/g, ' ').slice(0, 1800)).catch(() => '');
+    const firstRows = await p.locator('table tr').evaluateAll((trs) => trs.slice(0, 5).map((tr) => tr.innerHTML.replace(/\s+/g, ' ').slice(0, 400))).catch(() => []);
+    return { title: await p.title().catch(() => ''), url: p.url(), dlLinks, rows, inputs, bodyText, firstRows };
+  }
+
   // Flujo completo. dryRun=true se detiene ANTES de Pagar (gratis, validable).
   async generar({ oficina, matricula, dryRun = false }) {
     await this.ensureLoggedIn();
