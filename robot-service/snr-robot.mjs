@@ -277,6 +277,7 @@ export class SnrRobot {
   // Descarga un CTL ya generado desde el historial (mecanismo probado). Devuelve Buffer PDF.
   async descargarDesdeHistorial(matricula) {
     const p = this.page;
+    await this.ensureLoggedIn(); // el historial requiere sesión; sin login redirige a la página pública
     await p.goto(URL_HIST, { waitUntil: 'networkidle', timeout: 30000 });
     await p.waitForSelector(S.dlCertLink, { timeout: 15000 });
     // ubicar la fila por matrícula y clickear su link de descarga
@@ -302,6 +303,7 @@ export class SnrRobot {
   // descarga, filas, texto y HTML de las primeras filas) para entender cómo descargar CTLs viejos.
   async debugHistorial() {
     const p = this.page;
+    await this.ensureLoggedIn();
     await p.goto(URL_HIST, { waitUntil: 'networkidle', timeout: 30000 });
     await p.waitForTimeout(2500);
     const dlLinks = await p.locator(S.dlCertLink).count().catch(() => -1);
