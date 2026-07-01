@@ -1,4 +1,4 @@
-// Cliente NIM (NVIDIA, OpenAI-compatible). Port de _leo-pr/src/llm/nvidiaClient.ts a ESM.
+// Cliente LLM OpenAI-compatible (NVIDIA NIM u OpenRouter, según LLM_BASE_URL + LLM_API_KEY).
 // Reintentos con backoff exponencial ante 429/5xx/red. NUNCA loguea la key.
 const BASE = process.env.LLM_BASE_URL || 'https://integrate.api.nvidia.com/v1';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -7,8 +7,8 @@ const transient = (e) => /HTTP (429|5\d\d)|ECONN|ETIMEDOUT|EAI_AGAIN|fetch faile
 
 // messages: array OpenAI ({role, content}). content puede ser string o array (texto + image_url) para visión.
 export async function nimChat(messages, { model, json = false, maxTokens = 2048 } = {}) {
-  const key = process.env.NVIDIA_API_KEY;
-  if (!key) throw new Error('NVIDIA_API_KEY no seteada (requerida para el Estudio)');
+  const key = process.env.LLM_API_KEY || process.env.NVIDIA_API_KEY; // LLM_API_KEY (OpenRouter) tiene prioridad
+  if (!key) throw new Error('LLM_API_KEY/NVIDIA_API_KEY no seteada (requerida para el Estudio)');
   const mdl = model || process.env.LLM_MODEL || 'meta/llama-3.3-70b-instruct';
   const body = JSON.stringify({ model: mdl, temperature: 0, top_p: 1, max_tokens: maxTokens, ...(json ? { response_format: { type: 'json_object' } } : {}), messages });
   const maxAttempts = Number(process.env.LLM_MAX_RETRIES || 5);
