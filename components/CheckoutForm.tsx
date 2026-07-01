@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import OficinaSelect from './OficinaSelect';
+import { oficinaCode } from '@/lib/oficinas';
 import { PLANS, formatCOP, type PlanId } from '@/lib/config';
 
 type VResult = { disponible: boolean | null; estado: string | null; direccion: string | null; circulo: string | null; mocked?: boolean; error?: string };
@@ -96,6 +97,21 @@ export default function CheckoutForm() {
     }, 1000);
     return () => clearTimeout(handler);
   }, [oficina, matricula, vResult, validating]);
+
+  // CTA "Comprar ahora": cae desde arriba hasta su posición final al entrar en vista (una sola vez).
+  const footerRef = useRef<HTMLDivElement>(null);
+  const [ctaSeen, setCtaSeen] = useState(false);
+  useEffect(() => {
+    const el = footerRef.current;
+    if (!el) return;
+    // Sin IntersectionObserver (navegadores viejos): mostrar el CTA sin animación, nunca invisible.
+    if (typeof IntersectionObserver === 'undefined') { setCtaSeen(true); return; }
+    const io = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) { setCtaSeen(true); io.disconnect(); }
+    }, { threshold: 0.25 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   const isVerified = vResult?.disponible === true || (vResult?.mocked && !vResult?.error);
   const isRejected = vResult?.disponible === false;
@@ -209,7 +225,7 @@ export default function CheckoutForm() {
           {validating && (
              <div className="rounded-xl border border-purple-200 bg-purple-50 p-4 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="font-mono font-bold text-gray-700">Matrícula: <span className="text-purple-600">{oficina?.split(' - ')[1] || 'XXX'} - {matricula}</span></div>
+                  <div className="font-mono font-bold text-gray-700">Matrícula: <span className="text-purple-600">{oficinaCode(oficina) || '—'} - {matricula}</span></div>
                 </div>
                 <button disabled className="rounded-xl bg-[#a47cf6] opacity-80 px-6 py-2.5 text-sm font-bold text-white flex items-center gap-2">
                   <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
@@ -226,7 +242,7 @@ export default function CheckoutForm() {
                   </div>
                   <div>
                     <div className="font-mono font-bold text-gray-800">
-                      Matrícula: <span className="text-green-700">{oficina?.split(' - ')[1] || 'XXX'} - {matricula}</span>
+                      Matrícula: <span className="text-green-700">{oficinaCode(oficina) || '—'} - {matricula}</span>
                     </div>
                     {vResult?.direccion && (
                       <div className="text-xs text-green-700 mt-0.5">{vResult.direccion}</div>
@@ -247,7 +263,7 @@ export default function CheckoutForm() {
                   </div>
                   <div>
                     <div className="font-mono font-bold text-red-800">
-                      No encontrada: {oficina?.split(' - ')[1] || 'XXX'} - {matricula}
+                      No encontrada: {oficinaCode(oficina) || '—'} - {matricula}
                     </div>
                     <div className="text-xs text-red-600 mt-0.5">Verifica los datos e intenta de nuevo.</div>
                   </div>
@@ -415,7 +431,7 @@ export default function CheckoutForm() {
 
         {/* FOOTER: en móvil = barra FIJA abajo (CTA siempre visible). En desktop = sección final DENTRO de la
             tarjeta, separada por un borde superior (ya NO una tarjeta blanca flotando aparte). */}
-        <div className="fixed inset-x-0 bottom-0 z-40 sm:static sm:mt-8 sm:border-t sm:border-gray-200 sm:pt-6">
+        <div ref={footerRef} className={`fixed inset-x-0 bottom-0 z-40 sm:static sm:mt-8 sm:border-t sm:border-gray-200 sm:pt-6 ${ctaSeen ? 'ctl-drop-in' : 'opacity-0'}`}>
           <div className="w-full rounded-t-3xl bg-white p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.08)] sm:rounded-none sm:bg-transparent sm:p-0 sm:shadow-none">
           <div className="mx-auto flex max-w-7xl flex-col gap-4">
             

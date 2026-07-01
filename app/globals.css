@@ -98,6 +98,18 @@ select {
   animation: ctl-fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* CTA "Comprar ahora": cae desde arriba hasta su posición final al entrar en vista. */
+@keyframes ctl-drop-in {
+  from { opacity: 0; transform: translateY(-30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.ctl-drop-in {
+  animation: ctl-drop-in 0.62s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ctl-drop-in { animation: none; }
+}
+
 /* — Animaciones del diseño Home (Claude Design "Certitradicion Home.dc.html") — */
 @keyframes cz-spin { to { transform: rotate(360deg); } }
 @keyframes cz-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
