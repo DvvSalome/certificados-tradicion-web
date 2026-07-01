@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 // reales del backend. ponytail: si algún día queremos cifras reales, esto se reemplaza
 // por un fetch a un endpoint; la UI (count-up) no cambia.
 
-const STORE_KEY = 'crt_stats_v1';
+const STORE_KEY = 'crt_stats_v2'; // v2: re-siembra (v1 quedó inflado por recargas de prueba)
 const EPOCH = Date.UTC(2026, 5, 1); // ancla temporal: 1 jun 2026 (mes 5 = junio)
 
 type Stats = { reportes: number; alertas: number; visits: number };
@@ -15,8 +15,8 @@ type Stats = { reportes: number; alertas: number; visits: number };
 // Semilla por tiempo: un visitante nuevo no ve siempre el mismo número; crece ~0.8/hora.
 function seed(): Stats {
   const hours = Math.max(0, (Date.now() - EPOCH) / 3.6e6);
-  const reportes = 3496 + Math.floor(hours * 0.8);
-  return { reportes, alertas: Math.floor(reportes * 2.6), visits: 0 };
+  const reportes = 1800 + Math.floor(hours * 0.35);
+  return { reportes, alertas: Math.floor(reportes * 1.8), visits: 0 };
 }
 
 // Siguiente estado: parte de lo guardado (o semilla) y suma un bump por visita.
@@ -28,10 +28,10 @@ function nextStats(): Stats {
   } catch {
     s = seed();
   }
-  const bumpR = 2 + Math.floor(Math.random() * 8); // +2..+9 reportes por visita
+  const bumpR = 1 + Math.floor(Math.random() * 3); // +1..3 reportes por visita (suave)
   s = {
     reportes: s.reportes + bumpR,
-    alertas: s.alertas + bumpR * 2 + Math.floor(Math.random() * 6),
+    alertas: s.alertas + 1 + Math.floor(Math.random() * 3), // +1..3 alertas (ya no "un montón")
     visits: s.visits + 1,
   };
   try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); } catch {}
