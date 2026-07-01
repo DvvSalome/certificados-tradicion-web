@@ -4,6 +4,9 @@ import { Seal, WompiLogo } from '@/components/Brand';
 import VideoPlayer from '@/components/VideoPlayer';
 import AnimatedCertificate from '@/components/AnimatedCertificate';
 import { RotatingTail } from '@/components/RotatingTail';
+import StatsCounter from '@/components/StatsCounter';
+import WhyUs from '@/components/WhyUs';
+import Testimonials from '@/components/Testimonials';
 import { PLANS, formatCOP, type PlanId } from '@/lib/config';
 
 const COMPARISON = [
@@ -127,6 +130,12 @@ export default function Home() {
       
       <div className="h-10"></div>
 
+      {/* ===== PRUEBA SOCIAL (contador vivo, escala por visita) ===== */}
+      <StatsCounter />
+
+      {/* ===== POR QUÉ CON NOSOTROS ===== */}
+      <WhyUs />
+
       {/* ===== COMO FUNCIONA ===== */}
       <section id="como-funciona" className="bg-white py-16 lg:py-24 border-t border-[var(--border)]">
         <div className="mx-auto max-w-6xl px-6 flex flex-col lg:flex-row gap-12 items-center">
@@ -242,6 +251,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* ===== TESTIMONIOS ===== */}
+      <Testimonials />
 
       {/* ===== PREGUNTAS FRECUENTES ===== */}
       <section id="preguntas-frecuentes" className="bg-white py-16 lg:py-24 border-t border-[var(--border)]">

@@ -41,9 +41,18 @@ const data = {
         'https://www.facebook.com/certitradicion', // placeholder Facebook
         'https://www.youtube.com/@certitradicion', // placeholder YouTube
       ],
+      telephone: '+573212258245',
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: 'Calle 80 B #42 D',
+        addressLocality: 'Barranquilla',
+        addressRegion: 'Atlántico',
+        addressCountry: 'CO',
+      },
       contactPoint: {
         '@type': 'ContactPoint',
         contactType: 'customer support',
+        telephone: '+573212258245',
         email: 'certificados@certitradicion.com',
         areaServed: 'CO',
         availableLanguage: 'es',
