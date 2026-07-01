@@ -178,6 +178,33 @@ async function entregarSobrePdf(pdf, { reference, oficina, matricula, email, pla
   }
 }
 
+// TEST: descarga N CTLs del HISTORIAL (ya generados, gratis) y corre el estudio en cada uno. Devuelve el
+// análisis para validar el prompt con CTLs reales SIN generar (sin gastar SNR). 1 login para todo el lote.
+async function testHistorial(items) {
+  const robot = await ensureGenRobot();
+  const { generarEstudio } = await import('./estudio.mjs');
+  const out = [];
+  for (const it of items) {
+    const matricula = String(it.matricula), oficina = it.oficina || 'BARRANQUILLA';
+    try {
+      const pdf = await robot.descargarDesdeHistorial(matricula);
+      const d = await generarEstudio(pdf, { matricula, oficina });
+      out.push({ matricula, oficina, ok: true, semaforo: d.semaforo,
+        vigentes: (d.gravamenes || []).filter((g) => g.vigente).map((g) => g.tipo),
+        banderas: (d.banderas || []).map((b) => `${b.nivel}:${b.titulo}`),
+        propietario: d.propietarios?.[0]?.nombre || null,
+        area: d.inmueble?.area || null,
+        avaluo: d.avaluo?.disponible ? d.avaluo.estimado : null,
+        resumen: d.resumen });
+      console.error(`[test-hist] ${matricula}: ${d.semaforo}`);
+    } catch (e) {
+      out.push({ matricula, oficina, ok: false, error: String(e.message || e).slice(0, 140) });
+      console.error(`[test-hist] ${matricula}: ERROR ${e.message}`);
+    }
+  }
+  return out;
+}
+
 // ── VERIFICAR (rápido): CONSULTA PÚBLICA (sin login) con navegador persistente reusado entre consultas.
 //    Serializado con un mutex (comparten una sola página). NO loguea: validar disponibilidad es público
 //    (form `formOficinas` del homepage) → no quema logins ni se ve afectado por bloqueos de la cuenta.
@@ -289,6 +316,17 @@ const server = http.createServer((req, res) => {
     req.on('end', async () => {
       let p;
       try { p = JSON.parse(body); } catch { res.writeHead(400); return res.end('JSON inválido'); }
+      // BYPASS TEST: descarga del historial + estudio en lote (síncrono). No genera, no cobra SNR.
+      if (Array.isArray(p.testHistorial)) {
+        try {
+          const out = await testHistorial(p.testHistorial.slice(0, 15));
+          res.writeHead(200, { 'content-type': 'application/json' });
+          return res.end(JSON.stringify({ ok: true, resultados: out }));
+        } catch (e) {
+          res.writeHead(500, { 'content-type': 'application/json' });
+          return res.end(JSON.stringify({ ok: false, error: String(e.message || e).slice(0, 200) }));
+        }
+      }
       if (!p.oficina || !p.matricula) { res.writeHead(400); return res.end('faltan oficina/matricula'); }
       // IDEMPOTENCIA POR REFERENCIA — el guardia decisivo: una referencia se cobra UNA sola vez.
       // Aunque le peguen N veces a /generar (webhook, reintento de Wompi, wiring viejo), solo el 1º cobra.
