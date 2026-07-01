@@ -19,7 +19,10 @@ export async function extraerTextoCTL(pdfBuffer) {
   // 1) intentar texto directo
   let texto = '';
   try {
-    const pdfParse = (await import('pdf-parse')).default;
+    // OJO: importar el submódulo interno, NO 'pdf-parse' (su index.js tiene un "debug mode" que al
+    // cargarse intenta leer ./test/data/05-versions-space.pdf → ENOENT → rompía la extracción de texto
+    // y forzaba OCR de visión para TODO CTL). El lib interno es el parser puro.
+    const pdfParse = (await import('pdf-parse/lib/pdf-parse.js')).default;
     const r = await pdfParse(pdfBuffer);
     texto = (r.text || '').trim();
   } catch (e) { console.error('[estudio] pdf-parse falló:', e.message); }

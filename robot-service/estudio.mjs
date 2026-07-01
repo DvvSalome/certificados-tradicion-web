@@ -4,10 +4,20 @@ import { nimChat } from './nim-client.mjs';
 
 const SYS = `Eres un analista jurídico inmobiliario en Colombia. Recibes el TEXTO de un Certificado de Tradición
 y Libertad (CTL) y produces un "Estudio de Títulos" claro para un comprador no experto. Analiza SOLO lo que el
-texto dice (no inventes). Identifica propietarios actuales, la cadena de tradición, y los gravámenes/limitaciones
-VIGENTES (hipotecas, embargos, patrimonio de familia, afectación a vivienda familiar, demandas, falsa tradición,
-servidumbres). Marca banderas de riesgo (rojo = grave: embargo/demanda/extinción/falsa tradición; amarillo =
-atención: hipoteca vigente, patrimonio de familia). Devuelve EXCLUSIVAMENTE un JSON con esta forma exacta:
+texto dice (no inventes).
+
+CRÍTICO — CANCELACIONES (lo más importante): las anotaciones van NUMERADAS en orden cronológico. Cuando una
+anotación dice «Se cancela anotación No: X», o su especificación es una CANCELACION (p. ej. "CANCELACION DE
+HIPOTECA", "CANCELACION DE EMBARGO", "CANCELACION DEMANDA", "CANCELACION AFECTACION A VIVIENDA FAMILIAR"),
+entonces la anotación X y su gravamen/medida/limitación quedan SIN EFECTO: NO está vigente. Un
+gravamen/embargo/demanda/limitación SOLO está vigente si NINGUNA anotación POSTERIOR lo cancela. Recorre TODAS
+las anotaciones de principio a fin (incluidas las MÁS RECIENTES al final) y reporta en "gravamenes"/"banderas"
+ÚNICAMENTE lo que siga vigente hoy. Si una hipoteca/embargo/demanda vieja fue cancelada, NO la reportes.
+
+Identifica propietarios actuales, la cadena de tradición, y los gravámenes/limitaciones VIGENTES (hipotecas,
+embargos, patrimonio de familia, afectación a vivienda familiar, demandas, falsa tradición, servidumbres). Marca
+banderas de riesgo (rojo = grave: embargo/demanda/extinción/falsa tradición VIGENTE; amarillo = atención:
+hipoteca vigente, patrimonio de familia). Devuelve EXCLUSIVAMENTE un JSON con esta forma exacta:
 {
   "inmueble": { "matricula": string, "direccion": string|null, "circulo": string|null, "area": string|null },
   "propietarios": [ { "nombre": string, "identificacion": string|null, "modo": string, "anotacion": string|null } ],
@@ -22,7 +32,9 @@ Reglas del semáforo: rojo si hay alguna bandera roja; amarillo si solo hay amar
 
 export async function generarEstudio(pdfBuffer, { matricula, oficina }) {
   const texto = await extraerTextoCTL(pdfBuffer);
-  const user = `Matrícula: ${matricula} · Oficina: ${oficina}\n\nTEXTO DEL CTL:\n${texto.slice(0, 24000)}`;
+  // CTL completo (antes cortaba en 24000 chars ≈ media hoja → se perdía el final, donde suelen estar las
+  // cancelaciones y las medidas más recientes). llama-3.3-70b tiene contexto de 128k tokens; 120k chars caben.
+  const user = `Matrícula: ${matricula} · Oficina: ${oficina}\n\nTEXTO DEL CTL (léelo COMPLETO, las cancelaciones y medidas recientes están al final):\n${texto.slice(0, 120000)}`;
   const raw = await nimChat([{ role: 'system', content: SYS }, { role: 'user', content: user }], { json: true, maxTokens: 3000 });
   let data;
   try { data = JSON.parse(raw); } catch { data = JSON.parse((raw.match(/\{[\s\S]*\}/) || ['{}'])[0]); }
