@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import OficinaSelect from './OficinaSelect';
 import { PLANS, formatCOP, type PlanId } from '@/lib/config';
 
@@ -60,15 +60,19 @@ export default function CheckoutForm() {
     } catch (e) {}
   }, []);
 
+  const inFlight = useRef(false);
   async function validarMatricula(silent = false) {
     if (!oficina || !matricula.trim()) {
       if (!silent) setError('Por favor selecciona la oficina de registro e ingresa la matrícula inmobiliaria primero.');
       return;
     }
+    // Guard: no lanzar validaciones duplicadas simultáneas (el debounce + onBlur podían disparar varias).
+    if (inFlight.current) return;
+    inFlight.current = true;
     setError(null);
     setValidating(true);
     setVResult(null);
-    
+
     try {
       const r = await fetch('/api/validar', {
         method: 'POST', headers: { 'content-type': 'application/json' },
@@ -79,6 +83,7 @@ export default function CheckoutForm() {
     } catch {
       setVResult({ disponible: null, estado: null, direccion: null, circulo: null, error: 'Error de red al consultar' });
     } finally {
+      inFlight.current = false;
       setValidating(false);
     }
   }

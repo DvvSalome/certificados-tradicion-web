@@ -29,7 +29,7 @@ export function rateLimited(ip: string): boolean {
 }
 
 async function getCached(oficina: string, matricula: string): Promise<VerifyResult | null> {
-  if (process.env.VERCEL || !process.env.DATABASE_URL) return null;
+  if (!process.env.DATABASE_URL) return null;
   const { rows } = await getPool().query(
     `SELECT disponible, estado, direccion, circulo FROM verificaciones
      WHERE oficina = $1 AND matricula = $2 AND checked_at > now() - ($3 || ' hours')::interval`,
@@ -41,7 +41,7 @@ async function getCached(oficina: string, matricula: string): Promise<VerifyResu
 }
 
 async function setCached(oficina: string, matricula: string, r: VerifyResult): Promise<void> {
-  if (process.env.VERCEL || !process.env.DATABASE_URL) return;
+  if (!process.env.DATABASE_URL) return;
   await getPool().query(
     `INSERT INTO verificaciones (oficina, matricula, disponible, estado, direccion, circulo, checked_at)
      VALUES ($1,$2,$3,$4,$5,$6, now())
@@ -52,26 +52,39 @@ async function setCached(oficina: string, matricula: string, r: VerifyResult): P
   );
 }
 
-// @ts-ignore
-import { consultaHttp } from '../robot-service/snr-consulta-http.mjs';
+// La consulta al SNR CORRE EN EL VPS (robot /verificar vía puente), NO en Vercel. Correrla dentro de Vercel
+// (EE.UU.) contra el portal del SNR (Colombia) se cuelga 20s+; en el VPS son ~800ms. Puente en el web de
+// EasyPanel: certificados.fourgsolutions.com/api/verificar → certificados_robot:3000/verificar.
+const VERIFY_BRIDGE = 'https://certificados.fourgsolutions.com/api/verificar';
 
-// Caché primero; si no, consulta directa por HTTP.
+// Caché primero; si no, consulta al VPS (rápido) y cachea el resultado conclusivo.
 export async function verificar(oficina: string, matricula: string): Promise<VerifyResult> {
   const cached = await getCached(oficina, matricula);
   if (cached) return cached;
-  
+
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 15000);
   try {
-    const info = await consultaHttp(oficina, matricula);
+    const res = await fetch(VERIFY_BRIDGE, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-webhook-secret': SECRET },
+      body: JSON.stringify({ oficina, matricula }),
+      signal: ctrl.signal,
+    });
+    if (!res.ok) return { disponible: null, estado: null, direccion: null, circulo: null, cached: false, error: 'verificar ' + res.status };
+    const info = await res.json();
     const fresh: VerifyResult = {
       disponible: !!info.disponible,
       estado: info.estado ?? null,
       direccion: info.direccion ?? null,
       circulo: info.circulo ?? null,
-      cached: false
+      cached: false,
     };
     if (fresh.estado && fresh.disponible) await setCached(oficina, matricula, fresh).catch(() => {});
     return fresh;
   } catch (e) {
     return { disponible: null, estado: null, direccion: null, circulo: null, cached: false, error: String(e).slice(0, 120) };
+  } finally {
+    clearTimeout(t);
   }
 }
