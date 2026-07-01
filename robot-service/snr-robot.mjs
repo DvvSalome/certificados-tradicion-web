@@ -303,15 +303,24 @@ export class SnrRobot {
   // descarga, filas, texto y HTML de las primeras filas) para entender cómo descargar CTLs viejos.
   async debugHistorial() {
     const p = this.page;
-    await this.ensureLoggedIn();
-    await p.goto(URL_HIST, { waitUntil: 'networkidle', timeout: 30000 });
+    const steps = [];
+    steps.push('url inicial: ' + p.url());
+    let logged = null;
+    try { logged = await this.isLoggedIn(); } catch (e) { steps.push('isLoggedIn ERROR: ' + e.message); }
+    steps.push(`isLoggedIn()=${logged} · url tras check: ${p.url()}`);
+    if (!logged) {
+      try { await this.login(); steps.push('login() OK · url: ' + p.url()); }
+      catch (e) { steps.push(`login() ERROR [${e.code || ''}]: ${e.message}`); }
+    }
+    await p.goto(URL_HIST, { waitUntil: 'networkidle', timeout: 30000 }).catch((e) => steps.push('goto hist ERROR: ' + e.message));
     await p.waitForTimeout(2500);
+    steps.push('url historial final: ' + p.url());
     const dlLinks = await p.locator(S.dlCertLink).count().catch(() => -1);
     const rows = await p.locator('tr').count().catch(() => -1);
     const inputs = await p.locator('input, select, button').evaluateAll((els) => els.map((e) => ({ tag: e.tagName, id: e.id, name: e.name, type: e.type, ph: e.placeholder, title: e.title, txt: (e.textContent || '').trim().slice(0, 30) })).filter((x) => x.id || x.name || x.title).slice(0, 40)).catch(() => []);
     const bodyText = await p.locator('body').innerText().then((t) => t.replace(/\s+/g, ' ').slice(0, 1800)).catch(() => '');
     const firstRows = await p.locator('table tr').evaluateAll((trs) => trs.slice(0, 5).map((tr) => tr.innerHTML.replace(/\s+/g, ' ').slice(0, 400))).catch(() => []);
-    return { title: await p.title().catch(() => ''), url: p.url(), dlLinks, rows, inputs, bodyText, firstRows };
+    return { steps, title: await p.title().catch(() => ''), url: p.url(), dlLinks, rows, inputs, bodyText, firstRows };
   }
 
   // Flujo completo. dryRun=true se detiene ANTES de Pagar (gratis, validable).
