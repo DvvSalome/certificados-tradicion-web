@@ -7,10 +7,10 @@ import { Seal } from './Brand';
 // marca + globo de mensaje; enlaza a wa.me con un texto predeterminado. El globo se puede cerrar
 // y recuerda la preferencia (localStorage).
 //
-// Se muestra en sm+ (desktop/tablet). En móvil hay una barra de compra FIJA abajo y el botón
-// taparía el CTA, así que ahí no se renderiza (el WhatsApp queda en el footer del sitio).
+// En móvil se sube (bottom-40) para no tapar la barra de compra FIJA de abajo.
+// Mensaje predeterminado SIN emoji (evita el "�" que salía en WhatsApp) y orientado a servicios.
 const WA_URL = `https://wa.me/573212258245?text=${encodeURIComponent(
-  '¡Hola! 👋 Quiero información sobre mi Certificado de Tradición y Libertad.',
+  'Hola, quiero conocer más sobre sus servicios.',
 )}`;
 
 export default function WhatsAppWidget() {
@@ -30,9 +30,9 @@ export default function WhatsAppWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 right-5 z-[60] hidden flex-col items-end gap-3 sm:flex print:hidden">
+    <div className="fixed bottom-40 right-4 z-[60] flex flex-col items-end gap-3 sm:bottom-6 sm:right-5 print:hidden">
       {showBubble && (
-        <div className="ctl-fade-up relative w-[250px] rounded-2xl rounded-br-md border border-black/5 bg-white px-4 py-3.5 shadow-[0_16px_44px_-10px_rgba(13,27,42,0.4)]">
+        <div className="ctl-fade-up relative w-[250px] rounded-2xl border border-black/5 bg-white px-4 py-3.5 shadow-[0_16px_44px_-10px_rgba(13,27,42,0.4)]">
           <button
             type="button"
             onClick={dismiss}
@@ -46,9 +46,11 @@ export default function WhatsAppWidget() {
           <a href={WA_URL} target="_blank" rel="noopener noreferrer" onClick={() => setShowBubble(false)} className="flex items-start gap-2.5">
             <span className="mt-0.5 shrink-0"><Seal size={22} tone="onLight" /></span>
             <p className="text-[13.5px] leading-snug text-[var(--foreground)]">
-              ¡Hola! <span aria-hidden="true">💜</span> ¿Necesitas tu Certificado de Tradición y Libertad? Escríbenos por WhatsApp.
+              ¡Hola! <span aria-hidden="true">💜</span> ¿Quieres conocer todos nuestros servicios? Escríbenos por WhatsApp y te asesoramos.
             </p>
           </a>
+          {/* Colita del globo apuntando al botón (speech-bubble tail) */}
+          <span className="absolute -bottom-1.5 right-7 size-3 rotate-45 border-b border-r border-black/5 bg-white" />
         </div>
       )}
 
