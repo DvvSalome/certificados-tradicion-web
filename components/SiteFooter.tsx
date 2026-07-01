@@ -36,6 +36,17 @@ export default function SiteFooter() {
             Servicio privado de gestión documental. No formamos parte del Gobierno de Colombia ni de GOV.CO;
             actuamos como intermediarios para facilitar tu solicitud ante la autoridad competente.
           </p>
+          <p className="mt-3 text-xs text-white/55">
+            Calle 80 B #42 D, Barranquilla ·{' '}
+            <a
+              href="https://wa.me/573212258245"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-white/80 transition-colors hover:text-white"
+            >
+              WhatsApp 321 225 8245
+            </a>
+          </p>
           <p className="mt-3 text-xs text-white/40">© 2026 Certitradición · Pago seguro procesado por Wompi</p>
         </div>
       </div>
