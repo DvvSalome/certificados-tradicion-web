@@ -413,11 +413,10 @@ export default function CheckoutForm() {
           })}
         </div>
 
-      </div>
-
-      {/* FOOTER: fijo abajo en móvil (CTA siempre visible); en flujo normal en desktop (no flota/se sale). */}
-      <div className="fixed inset-x-0 bottom-0 z-40 sm:static sm:mt-6">
-        <div className="w-full rounded-t-3xl sm:rounded-[28px] border-t sm:border border-gray-200 bg-white p-4 sm:p-6 shadow-[0_-10px_40px_rgba(0,0,0,0.08)] sm:shadow-sm">
+        {/* FOOTER: en móvil = barra FIJA abajo (CTA siempre visible). En desktop = sección final DENTRO de la
+            tarjeta, separada por un borde superior (ya NO una tarjeta blanca flotando aparte). */}
+        <div className="fixed inset-x-0 bottom-0 z-40 sm:static sm:mt-8 sm:border-t sm:border-gray-200 sm:pt-6">
+          <div className="w-full rounded-t-3xl bg-white p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.08)] sm:rounded-none sm:bg-transparent sm:p-0 sm:shadow-none">
           <div className="mx-auto flex max-w-7xl flex-col sm:flex-row sm:items-center justify-between gap-4">
             
             <div className="hidden sm:flex items-center gap-8">
@@ -470,6 +469,7 @@ export default function CheckoutForm() {
             
           </div>
         </div>
+      </div>
       </div>
 
       {/* MODALS */}
