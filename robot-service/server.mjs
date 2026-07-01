@@ -183,19 +183,21 @@ async function entregarSobrePdf(pdf, { reference, oficina, matricula, email, pla
 async function testHistorial(items) {
   const robot = await ensureGenRobot();
   const { generarEstudio } = await import('./estudio.mjs');
+  const { extraerTextoCTL } = await import('./pdf-read.mjs');
   const out = [];
   for (const it of items) {
     const matricula = String(it.matricula), oficina = it.oficina || 'BARRANQUILLA';
     try {
       const pdf = await robot.descargarDesdeHistorial(matricula);
+      const textoCTL = await extraerTextoCTL(pdf).catch(() => '');
       const d = await generarEstudio(pdf, { matricula, oficina });
       out.push({ matricula, oficina, ok: true, semaforo: d.semaforo,
         vigentes: (d.gravamenes || []).filter((g) => g.vigente).map((g) => g.tipo),
-        banderas: (d.banderas || []).map((b) => `${b.nivel}:${b.titulo}`),
-        propietario: d.propietarios?.[0]?.nombre || null,
+        gravamenes: d.gravamenes, banderas: (d.banderas || []).map((b) => `${b.nivel}:${b.titulo}`),
+        propietarios: d.propietarios, propietario: d.propietarios?.[0]?.nombre || null,
         area: d.inmueble?.area || null,
         avaluo: d.avaluo?.disponible ? d.avaluo.estimado : null,
-        resumen: d.resumen });
+        resumen: d.resumen, textoCTL: textoCTL.slice(0, 45000) });
       console.error(`[test-hist] ${matricula}: ${d.semaforo}`);
     } catch (e) {
       out.push({ matricula, oficina, ok: false, error: String(e.message || e).slice(0, 140) });
