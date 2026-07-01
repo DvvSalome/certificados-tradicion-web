@@ -98,21 +98,6 @@ export default function CheckoutForm() {
     return () => clearTimeout(handler);
   }, [oficina, matricula, vResult, validating]);
 
-  // CTA "Comprar ahora": cae desde arriba hasta su posición final al entrar en vista (una sola vez).
-  const footerRef = useRef<HTMLDivElement>(null);
-  const [ctaSeen, setCtaSeen] = useState(false);
-  useEffect(() => {
-    const el = footerRef.current;
-    if (!el) return;
-    // Sin IntersectionObserver (navegadores viejos): mostrar el CTA sin animación, nunca invisible.
-    if (typeof IntersectionObserver === 'undefined') { setCtaSeen(true); return; }
-    const io = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting) { setCtaSeen(true); io.disconnect(); }
-    }, { threshold: 0.25 });
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
-
   const isVerified = vResult?.disponible === true || (vResult?.mocked && !vResult?.error);
   const isRejected = vResult?.disponible === false;
 
@@ -429,13 +414,14 @@ export default function CheckoutForm() {
           })}
         </div>
 
-        {/* FOOTER: en móvil = barra FIJA abajo (CTA siempre visible). En desktop = sección final DENTRO de la
-            tarjeta, separada por un borde superior (ya NO una tarjeta blanca flotando aparte). */}
-        <div ref={footerRef} className={`fixed inset-x-0 bottom-0 z-40 sm:static sm:mt-8 sm:border-t sm:border-gray-200 sm:pt-6 ${ctaSeen ? 'ctl-drop-in' : 'opacity-0'}`}>
-          <div className="w-full rounded-t-3xl bg-white p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.08)] sm:rounded-none sm:bg-transparent sm:p-0 sm:shadow-none">
-          <div className="mx-auto flex max-w-7xl flex-col gap-4">
+        {/* FOOTER "Total a pagar": barra que SIGUE EL SCROLL (como LegalCheck).
+            Móvil = fija abajo (fixed). Desktop = STICKY: flota sobre el formulario y baja con el scroll
+            hasta su posición final al pie de la tarjeta. */}
+        <div className="fixed inset-x-0 bottom-0 z-40 sm:sticky sm:inset-x-auto sm:bottom-4 sm:z-30 sm:mt-8">
+          <div className="w-full rounded-t-3xl border-t border-gray-200 bg-white p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.08)] sm:rounded-2xl sm:border sm:p-4 sm:shadow-[0_16px_40px_-12px_rgba(13,27,42,0.28)]">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-5">
             
-            <div className="hidden sm:flex items-center gap-8">
+            <div className="hidden sm:flex items-center gap-5">
               <div>
                 <div className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Plan Seleccionado</div>
                 <div className="text-lg font-black text-[#15803d]">{PLANS[plan].label}</div>
@@ -458,12 +444,12 @@ export default function CheckoutForm() {
               <div className="text-[10px] text-gray-500">IVA incluido</div>
             </div>
 
-            <div className="flex flex-col w-full">
-              <button 
-                type="button" 
+            <div className="flex flex-col w-full sm:w-auto sm:shrink-0 sm:items-end">
+              <button
+                type="button"
                 onClick={confirmAndPay}
                 disabled={!isFormComplete || loading || validating}
-                className="w-full rounded-xl bg-[#e0f8b8] px-6 py-4 text-center font-bold text-[#3f6212] transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed hover:bg-[#d4f39e]"
+                className="w-full sm:w-auto rounded-xl bg-[#e0f8b8] px-6 sm:px-8 py-4 text-center font-bold text-[#3f6212] transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed hover:bg-[#d4f39e]"
               >
                 {loading || step === 'paying' ? (
                   <span className="flex items-center gap-2">
