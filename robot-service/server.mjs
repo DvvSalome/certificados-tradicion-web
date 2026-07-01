@@ -57,6 +57,9 @@ function generar(job) {
 
 async function generarOne(job) {
   const { reference, oficina, matricula, email, plan } = job;
+  // BYPASS DE PRUEBA (gated por x-webhook-secret): si viene un PDF de prueba, NO tocamos el SNR ni el saldo —
+  // corremos el estudio + los 2 correos sobre ESE PDF. Para probar el flujo Express sin gastar un CTL real.
+  if (job.testPdfBase64) return entregarSobrePdf(Buffer.from(job.testPdfBase64, 'base64'), job);
   // Loop de FALLBACK por cuenta: si la cuenta activa se BLOQUEA, salta a otra. Acotado por nº de cuentas
   // (cada cuenta se intenta como máximo una vez). Los demás errores NO reintentan (igual que antes).
   for (let intentoCuenta = 0; ; intentoCuenta++) {
@@ -150,6 +153,29 @@ async function generarConCuenta(robot, cuenta, { reference, oficina, matricula, 
         await enviarAlerta('🟠 Estudio Express pendiente (reenviar manual)', `El CTL de ${matricula} (${oficina}) YA se entregó a ${email}, pero el Estudio de Títulos falló: ${ee.message}\nGenerar/reenviar el Estudio manual.`).catch(() => {});
       }
     }
+}
+
+// BYPASS DE PRUEBA: corre el estudio + los 2 correos sobre un PDF dado, SIN SNR ni saldo. Best-effort.
+async function entregarSobrePdf(pdf, { reference, oficina, matricula, email, plan }) {
+  console.error(`[TEST] entrega de prueba sobre PDF (${pdf.length} bytes) · ${matricula} · plan ${plan} → ${email}`);
+  try {
+    const d = await entregarCorreo({ pdf, matricula, oficina, email, reference });
+    console.error(`[TEST] correo CTL: ${d.sent ? 'ENVIADO a ' + email + (d.withPreview ? ' (con preview)' : '') : 'NO (' + d.reason + ')'}`);
+  } catch (de) { console.error(`[TEST] correo CTL FALLÓ: ${de.message}`); }
+  if (plan === 'express') {
+    try {
+      const { generarEstudio } = await import('./estudio.mjs');
+      const { renderEstudioPdf } = await import('./estudio-pdf.mjs');
+      const fecha = new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date());
+      const data = await generarEstudio(pdf, { matricula, oficina });
+      try { const { chequearAlertas } = await import('./alertas.mjs'); data.alertas = await chequearAlertas(data.propietarios); } catch (ae) { console.error('[TEST] alertas: ' + ae.message); }
+      try { const { estimarAvaluo } = await import('./avaluo.mjs'); data.avaluo = estimarAvaluo({ area: data.inmueble?.area, ciudad: oficina }); } catch (ve) { console.error('[TEST] avaluo: ' + ve.message); }
+      const estudioPdf = await renderEstudioPdf(data, { matricula, oficina, fecha });
+      console.error(`[TEST] estudio OK (${estudioPdf.length} bytes, semáforo ${data.semaforo})`);
+      const de2 = await entregarEstudio({ estudio: estudioPdf, matricula, oficina, email });
+      console.error(`[TEST] correo Estudio: ${de2.sent ? 'ENVIADO a ' + email : 'NO (' + de2.reason + ')'}`);
+    } catch (ee) { console.error(`[TEST] estudio FALLÓ: ${ee.message}`); }
+  }
 }
 
 // ── VERIFICAR (rápido): CONSULTA PÚBLICA (sin login) con navegador persistente reusado entre consultas.
