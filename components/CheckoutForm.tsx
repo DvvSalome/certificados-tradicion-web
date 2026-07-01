@@ -417,7 +417,7 @@ export default function CheckoutForm() {
             tarjeta, separada por un borde superior (ya NO una tarjeta blanca flotando aparte). */}
         <div className="fixed inset-x-0 bottom-0 z-40 sm:static sm:mt-8 sm:border-t sm:border-gray-200 sm:pt-6">
           <div className="w-full rounded-t-3xl bg-white p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.08)] sm:rounded-none sm:bg-transparent sm:p-0 sm:shadow-none">
-          <div className="mx-auto flex max-w-7xl flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="mx-auto flex max-w-7xl flex-col gap-4">
             
             <div className="hidden sm:flex items-center gap-8">
               <div>
@@ -442,12 +442,12 @@ export default function CheckoutForm() {
               <div className="text-[10px] text-gray-500">IVA incluido</div>
             </div>
 
-            <div className="flex flex-col sm:items-end w-full sm:w-auto">
+            <div className="flex flex-col w-full">
               <button 
                 type="button" 
                 onClick={confirmAndPay}
                 disabled={!isFormComplete || loading || validating}
-                className="w-full sm:w-[300px] rounded-xl bg-[#e0f8b8] px-6 py-4 text-center font-bold text-[#3f6212] transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed hover:bg-[#d4f39e]"
+                className="w-full rounded-xl bg-[#e0f8b8] px-6 py-4 text-center font-bold text-[#3f6212] transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed hover:bg-[#d4f39e]"
               >
                 {loading || step === 'paying' ? (
                   <span className="flex items-center gap-2">
