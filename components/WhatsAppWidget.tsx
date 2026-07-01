@@ -30,7 +30,7 @@ export default function WhatsAppWidget() {
   };
 
   return (
-    <div className="fixed bottom-40 right-4 z-[60] flex flex-col items-end gap-3 sm:bottom-6 sm:right-5 print:hidden">
+    <div className="fixed bottom-44 right-4 z-[60] flex flex-col items-end gap-3 sm:bottom-6 sm:right-5 print:hidden">
       {showBubble && (
         <div className="ctl-fade-up relative w-[250px] rounded-2xl border border-black/5 bg-white px-4 py-3.5 shadow-[0_16px_44px_-10px_rgba(13,27,42,0.4)]">
           <button
