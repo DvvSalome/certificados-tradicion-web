@@ -26,7 +26,7 @@ hipoteca vigente, patrimonio de familia). Devuelve EXCLUSIVAMENTE un JSON con es
   "semaforo": "verde"|"amarillo"|"rojo",
   "resumen": string
 }
-Para "area": extrae el área del inmueble en metros cuadrados si aparece (secciones "AREA Y COEFICIENTE", "AREA PRIVADA" o "AREA CONSTRUIDA"), en formato "NN m2"; usa null si no aparece.
+Para "area": extrae el área del inmueble en m² si aparece llena (secciones "AREA Y COEFICIENTE", "AREA PRIVADA" o "AREA CONSTRUIDA"), formato "NN m2". Si esas casillas están VACÍAS pero en "MEDIDAS Y LINDEROS" / "CABIDA Y LINDEROS" hay dimensiones en metros de los lados del predio, ESTIMA el área aproximada (largo × ancho aproximados de los lados) y devuélvela como "NN m2 (estimada de linderos)". Solo usa null si no hay ninguna medida.
 Reglas del semáforo: rojo si hay alguna bandera roja; amarillo si solo hay amarillas; verde si no hay banderas.
 "resumen": 2-4 frases en español simple, directo al comprador. No incluyas texto fuera del JSON.`;
 
