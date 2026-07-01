@@ -52,7 +52,7 @@ export default function WhyUs() {
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <h2 className="max-w-2xl text-3xl font-extrabold leading-tight tracking-tight text-[var(--foreground)] sm:text-4xl lg:text-[2.6rem] lg:leading-[1.12]">
             ¿Por qué obtener tu certificado de tradición y libertad con{' '}
-            <span className="rounded-lg bg-[#a3e635] px-2 py-0.5 text-[var(--foreground)]">nosotros</span>?
+            <span className="rounded-lg bg-[var(--brand)] px-2 py-0.5 text-white">nosotros</span>?
           </h2>
           <p className="max-w-md text-[15px] leading-relaxed text-[var(--muted)]">
             Ofrecemos la forma más sencilla y segura de adquirir tu Certificado de Tradición directamente desde la oficina de supernotariado y registro.
@@ -65,7 +65,7 @@ export default function WhyUs() {
               key={b.t}
               className="flex flex-col gap-4 rounded-2xl border border-[var(--border)] bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
             >
-              <span className="grid size-11 place-items-center rounded-xl bg-[#a3e635] text-[var(--foreground)]">
+              <span className="grid size-11 place-items-center rounded-xl bg-[var(--brand)] text-white">
                 {b.icon}
               </span>
               <h3 className="text-lg font-bold text-[var(--foreground)]">{b.t}</h3>
