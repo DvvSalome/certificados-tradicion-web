@@ -84,7 +84,11 @@ export default function Home() {
               Documento oficial · validez 30 días
             </span>
             <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-[var(--foreground)] sm:text-5xl lg:text-[3.25rem] lg:leading-[1.1]">
-              Tu Certificado de Tradición y Libertad, <span className="text-[var(--brand)]"><RotatingTail phrases={['listo en minutos.', '100% oficial y al día.', 'directo a tu WhatsApp.', 'sin hacer filas.']} /></span>
+              Tu Certificado de Tradición y Libertad,
+              {/* Frase rotativa en su PROPIA línea con altura reservada (2 líneas en móvil/tablet, 1 en desktop)
+                  → el <h1> mide siempre igual al cambiar de frase, así la página NO salta.
+                  Nota: mantener cada frase a 1 línea en desktop para que no reaparezca el salto. */}
+              <span className="block min-h-[2.5em] text-[var(--brand)] lg:min-h-[1.35em]"><RotatingTail phrases={['listo en minutos.', '100% oficial y al día.', 'directo a tu WhatsApp.', 'sin hacer filas.']} /></span>
             </h1>
             <p className="max-w-lg text-base sm:text-[17px] leading-relaxed text-[var(--muted)]">
               Descarga tu certificado de libertad expedido por la <span className="font-semibold text-[var(--brand)]">Superintendencia de Notariado y Registro</span> en segundos. Entrega por WhatsApp y correo, pago seguro por PSE.
