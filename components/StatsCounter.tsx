@@ -72,9 +72,12 @@ export default function StatsCounter() {
     if (typeof IntersectionObserver === 'undefined') { setSeen(true); return; }
     const io = new IntersectionObserver(([e]) => {
       if (e.isIntersecting) { setSeen(true); io.disconnect(); }
-    }, { threshold: 0.4 });
+    }, { threshold: 0.25 });
     io.observe(el);
-    return () => io.disconnect();
+    // Salvavidas: si el observer no dispara (jank, casos raros), mostrar igual a los 3.5s
+    // para que los números nunca queden atascados en 0.
+    const fallback = setTimeout(() => setSeen(true), 3500);
+    return () => { io.disconnect(); clearTimeout(fallback); };
   }, []);
 
   const reportes = useCountUp(stats?.reportes ?? 0, seen && !!stats);
