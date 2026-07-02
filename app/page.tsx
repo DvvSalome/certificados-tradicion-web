@@ -137,7 +137,7 @@ export default function Home() {
       <section id="comprar" className="scroll-mt-24 border-t border-[var(--border)] bg-white py-14 lg:py-20">
         <div className="mx-auto flex max-w-6xl flex-col gap-12 px-4 sm:px-6">
           <div className="mx-auto flex max-w-3xl flex-col items-center gap-4 text-center">
-            <p className="font-bold text-[12px] tracking-widest uppercase text-[var(--brand)]">Antes de empezar</p>
+            <p className="text-lg font-extrabold uppercase tracking-widest text-[var(--brand)] sm:text-xl">Antes de empezar</p>
             <h2 className="text-3xl font-extrabold tracking-tight text-[var(--foreground)] sm:text-4xl">¿Cómo encuentro mi matrícula inmobiliaria?</h2>
             <p className="max-w-2xl text-[17px] leading-relaxed text-[var(--muted)]">
               Puedes ubicarla en un <b className="text-[var(--foreground)]">certificado de tradición y libertad anterior</b> o en tu <b className="text-[var(--foreground)]">factura de impuesto predial</b>. Busca el código de la oficina de registro y el número de matrícula, así:
@@ -145,8 +145,8 @@ export default function Home() {
             <img
               src="/como-encuentro-matricula.jpg"
               alt="Cómo ubicar la oficina de registro y la matrícula inmobiliaria en un certificado de tradición o en una factura de impuesto predial"
-              width={1400}
-              height={721}
+              width={1500}
+              height={833}
               loading="lazy"
               className="mt-2 h-auto w-full rounded-2xl border border-[var(--border)] shadow-md"
             />

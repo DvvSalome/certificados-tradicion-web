@@ -104,8 +104,8 @@ async function procesar(raw: string) {
     if (!row || !row.cert_pdf) {
       console.error(`[wa webhook] sin certificado autorizado para ${from}${ref ? ` (ref ${ref})` : ''}`);
       await enviarTexto(from, ref
-        ? 'No encuentro un certificado a nombre de este número de WhatsApp con esa referencia. Escríbenos desde el mismo número que registraste al pagar 🙏'
-        : 'Hola 👋 No veo un certificado asociado a este número. Si ya pagaste, escríbenos desde el mismo número de WhatsApp que pusiste al comprar.');
+        ? 'Mmm, no encuentro un certificado con esa referencia a nombre de este número 🤔. Verifica que sea la referencia de tu correo de confirmación (empieza por CTL-) y escríbeme desde el mismo número de WhatsApp con el que pagaste 🙏'
+        : '¡Hola! 👋 Soy el asistente de Certitradición 💜 Aún no veo un certificado a nombre de este número. Si ya hiciste tu pedido, envíame la referencia (empieza por CTL-) que está en tu correo de confirmación, o escríbeme desde el mismo número con el que pagaste. ¿Aún no lo solicitas? 👉 certitradicion.com');
       continue;
     }
     const cdKey = `${from}:${row.reference}`;
