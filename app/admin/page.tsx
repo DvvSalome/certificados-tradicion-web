@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getSession, getDashboard, getMetrics, SALDO_THRESHOLD_CENTS } from '@/lib/admin';
+import { getSession, getDashboard, getMetrics, getSnrStatus, SALDO_THRESHOLD_CENTS } from '@/lib/admin';
 import { formatCOP } from '@/lib/config';
 import LogoutButton from './LogoutButton';
 import BatchPanel from './BatchPanel';
@@ -26,7 +26,7 @@ const STATUS_LABEL: Record<string, string> = {
 export default async function AdminDashboard() {
   const role = await getSession();
   if (!role) redirect('/admin/login');
-  const [d, metrics] = await Promise.all([getDashboard(), getMetrics()]);
+  const [d, metrics, snr] = await Promise.all([getDashboard(), getMetrics(), getSnrStatus()]);
 
   // Estado del robot: sano si hubo OK reciente y no falló después.
   const robotOk = d.robot.lastOkAt && (!d.robot.lastError || (d.robot.lastOkAt >= (d.robot.lastRunAt ?? '')));
@@ -87,6 +87,31 @@ export default async function AdminDashboard() {
           <div className="rounded-xl border border-[#f3c2bd] bg-[#fdecec] px-4 py-3 text-[13px] text-[#b42318]">
             <span className="font-semibold">Último error del robot:</span> {d.robot.lastError}
           </div>
+        )}
+
+        {/* Estado del pool de cuentas SNR */}
+        {snr && snr.cuentas.length > 0 && (
+          <Card title="Cuentas SNR" hint={snr.updatedAt ? `actualizado ${ago(snr.updatedAt)}` : undefined}>
+            <div className="grid gap-3 p-3 sm:grid-cols-2">
+              {snr.cuentas.map((c) => {
+                const activa = c.user === snr.activa;
+                return (
+                  <div key={c.user} className="rounded-xl border border-[var(--border)] bg-white p-4">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-[13px] font-bold text-[var(--foreground)]">{c.user}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${c.disponible ? 'bg-[var(--accent-50)] text-[var(--accent)]' : 'bg-[#fdecec] text-[#b42318]'}`}>
+                        {c.disponible ? (activa ? 'ACTIVA' : 'disponible') : 'bloqueada'}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-[13px] text-[var(--foreground)]">
+                      Saldo: <span className="font-semibold">{c.saldoCents === null || c.saldoCents === undefined ? '—' : fmt(c.saldoCents)}</span>
+                    </p>
+                    {!c.disponible && c.reason && <p className="mt-0.5 text-[11px] text-[#b42318]">{c.reason}</p>}
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
         )}
 
         {/* Métricas · últimos 14 días */}

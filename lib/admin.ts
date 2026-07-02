@@ -149,6 +149,26 @@ export async function recordSaldo(saldoCents: number): Promise<{ saldoCents: num
   return { saldoCents, low: saldoCents < SALDO_THRESHOLD_CENTS };
 }
 
+// ── Estado del pool de cuentas SNR (lo empuja el robot a /api/admin/snr-status). ──
+export interface SnrStatus {
+  activa: string | null;
+  total: number;
+  cuentas: { user: string; disponible: boolean; saldoCents: number | null; cooldownUntil: number | null; reason: string | null }[];
+  updatedAt: string | null;
+}
+
+export async function getSnrStatus(): Promise<SnrStatus | null> {
+  if (!process.env.DATABASE_URL) return null;
+  try {
+    const { rows } = await getPool().query('SELECT data, updated_at FROM snr_status WHERE id = 1');
+    if (!rows[0]) return null;
+    const d = rows[0].data as { activa?: string; total?: number; cuentas?: SnrStatus['cuentas'] };
+    return { activa: d.activa ?? null, total: d.total ?? 0, cuentas: d.cuentas ?? [], updatedAt: iso(rows[0].updated_at) };
+  } catch {
+    return null; // la tabla aún no existe (el robot no ha empujado todavía)
+  }
+}
+
 // ── Métricas para gráficas: serie diaria de los últimos 14 días + tasa de éxito del robot. ──
 export interface Metrics {
   daily: { date: string; revenueCents: number; certs: number; fails: number }[];

@@ -327,4 +327,16 @@ server.listen(PORT, () => {
       .then((r) => { if (!r.ok) console.error('[reaper] HTTP ' + r.status); })
       .catch((e) => console.error('[reaper] ' + e.message));
   }, 10 * 60 * 1000);
+  // Estado del pool de cuentas SNR → panel (Vercel no alcanza al robot; se lo empujamos). Al arranque y c/10 min.
+  if (PANEL && SECRET) {
+    pushSnrStatus();
+    setInterval(pushSnrStatus, 10 * 60 * 1000);
+  }
 });
+
+function pushSnrStatus() {
+  const body = JSON.stringify({ total: totalCuentas(), activa: genAccount?.user || null, cuentas: estadoCuentas() });
+  fetch(`${PANEL}/api/admin/snr-status`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-webhook-secret': SECRET }, body })
+    .then((r) => { if (!r.ok) console.error('[snr-status] HTTP ' + r.status); })
+    .catch((e) => console.error('[snr-status] ' + e.message));
+}
