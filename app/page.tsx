@@ -1,7 +1,6 @@
 import CheckoutForm from '@/components/CheckoutForm';
 import SiteFooter from '@/components/SiteFooter';
 import { Seal, WompiLogo } from '@/components/Brand';
-import VideoPlayer from '@/components/VideoPlayer';
 import AnimatedCertificate from '@/components/AnimatedCertificate';
 import { RotatingTail } from '@/components/RotatingTail';
 import StatsCounter from '@/components/StatsCounter';
@@ -79,30 +78,21 @@ export default function Home() {
       </header>
 
       {/* ===== HERO ===== */}
-      <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 lg:flex-row lg:items-start lg:gap-10 lg:px-6 lg:py-10">
-        <div className="flex w-full flex-col gap-5 lg:w-7/12 lg:gap-5 lg:pr-8">
-          <div className="flex flex-col gap-3 lg:gap-3">
-            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[var(--brand-ring)] bg-[var(--brand-50)] px-3 py-1.5 text-xs font-semibold text-[var(--brand)]">
-              <span className="size-2 rounded-full bg-[var(--accent)]" /> 
-              Documento oficial · validez 30 días
-            </span>
-            <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-[var(--foreground)] sm:text-5xl lg:text-[3.25rem] lg:leading-[1.1]">
-              Tu Certificado de Tradición y Libertad,
-              {/* Frase rotativa en su PROPIA línea con altura reservada (2 líneas en móvil/tablet, 1 en desktop)
-                  → el <h1> mide siempre igual al cambiar de frase, así la página NO salta.
-                  Nota: mantener cada frase a 1 línea en desktop para que no reaparezca el salto. */}
-              <span className="block min-h-[2.5em] text-[var(--brand)] lg:min-h-[1.35em]"><RotatingTail phrases={['listo en minutos.', '100% oficial y al día.', 'directo a tu WhatsApp.', 'sin hacer filas.']} /></span>
-            </h1>
-            <p className="max-w-lg text-base sm:text-[17px] leading-relaxed text-[var(--muted)]">
-              Descarga tu certificado de libertad expedido por la <span className="font-semibold text-[var(--brand)]">Superintendencia de Notariado y Registro</span> en segundos. Entrega por WhatsApp y correo, pago seguro por PSE.
-            </p>
-          </div>
-          
-          <div className="w-full">
-            <CheckoutForm />
-          </div>
-
-          <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-[var(--muted-2)]">
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 lg:flex-row lg:items-center lg:gap-12 lg:px-6 lg:py-14">
+        <div className="flex w-full flex-col gap-5 lg:w-7/12 lg:pr-8">
+          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[var(--brand-ring)] bg-[var(--brand-50)] px-3 py-1.5 text-xs font-semibold text-[var(--brand)]">
+            <span className="size-2 rounded-full bg-[var(--accent)]" />
+            Documento oficial · validez 30 días
+          </span>
+          <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-[var(--foreground)] sm:text-5xl lg:text-[3.25rem] lg:leading-[1.1]">
+            Tu Certificado de Tradición y Libertad,
+            {/* Frase rotativa en su PROPIA línea con altura reservada → el <h1> no salta al cambiar de frase. */}
+            <span className="block min-h-[2.5em] text-[var(--brand)] lg:min-h-[1.35em]"><RotatingTail phrases={['listo en minutos.', '100% oficial y al día.', 'directo a tu WhatsApp.', 'sin hacer filas.']} /></span>
+          </h1>
+          <p className="max-w-lg text-base sm:text-[17px] leading-relaxed text-[var(--muted)]">
+            Descarga tu certificado de libertad expedido por la <span className="font-semibold text-[var(--brand)]">Superintendencia de Notariado y Registro</span> en segundos. Entrega por WhatsApp y correo, pago seguro por PSE.
+          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-4 text-xs font-medium text-[var(--muted-2)]">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-white px-3 py-2 shadow-sm">
               <svg className="size-4 text-[var(--accent)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
               Cifrado SSL
@@ -118,17 +108,60 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="flex w-full flex-col lg:sticky lg:top-24 lg:w-5/12">
-          <div className="flex flex-col gap-2">
-            <VideoPlayer />
-            <p className="mt-4 text-center text-sm leading-relaxed text-[var(--muted-2)] px-4">
-              Haz clic en el video para escuchar
-            </p>
+        {/* Tarjeta del plan Básico con botón Pagar → baja a la sección de solicitud */}
+        <div className="w-full lg:w-5/12">
+          <div className="rounded-3xl border-2 border-[var(--brand)] bg-white p-7 shadow-xl sm:p-8">
+            <p className="text-xs font-bold uppercase tracking-wide text-[var(--brand)]">Plan Básico</p>
+            <p className="mt-1 text-sm text-[var(--muted)]">{PLANS.basico.tagline}</p>
+            <p className="mt-4 text-5xl font-extrabold tracking-tight text-[var(--foreground)]">{formatCOP(PLANS.basico.priceCop)}</p>
+            <p className="mt-1 text-xs text-[var(--muted-2)]">IVA incluido · pago único</p>
+            <ul className="mt-5 flex flex-col gap-2.5 border-t border-black/5 pt-5">
+              {PLANS.basico.features.map((f, i) => (
+                <li key={i} className="flex items-start gap-2.5 text-[14px] text-[var(--muted)]">
+                  <svg className="mt-0.5 size-4 shrink-0 text-[var(--brand)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                  {f}
+                </li>
+              ))}
+            </ul>
+            <a href="#comprar" className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-[var(--brand)] py-4 text-lg font-bold text-white shadow-lg transition hover:bg-[var(--brand-600)]">
+              Pagar
+              <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            </a>
+            <p className="mt-3 text-center text-xs text-[var(--muted-2)]">Pago seguro con Wompi · tarjeta o PSE</p>
           </div>
         </div>
       </main>
-      
-      <div className="h-10"></div>
+
+      <div className="h-4"></div>
+
+      {/* ===== SOLICITAR: ¿cómo encuentro mi matrícula? + formulario de pago ===== */}
+      <section id="comprar" className="scroll-mt-24 border-t border-[var(--border)] bg-white py-14 lg:py-20">
+        <div className="mx-auto flex max-w-4xl flex-col gap-12 px-4 sm:px-6">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <p className="font-bold text-[12px] tracking-widest uppercase text-[var(--brand)]">Antes de empezar</p>
+            <h2 className="text-3xl font-extrabold tracking-tight text-[var(--foreground)] sm:text-4xl">¿Cómo encuentro mi matrícula inmobiliaria?</h2>
+            <p className="max-w-2xl text-[17px] leading-relaxed text-[var(--muted)]">
+              Puedes ubicarla en un <b className="text-[var(--foreground)]">certificado de tradición y libertad anterior</b> o en tu <b className="text-[var(--foreground)]">factura de impuesto predial</b>. Busca el código de la oficina de registro y el número de matrícula, así:
+            </p>
+            <img
+              src="/como-encuentro-matricula.jpg"
+              alt="Cómo ubicar la oficina de registro y la matrícula inmobiliaria en un certificado de tradición o en una factura de impuesto predial"
+              width={1400}
+              height={721}
+              loading="lazy"
+              className="mt-2 h-auto w-full rounded-2xl border border-[var(--border)] shadow-md"
+            />
+          </div>
+
+          <div className="flex flex-col gap-5">
+            <div className="text-center">
+              <h2 className="text-2xl font-extrabold tracking-tight text-[var(--foreground)] sm:text-3xl">Solicita tu certificado</h2>
+              <p className="mt-1 text-[15px] text-[var(--muted)]">Completa el formulario y recíbelo en minutos.</p>
+            </div>
+            <CheckoutForm />
+          </div>
+        </div>
+      </section>
 
       {/* ===== PRUEBA SOCIAL (contador vivo, escala por visita) ===== */}
       <StatsCounter />

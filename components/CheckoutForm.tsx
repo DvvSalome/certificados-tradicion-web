@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import OficinaSelect from './OficinaSelect';
-import MatriculaHelpModal from './MatriculaHelpModal';
 import { oficinaCode } from '@/lib/oficinas';
 import { PLANS, formatCOP, type PlanId } from '@/lib/config';
 
@@ -45,7 +44,6 @@ export default function CheckoutForm() {
   const [vResult, setVResult] = useState<VResult | null>(null);
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
-  const [showMatriculaHelp, setShowMatriculaHelp] = useState(false);
 
   // Load saved data
   useEffect(() => {
@@ -243,13 +241,7 @@ export default function CheckoutForm() {
             <OficinaSelect value={oficina} onChange={(v) => { setOficina(v); setVResult(null); setError(null); }} />
           </label>
           <label>
-            <span className={`${labelCls} flex items-center justify-between gap-2`}>
-              <span>Matrícula inmobiliaria <span className="text-red-500">*</span></span>
-              <button type="button" onClick={() => setShowMatriculaHelp(true)} className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--brand)] hover:underline">
-                <svg className="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                ¿Cómo la encuentro?
-              </button>
-            </span>
+            <span className={labelCls}>Matrícula inmobiliaria <span className="text-red-500">*</span></span>
             <input
               value={matricula}
               onChange={(e) => { setMatricula(e.target.value.replace(/\D/g, '')); setVResult(null); setError(null); }}
@@ -484,7 +476,6 @@ export default function CheckoutForm() {
       </div>
 
       {/* MODALS */}
-      <MatriculaHelpModal open={showMatriculaHelp} onClose={() => setShowMatriculaHelp(false)} />
       {showTerms && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
           <div className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">

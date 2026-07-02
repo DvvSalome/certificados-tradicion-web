@@ -1,4 +1,4 @@
-export const PRICE_COP = Number(process.env.PRICE_BASICO_COP || process.env.PRICE_COP || 39800);
+export const PRICE_COP = Number(process.env.PRICE_BASICO_COP || process.env.PRICE_COP || 38900);
 export const AMOUNT_IN_CENTS = PRICE_COP * 100;
 export const CURRENCY = 'COP';
 export const SITE_NAME = 'Certificado de Tradición y Libertad';
@@ -9,7 +9,7 @@ export interface Plan { id: PlanId; label: string; tagline: string; priceCop: nu
 export const PLANS: Record<PlanId, Plan> = {
   basico: {
     id: 'basico', label: 'Básico', tagline: 'Ideal si solo necesitas el documento oficial',
-    priceCop: Number(process.env.PRICE_BASICO_COP || 39800),
+    priceCop: Number(process.env.PRICE_BASICO_COP || 38900),
     features: ['Certificado de Tradición y Libertad (PDF oficial)', 'Entrega por correo en minutos', 'Validez 30 días'],
   },
   express: {
