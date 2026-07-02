@@ -62,7 +62,11 @@ export async function POST(req: Request) {
   if (!firmaValida(raw, req.headers.get('x-hub-signature-256') || '')) {
     return new Response('bad signature', { status: 401 });
   }
-  procesar(raw).catch((e) => console.error('[wa webhook] procesar:', e));
+  // IMPORTANTE (serverless): NO fire-and-forget. En Vercel la función se CONGELA al responder y mataría el
+  // procesamiento asíncrono → el mensaje llegaba pero la respuesta nunca se enviaba (por eso "dejó de
+  // contestar" al migrar de EasyPanel a Vercel). Awaiteamos antes de responder. Es rápido (1 query + 1 envío)
+  // y cabe holgado en el timeout del webhook de Meta.
+  await procesar(raw).catch((e) => console.error('[wa webhook] procesar:', e));
   return NextResponse.json({ ok: true });
 }
 
