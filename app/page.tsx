@@ -1,6 +1,7 @@
 import CheckoutForm from '@/components/CheckoutForm';
 import SiteFooter from '@/components/SiteFooter';
 import { Seal, WompiLogo } from '@/components/Brand';
+import VideoPlayer from '@/components/VideoPlayer';
 import AnimatedCertificate from '@/components/AnimatedCertificate';
 import { RotatingTail } from '@/components/RotatingTail';
 import StatsCounter from '@/components/StatsCounter';
@@ -132,7 +133,23 @@ export default function Home() {
         </div>
       </main>
 
-      <div className="h-4"></div>
+      {/* ===== VIDEO (presentación) ===== */}
+      <section className="border-t border-[var(--border)] bg-white py-12 lg:py-16">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-8 px-4 sm:px-6 lg:flex-row lg:justify-center lg:gap-14">
+          <div className="max-w-md text-center lg:text-left">
+            <p className="font-bold text-[12px] tracking-widest uppercase text-[var(--brand)]">En video</p>
+            <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-[var(--foreground)] sm:text-4xl">Así de fácil es obtener tu certificado</h2>
+            <p className="mt-3 text-[17px] leading-relaxed text-[var(--muted)]">Mira en segundos cómo funciona el servicio. Toca el video para escuchar.</p>
+            <a href="#comprar" className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[var(--brand)] px-6 py-3.5 font-bold text-white shadow-lg transition hover:bg-[var(--brand-600)]">
+              Solicitar ahora
+              <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            </a>
+          </div>
+          <div className="w-full max-w-[300px] sm:max-w-[340px]">
+            <VideoPlayer />
+          </div>
+        </div>
+      </section>
 
       {/* ===== SOLICITAR: ¿cómo encuentro mi matrícula? + formulario de pago ===== */}
       <section id="comprar" className="scroll-mt-24 border-t border-[var(--border)] bg-white py-14 lg:py-20">
