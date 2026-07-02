@@ -16,6 +16,13 @@ CREATE TABLE IF NOT EXISTS orders (
 
 CREATE INDEX IF NOT EXISTS orders_status_idx ON orders (status);
 
+-- PDFs efímeros guardados para reenvío por WhatsApp (se purgan a las CERT_PDF_TTL_HOURS, ver reaper).
+-- ALTER (no en el CREATE) porque se agregaron por migración sobre tablas existentes.
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS cert_pdf     BYTEA;        -- Certificado de Tradición (CTL)
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS cert_pdf_at  TIMESTAMPTZ;  -- cuándo se guardó el CTL
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS estudio_pdf  BYTEA;        -- Estudio de Títulos (plan Express)
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS attempts     INT NOT NULL DEFAULT 0; -- reintentos/anti-doble-alerta (reaper)
+
 -- Bitácora de generaciones del robot. El panel la usa para "certificados generados",
 -- costo real del SNR (columna Valor del historial) y estado del robot (última corrida).
 CREATE TABLE IF NOT EXISTS generations (

@@ -144,6 +144,10 @@ async function generarConCuenta(robot, cuenta, { reference, oficina, matricula, 
         catch (ve) { console.error(`[avaluo] ✕ ${matricula}: ${ve.message}`); }
         const estudioPdf = await renderEstudioPdf(data, { matricula, oficina, fecha });
         console.error(`[estudio] ✅ ${matricula} (${estudioPdf.length} bytes, semáforo ${data.semaforo}, alertas ${data.alertas?.coincidencias?.length ?? '-'}, avaluo ${data.avaluo?.disponible ? 'sí' : 'no'})`);
+        // Guardar el Estudio para poder reenviarlo por WhatsApp (Express manda AMBOS PDFs por el chat). Best-effort.
+        try {
+          if (PANEL && SECRET) await fetch(`${PANEL}/api/admin/cert`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-webhook-secret': SECRET }, body: JSON.stringify({ reference, estudioBase64: estudioPdf.toString('base64') }) });
+        } catch (pe) { console.error('[estudio] guardar PDF (WhatsApp) falló: ' + pe.message); }
         const de2 = await entregarEstudio({ estudio: estudioPdf, matricula, oficina, email });
         console.error(`[estudio] correo 2 ${matricula}: ${de2.sent ? 'ENVIADO a ' + email : 'NO enviado (' + de2.reason + ')'}`);
       } catch (ee) {

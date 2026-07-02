@@ -45,7 +45,7 @@ export async function POST(req: Request) {
   // historial de la cuenta SNR si alguna vez hace falta re-descargarlo. Somos enviadores, no archivadores.
   const ttlH = Number(process.env.CERT_PDF_TTL_HOURS || 48);
   const purged = await getPool().query(
-    `UPDATE orders SET cert_pdf = NULL
+    `UPDATE orders SET cert_pdf = NULL, estudio_pdf = NULL
        WHERE cert_pdf IS NOT NULL AND cert_pdf_at < now() - (($1 || ' hours')::interval)`,
     [String(ttlH)],
   );

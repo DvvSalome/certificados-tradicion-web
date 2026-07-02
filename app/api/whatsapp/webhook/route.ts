@@ -97,10 +97,10 @@ async function procesar(raw: string) {
     // un Buffer crudo llegaría corrupto como {"type":"Buffer",...}. Reconstruimos el Buffer con Buffer.from.
     const { rows } = ref
       ? await getPool().query<Cert>(
-          "SELECT reference, encode(cert_pdf,'base64') AS cert_pdf_b64, matricula FROM orders WHERE reference = $1 AND phone = $2 AND cert_pdf IS NOT NULL",
+          "SELECT reference, encode(cert_pdf,'base64') AS cert_pdf_b64, encode(estudio_pdf,'base64') AS estudio_pdf_b64, matricula FROM orders WHERE reference = $1 AND phone = $2 AND cert_pdf IS NOT NULL",
           [ref.toUpperCase(), from])
       : await getPool().query<Cert>(
-          "SELECT reference, encode(cert_pdf,'base64') AS cert_pdf_b64, matricula FROM orders WHERE phone = $1 AND cert_pdf IS NOT NULL ORDER BY cert_pdf_at DESC LIMIT 1",
+          "SELECT reference, encode(cert_pdf,'base64') AS cert_pdf_b64, encode(estudio_pdf,'base64') AS estudio_pdf_b64, matricula FROM orders WHERE phone = $1 AND cert_pdf IS NOT NULL ORDER BY cert_pdf_at DESC LIMIT 1",
           [from]);
     const row = rows[0];
     if (!row || !row.cert_pdf_b64) {
@@ -119,7 +119,19 @@ async function procesar(raw: string) {
         `Certificado-Tradicion-${row.matricula}.pdf`,
         `Aquí tienes tu Certificado de Tradición y Libertad (matrícula ${row.matricula}). ¡Gracias por usar Certitradición!`,
       );
-      console.error(`[wa webhook] ✅ PDF (${row.reference}, matrícula ${row.matricula}) enviado a ${from}`);
+      console.error(`[wa webhook] ✅ CTL (${row.reference}, matrícula ${row.matricula}) enviado a ${from}`);
+      // Express: si el pedido tiene Estudio de Títulos guardado, lo enviamos también como 2º documento.
+      if (row.estudio_pdf_b64) {
+        try {
+          await enviarDocumento(
+            from,
+            Buffer.from(row.estudio_pdf_b64, 'base64'),
+            `Estudio-Titulos-${row.matricula}.pdf`,
+            `Y aquí tu Estudio de Títulos: propietarios, gravámenes, banderas de riesgo y avalúo estimado. ⚖️ Análisis informativo, no reemplaza asesoría legal.`,
+          );
+          console.error(`[wa webhook] ✅ Estudio (${row.reference}) enviado a ${from}`);
+        } catch (ee) { console.error('[wa webhook] envío estudio falló:', (ee as Error).message); }
+      }
       marcarEnviado(cdKey);
     } catch (e) {
       console.error('[wa webhook] envío doc falló:', (e as Error).message);
@@ -128,4 +140,4 @@ async function procesar(raw: string) {
   }
 }
 
-type Cert = { reference: string; cert_pdf_b64: string; matricula: string };
+type Cert = { reference: string; cert_pdf_b64: string; estudio_pdf_b64: string | null; matricula: string };
