@@ -28,20 +28,36 @@ function parseArea(a) {
 }
 const fmt = (n) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(Math.round(n / 1000) * 1000);
 
-// estimarAvaluo({ area, ciudad }) → { disponible, ciudad, valorM2, areaM2, estimado, min, max, nota } | { disponible:false, motivo }
+// El $/m² BAJA con el tamaño (dilución del valor del suelo): un apartamento pequeño vale más por m² que
+// una casa/lote grande. Ajuste por tramos → estimado más realista que un promedio plano de ciudad.
+// ponytail: heurística por tramos; el upgrade real (precisión de perito) es integrar catastro por predio.
+function factorTamano(a) {
+  if (a <= 60) return 1.18;   // apto pequeño
+  if (a <= 120) return 1.0;   // apto / casa pequeña (referencia)
+  if (a <= 250) return 0.86;  // casa
+  if (a <= 600) return 0.72;  // casa grande / lote
+  return 0.6;                  // lote grande
+}
+
+// estimarAvaluo({ area, ciudad }) → { disponible, ciudad, valorM2, areaM2, estimado, min, max, metodologia, confianza, nota }
 export function estimarAvaluo({ area, ciudad } = {}) {
   const a = parseArea(area);
   if (!a) return { disponible: false, motivo: 'sin área del inmueble en el CTL (se requiere para estimar)' };
   const { v, ciudad: cMatch } = valorM2(ciudad);
-  const base = a * v;
+  const vAdj = Math.round(v * factorTamano(a) / 10000) * 10000;
+  const base = a * vAdj;
+  // Rango ±18% (más creíble que ±35%). Sin ciudad reconocida el estimado es más incierto → rango más amplio.
+  const spread = cMatch ? 0.18 : 0.28;
   return {
     disponible: true,
     ciudad: cMatch || ciudad || null,
-    valorM2: v,
+    valorM2: vAdj,
     areaM2: a,
     estimado: fmt(base),
-    min: fmt(base * 0.65),
-    max: fmt(base * 1.35),
-    nota: 'Estimado automatizado referencial basado en promedios de zona. No es un avalúo formal de un perito. El valor real depende de la ubicación específica, el estrato, el estado del inmueble y el mercado.',
+    min: fmt(base * (1 - spread)),
+    max: fmt(base * (1 + spread)),
+    metodologia: `${a} m² × ${fmt(vAdj)}/m² (referencia residencial${cMatch ? ' ' + cMatch : ''}, ajustada por tamaño)`,
+    confianza: cMatch ? 'media' : 'baja',
+    nota: 'Estimado automatizado referencial basado en promedios de zona ajustados por tamaño. No es un avalúo formal de un perito. El valor real depende de la ubicación exacta, el estrato, el estado del inmueble y el mercado.',
   };
 }

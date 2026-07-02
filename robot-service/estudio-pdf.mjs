@@ -11,7 +11,8 @@ export async function renderEstudioPdf(estudio, meta) {
     ctx = await browser.newContext();
     const page = await ctx.newPage();
     await page.setContent(estudioHtml(estudio, meta), { waitUntil: 'load' });
-    const pdf = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '0', bottom: '0', left: '0', right: '0' } });
+    // preferCSSPageSize → respeta @page (margen 0 en pág.1 a sangre, 14mm en las siguientes) y break-inside.
+    const pdf = await page.pdf({ printBackground: true, preferCSSPageSize: true });
     return Buffer.from(pdf);
   } finally { try { await ctx?.close(); } catch {} try { await browser.close(); } catch {} }
 }

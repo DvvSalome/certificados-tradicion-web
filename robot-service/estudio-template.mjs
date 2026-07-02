@@ -37,10 +37,24 @@ export function estudioHtml(e, { matricula, oficina, fecha }) {
   const V = e.avaluo;
   const avaluoHtml = !V || !V.disponible
     ? '<p class="muted">Estimado no disponible: no se pudo determinar el área del inmueble en el CTL.</p>'
-    : `<div class="avaluo"><div class="est">${esc(V.estimado)}</div><div class="rango">Rango referencial ${esc(V.min)} – ${esc(V.max)}</div><div class="muted" style="font-size:11.5px;margin-top:6px">Área ${esc(V.areaM2)} m²${V.ciudad ? ' · valor de referencia zona ' + esc(V.ciudad) : ''}. ${esc(V.nota)}</div></div>`;
+    : `<div class="avaluo">
+        <div class="av-top">
+          <div><div class="av-lbl">Valor comercial estimado</div><div class="est">${esc(V.estimado)}</div></div>
+          ${V.confianza ? `<div class="av-conf conf-${esc(V.confianza)}">confianza ${esc(V.confianza)}</div>` : ''}
+        </div>
+        <div class="av-range"><span class="av-min">${esc(V.min)}</span><div class="av-bar"><span></span></div><span class="av-max">${esc(V.max)}</span></div>
+        <div class="rango" style="margin-top:4px">Rango referencial de mercado</div>
+        ${V.metodologia ? `<div class="av-meto">📐 ${esc(V.metodologia)}</div>` : ''}
+        <div class="muted" style="font-size:11px;margin-top:8px;line-height:1.5">${esc(V.nota)}</div>
+      </div>`;
 
   return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><style>
   *{box-sizing:border-box;font-family:'Segoe UI',Arial,sans-serif} body{margin:0;color:#0D1B2A;font-size:13px;line-height:1.5}
+  /* Salto de página: página 1 a sangre (header morado pegado al borde); páginas siguientes con margen
+     para que el contenido no aparezca recortado contra el borde superior. Y ninguna tarjeta se parte. */
+  @page{size:A4;margin:14mm 0} @page :first{margin:0}
+  h2{break-after:avoid;page-break-after:avoid}
+  .sema,.resumen,.avaluo,.flag,li,table{break-inside:avoid;page-break-inside:avoid}
   .header{display:flex;align-items:center;gap:14px;background:#774B78;color:#fff;padding:22px 44px}
   .header .brand{font-weight:800;font-size:21px;letter-spacing:-.2px} .header .sub{font-size:10px;letter-spacing:.22em;color:rgba(255,255,255,.72);margin-top:2px}
   .header .meta{margin-left:auto;text-align:right;font-size:11px;color:rgba(255,255,255,.85);line-height:1.6}
@@ -57,7 +71,13 @@ export function estudioHtml(e, { matricula, oficina, fecha }) {
   .flag b{font-size:13px} .flag.rojo{border-color:#B42318;background:#FDECEC} .flag.amarillo{border-color:#B7791F;background:#FEF6E7} .flag.ok{border-color:#0F7A52;background:#E8F5EF} .flag.ok b{color:#0F7A52}
   .flag span{font-size:11.5px;color:#5B6B7E;margin-top:2px}
   .avaluo{background:#F7F5F9;border:1px solid #ECE6EE;border-radius:12px;padding:16px 18px;margin:8px 0}
-  .avaluo .est{font-size:26px;font-weight:800;color:#1B2A3A;letter-spacing:-.5px} .avaluo .rango{color:#774B78;font-weight:600;font-size:12.5px;margin-top:2px}
+  .avaluo .est{font-size:27px;font-weight:800;color:#1B2A3A;letter-spacing:-.5px;margin-top:2px} .avaluo .rango{color:#774B78;font-weight:600;font-size:12px}
+  .av-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  .av-lbl{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#8593A3;font-weight:700}
+  .av-conf{font-size:9.5px;font-weight:700;border-radius:6px;padding:3px 9px;white-space:nowrap} .conf-media{background:#FEF6E7;color:#B7791F} .conf-baja{background:#FDECEC;color:#B42318} .conf-alta{background:#E8F5EF;color:#0F7A52}
+  .av-range{display:flex;align-items:center;gap:8px;margin-top:10px} .av-range .av-min,.av-range .av-max{font-size:11.5px;color:#5B6B7E;font-weight:600;white-space:nowrap}
+  .av-bar{flex:1;height:5px;border-radius:999px;background:linear-gradient(90deg,#B7E4CE,#774B78)}
+  .av-meto{font-size:11px;color:#5B6B7E;margin-top:9px;background:#fff;border:1px solid #ECE6EE;border-radius:8px;padding:7px 10px}
   .disc{font-size:10px;color:#8593A3;border-top:1px solid #E3E9F1;margin-top:26px;padding-top:12px;line-height:1.55}
   .foot{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:10px;color:#8593A3}
   </style></head><body>

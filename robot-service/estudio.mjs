@@ -35,7 +35,14 @@ hipoteca vigente, patrimonio de familia). Devuelve EXCLUSIVAMENTE un JSON con es
 }
 Para "area": extrae el área del inmueble en m² si aparece llena (secciones "AREA Y COEFICIENTE", "AREA PRIVADA" o "AREA CONSTRUIDA"), formato "NN m2". Si esas casillas están VACÍAS pero en "MEDIDAS Y LINDEROS" / "CABIDA Y LINDEROS" hay dimensiones en metros de los lados del predio, ESTIMA el área aproximada (largo × ancho aproximados de los lados) y devuélvela como "NN m2 (estimada de linderos)". Solo usa null si no hay ninguna medida.
 Reglas del semáforo: rojo si hay alguna bandera roja; amarillo si solo hay amarillas; verde si no hay banderas.
-"resumen": 2-4 frases en español simple, directo al comprador. No incluyas texto fuera del JSON.`;
+"resumen": un análisis de 5 a 8 frases (2-3 párrafos cortos), en español claro y directo al comprador, que cubra
+EN ESTE ORDEN: (1) qué es el inmueble y su ubicación; (2) quién es el propietario actual y CÓMO lo adquirió
+(compraventa, sucesión, etc.) según la última anotación; (3) qué gravámenes o limitaciones VIGENTES tiene y qué
+significan en la práctica para quien compra (p. ej. "tiene una hipoteca vigente: debe cancelarse antes o en la
+venta"); (4) las banderas de riesgo detectadas y su gravedad; (5) una recomendación práctica final (p. ej.
+"puede comprarse con tranquilidad verificando X", o "NO firmar hasta resolver la demanda de la anotación N").
+Sé concreto, cita números de anotación cuando ayuden, y no uses tecnicismos sin explicarlos. No inventes datos
+que no estén en el texto. No incluyas texto fuera del JSON.`;
 
 export async function generarEstudio(pdfBuffer, { matricula, oficina }) {
   const texto = await extraerTextoCTL(pdfBuffer);
