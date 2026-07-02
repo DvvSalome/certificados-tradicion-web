@@ -24,7 +24,8 @@ export default function VideoPlayer() {
     <div className="relative aspect-[9/16] w-full overflow-hidden rounded-3xl bg-[var(--brand-700)] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] border-[6px] border-white ring-1 ring-[var(--border)] group cursor-pointer" onClick={toggleMute}>
       <video
         ref={videoRef}
-        src="/certificado-demo.mp4"
+        src="/certificado-demo-web.mp4"
+        poster="/certificado-demo-poster.jpg"
         className="absolute inset-0 h-full w-full object-cover"
         autoPlay
         loop
