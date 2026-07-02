@@ -104,7 +104,7 @@ Expected: `✓ Compiled successfully`
 
 ```bash
 HK="SHA256:176Fxv3EwFl9S72NTyTop55193s9vbnbopDpwv9mLEE"
-cat <<'SQL' | "/c/Program Files/PuTTY/plink.exe" -batch -hostkey "$HK" -ssh -pw 'Adriangarx29@' root@72.60.124.121 'CID=$(docker ps -qf name=certificados_db); PGPASSWORD=***REDACTED*** docker exec -i $CID psql -U postgres -d certificados -t -A'
+cat <<'SQL' | "/c/Program Files/PuTTY/plink.exe" -batch -hostkey "$HK" -ssh -pw "$VPS_ROOT_PW" root@72.60.124.121 'CID=$(docker ps -qf name=certificados_db); PGPASSWORD="$PGPASSWORD" docker exec -i $CID psql -U postgres -d certificados -t -A'
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS plan TEXT NOT NULL DEFAULT 'basico';
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='orders_plan_check') THEN

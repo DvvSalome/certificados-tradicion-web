@@ -514,8 +514,9 @@ export default function CheckoutForm() {
               <p className="mb-4">En cumplimiento de la Ley 1581 de 2012 (Ley de Protección de Datos Personales de Colombia), le informamos lo siguiente:</p>
               <p className="mb-4">1. <strong>Recolección:</strong> Recolectamos su correo electrónico, teléfono/WhatsApp, número de identificación y nombres exclusivamente para la expedición y envío del certificado solicitado.</p>
               <p className="mb-4">2. <strong>Uso de datos:</strong> Sus datos no serán vendidos ni compartidos con terceros para fines publicitarios. Solo se usarán para comunicación transaccional relacionada con su solicitud.</p>
-              <p className="mb-4">3. <strong>Seguridad:</strong> Utilizamos pasarelas de pago reguladas (Wompi). En ningún momento almacenamos los datos de sus tarjetas de crédito o débito.</p>
-              <p>4. <strong>Derechos del Titular:</strong> Usted puede solicitar la eliminación, actualización o rectificación de sus datos personales en cualquier momento a través de nuestros canales de atención al cliente.</p>
+              <p className="mb-4">3. <strong>Encargados:</strong> Intervienen Wompi (pago), Meta/WhatsApp y correo (entrega). En el <strong>plan Express</strong>, el texto del certificado se procesa con inteligencia artificial (vía OpenRouter/Google) solo para generar el Estudio de Títulos; esto implica una transferencia internacional de datos que usted autoriza al solicitarlo.</p>
+              <p className="mb-4">4. <strong>Seguridad y conservación:</strong> Usamos pasarelas de pago reguladas (Wompi) y nunca almacenamos los datos de sus tarjetas. El PDF del certificado se conserva de forma temporal (~48 h) solo para reenviárselo, y luego se elimina.</p>
+              <p>5. <strong>Derechos del Titular:</strong> Puede solicitar conocer, actualizar, rectificar o eliminar sus datos, o revocar la autorización, escribiendo a certificados@certitradicion.com. Consulte la <a href="/privacidad" target="_blank" className="underline font-semibold">política completa</a>.</p>
             </div>
             <div className="border-t p-4">
               <button type="button" onClick={() => setShowPrivacy(false)} className="w-full rounded-xl bg-[var(--brand)] py-3 font-bold text-white hover:bg-[var(--brand-600)]">

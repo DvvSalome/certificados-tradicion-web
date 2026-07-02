@@ -1,7 +1,7 @@
 // Pool de cuentas SNR con fallback REACTIVO (por bloqueo de login O por saldo agotado) + cooldown diario.
 //
 // Config (1 sola variable, extensible):
-//   SNR_ACCOUNTS="CC22521092:Alex17,CC72237401:Alex17"   ← agregar otra = anexar ",CCxxxx:clave"
+//   SNR_ACCOUNTS="CCusuario1:clave1,CCusuario2:clave2"   ← agregar otra = anexar ",CCxxxx:clave"
 // Compat hacia atrás: si SNR_ACCOUNTS no está, usa SNR_USER/SNR_PASS (1 cuenta).
 //
 // Estrategia: orden FIJO (la 1ª de la lista es la principal). pickAccount() devuelve la primera cuenta
