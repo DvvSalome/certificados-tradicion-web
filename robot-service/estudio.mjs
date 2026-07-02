@@ -60,14 +60,15 @@ export async function generarEstudio(pdfBuffer, { matricula, oficina }) {
   // es un documento legal); círculo cae a la oficina si el modelo no lo trae.
   const im = data.inmueble || {};
   data.inmueble = { matricula: String(matricula), direccion: im.direccion ?? null, circulo: im.circulo ?? (oficina || null), area: im.area ?? null };
-  data.propietarios = Array.isArray(data.propietarios) ? data.propietarios : [];
+  data.propietarios = (Array.isArray(data.propietarios) ? data.propietarios : []).filter((p) => p && typeof p === 'object');
   data.gravamenes = (Array.isArray(data.gravamenes) ? data.gravamenes : [])
+    .filter((g) => g && typeof g === 'object')
     .map((g) => ({ ...g, naturaleza: g.naturaleza === 'normal' ? 'normal' : 'riesgo' }));
-  data.banderas = Array.isArray(data.banderas) ? data.banderas : [];
+  data.banderas = (Array.isArray(data.banderas) ? data.banderas : []).filter((b) => b && typeof b === 'object');
   data.ultimaVenta = data.ultimaVenta && typeof data.ultimaVenta === 'object' ? data.ultimaVenta : { valor: null, anio: null };
-  if (!['verde', 'amarillo', 'rojo'].includes(data.semaforo)) {
-    data.semaforo = data.banderas.some((b) => b.nivel === 'rojo') ? 'rojo' : data.banderas.length ? 'amarillo' : 'verde';
-  }
+  // Semáforo SIEMPRE derivado de las banderas (no confiar en el valor del modelo aunque sea sintácticamente
+  // válido): evita que el badge diga "verde" mientras hay una bandera roja (embargo/demanda) listada debajo.
+  data.semaforo = data.banderas.some((b) => b.nivel === 'rojo') ? 'rojo' : data.banderas.length ? 'amarillo' : 'verde';
   data.resumen = typeof data.resumen === 'string' ? data.resumen : '';
   return data;
 }

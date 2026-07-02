@@ -21,12 +21,15 @@ function valorM2(ciudad) {
   for (const k of Object.keys(VALOR_M2)) if (k !== 'DEFAULT' && c.includes(k)) return { v: VALOR_M2[k], ciudad: k };
   return { v: VALOR_M2.DEFAULT, ciudad: null };
 }
-// "80.5 m2", "80,50 MTS2", "80" → número o null
+// "80.5 m2", "80,50 MTS2", "1.234,56", "80" → número o null. Maneja las dos convenciones:
+//  - Si hay COMA → es el decimal; los puntos son miles → quitar puntos, coma→punto ("1.234,56"→1234.56).
+//  - Si NO hay coma → el punto es DECIMAL (no miles) → dejarlo tal cual ("80.125"→80.125, no 80125).
 function parseArea(a) {
   if (a == null) return null;
-  const m = String(a).replace(/\.(?=\d{3}\b)/g, '').replace(',', '.').match(/(\d+(\.\d+)?)/);
-  const n = m ? Number(m[1]) : null;
-  return n && n > 5 && n < 100000 ? n : null;
+  let s = String(a).match(/[\d.,]+/)?.[0] || '';
+  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+  const n = Number(s);
+  return Number.isFinite(n) && n > 5 && n < 100000 ? n : null;
 }
 const fmt = (n) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(Math.round(n / 1000) * 1000);
 
