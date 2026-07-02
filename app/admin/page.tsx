@@ -1,8 +1,10 @@
 import { redirect } from 'next/navigation';
-import { getSession, getDashboard, SALDO_THRESHOLD_CENTS } from '@/lib/admin';
+import { getSession, getDashboard, getMetrics, SALDO_THRESHOLD_CENTS } from '@/lib/admin';
 import { formatCOP } from '@/lib/config';
 import LogoutButton from './LogoutButton';
 import BatchPanel from './BatchPanel';
+import MetricsCharts from './MetricsCharts';
+import OrderActions from './OrderActions';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +26,7 @@ const STATUS_LABEL: Record<string, string> = {
 export default async function AdminDashboard() {
   const role = await getSession();
   if (!role) redirect('/admin/login');
-  const d = await getDashboard();
+  const [d, metrics] = await Promise.all([getDashboard(), getMetrics()]);
 
   // Estado del robot: sano si hubo OK reciente y no falló después.
   const robotOk = d.robot.lastOkAt && (!d.robot.lastError || (d.robot.lastOkAt >= (d.robot.lastRunAt ?? '')));
@@ -87,45 +89,48 @@ export default async function AdminDashboard() {
           </div>
         )}
 
+        {/* Métricas · últimos 14 días */}
+        <MetricsCharts m={metrics} />
+
         {/* Generación en lote */}
         <BatchPanel />
 
-        {/* Tablas */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card title="Generaciones recientes" hint={`${d.recentGenerations.length}`}>
-            {d.recentGenerations.length === 0 ? (
-              <Empty>Sin generaciones todavía.</Empty>
-            ) : (
-              <Table head={['Matrícula', 'Oficina', 'Estado', 'Costo']}>
-                {d.recentGenerations.map((g, i) => (
-                  <tr key={i} className="border-t border-[var(--border)]">
-                    <Td mono>{g.matricula}</Td>
-                    <Td>{g.oficina}</Td>
-                    <Td><Badge ok={g.status === 'OK'}>{g.status === 'OK' ? 'OK' : 'Falló'}</Badge></Td>
-                    <Td>{g.costCents === null ? '—' : fmt(g.costCents)}</Td>
-                  </tr>
-                ))}
-              </Table>
-            )}
-          </Card>
+        {/* Pedidos recientes con acciones (reenviar, ver PDF, reintentar) */}
+        <Card title="Pedidos recientes" hint={Object.entries(d.ordersByStatus).map(([k, v]) => `${STATUS_LABEL[k] ?? k}: ${v}`).join(' · ') || '0'}>
+          {d.recentOrders.length === 0 ? (
+            <Empty>Sin pedidos todavía.</Empty>
+          ) : (
+            <Table head={['Ref', 'Matrícula', 'Estado', 'Valor', 'Acciones']}>
+              {d.recentOrders.map((o) => (
+                <tr key={o.reference} className="border-t border-[var(--border)] align-top">
+                  <Td mono>{o.reference.slice(0, 10)}…</Td>
+                  <Td mono>{o.matricula}</Td>
+                  <Td><Badge ok={o.status === 'DELIVERED'} warn={o.status === 'FAILED'}>{STATUS_LABEL[o.status] ?? o.status}</Badge></Td>
+                  <Td>{fmt(o.amountCents)}</Td>
+                  <Td><OrderActions reference={o.reference} status={o.status} hasPdf={o.hasPdf} isSuperadmin={role === 'superadmin'} /></Td>
+                </tr>
+              ))}
+            </Table>
+          )}
+        </Card>
 
-          <Card title="Pedidos recientes" hint={Object.entries(d.ordersByStatus).map(([k, v]) => `${STATUS_LABEL[k] ?? k}: ${v}`).join(' · ') || '0'}>
-            {d.recentOrders.length === 0 ? (
-              <Empty>Sin pedidos todavía.</Empty>
-            ) : (
-              <Table head={['Ref', 'Matrícula', 'Estado', 'Valor']}>
-                {d.recentOrders.map((o) => (
-                  <tr key={o.reference} className="border-t border-[var(--border)]">
-                    <Td mono>{o.reference.slice(0, 10)}…</Td>
-                    <Td mono>{o.matricula}</Td>
-                    <Td><Badge ok={o.status === 'DELIVERED'} warn={o.status === 'FAILED'}>{STATUS_LABEL[o.status] ?? o.status}</Badge></Td>
-                    <Td>{fmt(o.amountCents)}</Td>
-                  </tr>
-                ))}
-              </Table>
-            )}
-          </Card>
-        </div>
+        {/* Generaciones recientes (bitácora del robot) */}
+        <Card title="Generaciones recientes" hint={`${d.recentGenerations.length}`}>
+          {d.recentGenerations.length === 0 ? (
+            <Empty>Sin generaciones todavía.</Empty>
+          ) : (
+            <Table head={['Matrícula', 'Oficina', 'Estado', 'Costo']}>
+              {d.recentGenerations.map((g, i) => (
+                <tr key={i} className="border-t border-[var(--border)]">
+                  <Td mono>{g.matricula}</Td>
+                  <Td>{g.oficina}</Td>
+                  <Td><Badge ok={g.status === 'OK'}>{g.status === 'OK' ? 'OK' : 'Falló'}</Badge></Td>
+                  <Td>{g.costCents === null ? '—' : fmt(g.costCents)}</Td>
+                </tr>
+              ))}
+            </Table>
+          )}
+        </Card>
 
         <p className="text-center text-xs text-[var(--muted-2)]">Panel interno · acceso restringido · no compartir el enlace</p>
       </main>

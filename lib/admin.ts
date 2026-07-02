@@ -68,7 +68,7 @@ export interface Dashboard {
   certCount: number;
   ordersByStatus: Record<string, number>;
   recentGenerations: { matricula: string; oficina: string; status: string; costCents: number | null; error: string | null; at: string }[];
-  recentOrders: { reference: string; matricula: string; oficina: string; status: string; amountCents: number; at: string }[];
+  recentOrders: { reference: string; matricula: string; oficina: string; status: string; amountCents: number; plan: string; hasPdf: boolean; at: string }[];
   robot: { lastRunAt: string | null; lastOkAt: string | null; lastError: string | null; okToday: number; failToday: number };
 }
 
@@ -95,7 +95,7 @@ export async function getDashboard(): Promise<Dashboard> {
         (SELECT COUNT(*) FROM generations WHERE status='OK') AS certs`),
     pool.query(`SELECT status, COUNT(*) AS c FROM orders GROUP BY status`),
     pool.query(`SELECT matricula, oficina, status, cost_in_cents, error, created_at FROM generations ORDER BY created_at DESC LIMIT 15`),
-    pool.query(`SELECT reference, matricula, oficina, status, amount_in_cents, created_at FROM orders ORDER BY created_at DESC LIMIT 15`),
+    pool.query(`SELECT reference, matricula, oficina, status, amount_in_cents, plan, (cert_pdf IS NOT NULL) AS has_pdf, created_at FROM orders ORDER BY created_at DESC LIMIT 15`),
     pool.query(`SELECT
         (SELECT created_at FROM generations ORDER BY created_at DESC LIMIT 1) AS last_run,
         (SELECT created_at FROM generations WHERE status='OK' ORDER BY created_at DESC LIMIT 1) AS last_ok,
@@ -126,7 +126,7 @@ export async function getDashboard(): Promise<Dashboard> {
     })),
     recentOrders: ords.rows.map((r) => ({
       reference: r.reference, matricula: r.matricula, oficina: r.oficina, status: r.status,
-      amountCents: n(r.amount_in_cents), at: iso(r.created_at)!,
+      amountCents: n(r.amount_in_cents), plan: r.plan ?? 'basico', hasPdf: !!r.has_pdf, at: iso(r.created_at)!,
     })),
     robot: {
       lastRunAt: iso(robot.rows[0]?.last_run), lastOkAt: iso(robot.rows[0]?.last_ok),
@@ -147,4 +147,35 @@ export async function recordGeneration(g: { reference?: string; matricula: strin
 export async function recordSaldo(saldoCents: number): Promise<{ saldoCents: number; low: boolean }> {
   await getPool().query(`INSERT INTO saldo_snapshots (saldo_cents) VALUES ($1)`, [saldoCents]);
   return { saldoCents, low: saldoCents < SALDO_THRESHOLD_CENTS };
+}
+
+// ── Métricas para gráficas: serie diaria de los últimos 14 días + tasa de éxito del robot. ──
+export interface Metrics {
+  daily: { date: string; revenueCents: number; certs: number; fails: number }[];
+  successRate: number | null; // 0-100 sobre las generaciones de los 14 días (null si no hubo)
+  totalCerts14: number;
+  totalRevenue14: number;
+}
+
+export async function getMetrics(): Promise<Metrics> {
+  const empty: Metrics = { daily: [], successRate: null, totalCerts14: 0, totalRevenue14: 0 };
+  if (!process.env.DATABASE_URL) return empty;
+  const { rows } = await getPool().query(`
+    WITH days AS (
+      SELECT generate_series((now()::date - interval '13 days'), now()::date, interval '1 day')::date AS d
+    )
+    SELECT to_char(days.d, 'YYYY-MM-DD') AS date,
+      COALESCE((SELECT SUM(amount_in_cents) FROM orders o WHERE o.status='DELIVERED' AND o.created_at::date = days.d), 0) AS revenue,
+      COALESCE((SELECT COUNT(*) FROM generations g WHERE g.status='OK' AND g.created_at::date = days.d), 0) AS certs,
+      COALESCE((SELECT COUNT(*) FROM generations g WHERE g.status='FAILED' AND g.created_at::date = days.d), 0) AS fails
+    FROM days ORDER BY days.d`);
+  const daily = rows.map((r) => ({ date: r.date, revenueCents: n(r.revenue), certs: n(r.certs), fails: n(r.fails) }));
+  const ok = daily.reduce((s, d) => s + d.certs, 0);
+  const fail = daily.reduce((s, d) => s + d.fails, 0);
+  return {
+    daily,
+    successRate: ok + fail > 0 ? Math.round((ok / (ok + fail)) * 100) : null,
+    totalCerts14: ok,
+    totalRevenue14: daily.reduce((s, d) => s + d.revenueCents, 0),
+  };
 }
