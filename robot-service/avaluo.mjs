@@ -4,13 +4,15 @@
 // específicos → por eso es "referencial" y con rango amplio. Para precisión real haría falta el avalúo
 // catastral por predio (integración de catastro), que es el upgrade natural.
 
-// COP/m² — promedios residenciales aproximados, configurables. Refinar con datos de mercado reales.
+// COP/m² residencial (vivienda usada), consenso de investigación de mercado 2024-2026 (Galería Inmobiliaria,
+// lonjas/Fedelonjas, Habi, DANE IVP, y portales descontando ~10-20% el sesgo al alza de precios de lista).
+// Valores CONSERVADORES, tirando a mediana de transacción. Referencial — no avalúo de perito. Rev. 2026-07.
 const VALOR_M2 = {
-  BOGOTA: 5500000, MEDELLIN: 4800000, CALI: 3600000, BARRANQUILLA: 3400000, CARTAGENA: 4200000,
-  BUCARAMANGA: 3500000, PEREIRA: 3200000, MANIZALES: 3000000, CUCUTA: 2600000, IBAGUE: 2700000,
-  'SANTA MARTA': 3300000, VILLAVICENCIO: 3000000, MONTERIA: 2800000, PASTO: 2800000, NEIVA: 2700000,
-  ARMENIA: 2900000, POPAYAN: 2800000, VALLEDUPAR: 2700000, SINCELEJO: 2500000, TUNJA: 2900000,
-  DEFAULT: 3200000,
+  BOGOTA: 5500000, MEDELLIN: 5500000, CALI: 3000000, BARRANQUILLA: 3700000, CARTAGENA: 5500000,
+  BUCARAMANGA: 3000000, PEREIRA: 2850000, MANIZALES: 3300000, CUCUTA: 2200000, IBAGUE: 2800000,
+  'SANTA MARTA': 4000000, VILLAVICENCIO: 2800000, MONTERIA: 3000000, PASTO: 3000000, NEIVA: 3000000,
+  ARMENIA: 2850000, POPAYAN: 3000000, VALLEDUPAR: 3000000, SINCELEJO: 2000000, TUNJA: 3100000,
+  DEFAULT: 2800000,
 };
 const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
 

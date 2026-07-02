@@ -45,6 +45,7 @@ export function estudioHtml(e, { matricula, oficina, fecha }) {
         <div class="av-range"><span class="av-min">${esc(V.min)}</span><div class="av-bar"><span></span></div><span class="av-max">${esc(V.max)}</span></div>
         <div class="rango" style="margin-top:4px">Rango referencial de mercado</div>
         ${V.metodologia ? `<div class="av-meto">📐 ${esc(V.metodologia)}</div>` : ''}
+        ${e.ultimaVenta && e.ultimaVenta.valor ? `<div class="av-meto">🧾 Última compraventa registrada en el folio: <b>${esc(e.ultimaVenta.valor)}</b>${e.ultimaVenta.anio ? ' (' + esc(e.ultimaVenta.anio) + ')' : ''}. <span style="color:#8593A3">Valor declarado en escritura (suele estar por debajo del precio real de mercado).</span></div>` : ''}
         <div class="muted" style="font-size:11px;margin-top:8px;line-height:1.5">${esc(V.nota)}</div>
       </div>`;
 

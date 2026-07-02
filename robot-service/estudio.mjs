@@ -30,9 +30,13 @@ hipoteca vigente, patrimonio de familia). Devuelve EXCLUSIVAMENTE un JSON con es
   "propietarios": [ { "nombre": string, "identificacion": string|null, "modo": string, "anotacion": string|null } ],
   "gravamenes": [ { "tipo": string, "descripcion": string, "vigente": boolean, "naturaleza": "riesgo"|"normal", "anotacion": string|null } ],
   "banderas": [ { "nivel": "rojo"|"amarillo", "titulo": string, "detalle": string } ],
+  "ultimaVenta": { "valor": string|null, "anio": string|null },
   "semaforo": "verde"|"amarillo"|"rojo",
   "resumen": string
 }
+Para "ultimaVenta": busca la COMPRAVENTA (venta) MÁS RECIENTE en la cadena de tradición y devuelve su valor
+declarado ("VALOR ACTO") y el año. Formato valor: "$NN.NNN.NNN" (con separador de miles). Ignora actos con
+VALOR ACTO $0, y actos que NO sean venta (hipoteca, embargo, aclaración, englobe). Si no hay ninguna, ambos null.
 Para "area": extrae el área del inmueble en m² si aparece llena (secciones "AREA Y COEFICIENTE", "AREA PRIVADA" o "AREA CONSTRUIDA"), formato "NN m2". Si esas casillas están VACÍAS pero en "MEDIDAS Y LINDEROS" / "CABIDA Y LINDEROS" hay dimensiones en metros de los lados del predio, ESTIMA el área aproximada (largo × ancho aproximados de los lados) y devuélvela como "NN m2 (estimada de linderos)". Solo usa null si no hay ninguna medida.
 Reglas del semáforo: rojo si hay alguna bandera roja; amarillo si solo hay amarillas; verde si no hay banderas.
 "resumen": un análisis de 5 a 8 frases (2-3 párrafos cortos), en español claro y directo al comprador, que cubra
@@ -60,6 +64,7 @@ export async function generarEstudio(pdfBuffer, { matricula, oficina }) {
   data.gravamenes = (Array.isArray(data.gravamenes) ? data.gravamenes : [])
     .map((g) => ({ ...g, naturaleza: g.naturaleza === 'normal' ? 'normal' : 'riesgo' }));
   data.banderas = Array.isArray(data.banderas) ? data.banderas : [];
+  data.ultimaVenta = data.ultimaVenta && typeof data.ultimaVenta === 'object' ? data.ultimaVenta : { valor: null, anio: null };
   if (!['verde', 'amarillo', 'rojo'].includes(data.semaforo)) {
     data.semaforo = data.banderas.some((b) => b.nivel === 'rojo') ? 'rojo' : data.banderas.length ? 'amarillo' : 'verde';
   }
