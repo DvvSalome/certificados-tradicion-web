@@ -93,15 +93,17 @@ async function procesar(raw: string) {
     // AUTORIZACIÓN: solo entregamos certificados cuyo pedido tenga ESTE mismo número (phone == from).
     // El número se captura al pagar. La referencia sola NO basta: es un token que puede filtrarse
     // (correo reenviado, URL /estado, captura) y entregar datos del inmueble a quien no pagó (Habeas Data).
+    // cert_pdf sale como base64 (encode en SQL): el pool de Vercel va por un proxy HTTP con JSON.stringify,
+    // un Buffer crudo llegaría corrupto como {"type":"Buffer",...}. Reconstruimos el Buffer con Buffer.from.
     const { rows } = ref
       ? await getPool().query<Cert>(
-          'SELECT reference, cert_pdf, matricula FROM orders WHERE reference = $1 AND phone = $2 AND cert_pdf IS NOT NULL',
+          "SELECT reference, encode(cert_pdf,'base64') AS cert_pdf_b64, matricula FROM orders WHERE reference = $1 AND phone = $2 AND cert_pdf IS NOT NULL",
           [ref.toUpperCase(), from])
       : await getPool().query<Cert>(
-          'SELECT reference, cert_pdf, matricula FROM orders WHERE phone = $1 AND cert_pdf IS NOT NULL ORDER BY cert_pdf_at DESC LIMIT 1',
+          "SELECT reference, encode(cert_pdf,'base64') AS cert_pdf_b64, matricula FROM orders WHERE phone = $1 AND cert_pdf IS NOT NULL ORDER BY cert_pdf_at DESC LIMIT 1",
           [from]);
     const row = rows[0];
-    if (!row || !row.cert_pdf) {
+    if (!row || !row.cert_pdf_b64) {
       console.error(`[wa webhook] sin certificado autorizado para ${from}${ref ? ` (ref ${ref})` : ''}`);
       await enviarTexto(from, ref
         ? 'Mmm, no encuentro un certificado con esa referencia a nombre de este número 🤔. Verifica que sea la referencia de tu correo de confirmación (empieza por CTL-) y escríbeme desde el mismo número de WhatsApp con el que pagaste 🙏'
@@ -113,7 +115,7 @@ async function procesar(raw: string) {
     try {
       await enviarDocumento(
         from,
-        row.cert_pdf,
+        Buffer.from(row.cert_pdf_b64, 'base64'),
         `Certificado-Tradicion-${row.matricula}.pdf`,
         `Aquí tienes tu Certificado de Tradición y Libertad (matrícula ${row.matricula}). ¡Gracias por usar Certitradición!`,
       );
@@ -126,4 +128,4 @@ async function procesar(raw: string) {
   }
 }
 
-type Cert = { reference: string; cert_pdf: Buffer | null; matricula: string };
+type Cert = { reference: string; cert_pdf_b64: string; matricula: string };

@@ -15,10 +15,11 @@ export async function POST(req: Request, ctx: { params: Promise<{ ref: string }>
   const { channel } = (await req.json().catch(() => ({}))) as { channel?: 'email' | 'whatsapp' };
   if (channel !== 'email' && channel !== 'whatsapp') return NextResponse.json({ error: 'channel debe ser email o whatsapp' }, { status: 400 });
 
-  const { rows } = await getPool().query('SELECT cert_pdf, matricula, oficina, email, phone FROM orders WHERE reference = $1', [ref]);
+  // cert_pdf como base64 (el pool de Vercel va por proxy HTTP con JSON.stringify → un Buffer llegaría corrupto).
+  const { rows } = await getPool().query("SELECT encode(cert_pdf,'base64') AS cert_pdf_b64, matricula, oficina, email, phone FROM orders WHERE reference = $1", [ref]);
   const o = rows[0];
-  if (!o || !o.cert_pdf) return NextResponse.json({ error: 'Sin PDF guardado (aún no generado o purgado a las 48h)' }, { status: 404 });
-  const pdf: Buffer = o.cert_pdf;
+  if (!o || !o.cert_pdf_b64) return NextResponse.json({ error: 'Sin PDF guardado (aún no generado o purgado a las 48h)' }, { status: 404 });
+  const pdf: Buffer = Buffer.from(o.cert_pdf_b64, 'base64');
 
   try {
     if (channel === 'email') {

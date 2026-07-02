@@ -12,15 +12,17 @@ export async function GET(_req: Request, ctx: { params: Promise<{ ref: string }>
   }
 
   try {
-    const { rows } = await getPool().query('SELECT cert_pdf, matricula FROM orders WHERE reference = $1', [ref]);
+    // cert_pdf como base64 (encode en SQL): el pool de Vercel va por un proxy HTTP con JSON.stringify → un
+    // Buffer crudo llegaría corrupto como {"type":"Buffer",...}. Reconstruimos con Buffer.from.
+    const { rows } = await getPool().query("SELECT encode(cert_pdf,'base64') AS cert_pdf_b64, matricula FROM orders WHERE reference = $1", [ref]);
     const order = rows[0];
 
-    if (!order || !order.cert_pdf) {
+    if (!order || !order.cert_pdf_b64) {
       return NextResponse.json({ error: 'Documento no encontrado o aún no generado' }, { status: 404 });
     }
 
-    const pdfBuffer = order.cert_pdf;
-    
+    const pdfBuffer = Buffer.from(order.cert_pdf_b64, 'base64');
+
     return new NextResponse(pdfBuffer, {
       status: 200,
       headers: {

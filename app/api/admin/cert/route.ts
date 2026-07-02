@@ -16,6 +16,8 @@ export async function POST(req: Request) {
   if (!b.reference || !b.pdfBase64) return NextResponse.json({ error: 'reference y pdfBase64 requeridos' }, { status: 400 });
   const buf = Buffer.from(b.pdfBase64, 'base64');
   if (buf.slice(0, 5).toString() !== '%PDF-') return NextResponse.json({ error: 'no es PDF' }, { status: 400 });
-  await getPool().query('UPDATE orders SET cert_pdf = $2, cert_pdf_at = now() WHERE reference = $1', [b.reference, buf]);
+  // El pool de Vercel va por un proxy HTTP que hace JSON.stringify de los params: un Buffer se corromper­ía a
+  // {"type":"Buffer",...}. Pasamos la base64 como TEXTO (sobrevive JSON) y la decodificamos a bytea en SQL.
+  await getPool().query("UPDATE orders SET cert_pdf = decode($2, 'base64'), cert_pdf_at = now() WHERE reference = $1", [b.reference, b.pdfBase64]);
   return NextResponse.json({ ok: true, bytes: buf.length });
 }
