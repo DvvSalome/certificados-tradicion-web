@@ -133,28 +133,10 @@ export default function Home() {
         </div>
       </main>
 
-      {/* ===== VIDEO (presentación) ===== */}
-      <section className="border-t border-[var(--border)] bg-white py-12 lg:py-16">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-8 px-4 sm:px-6 lg:flex-row lg:justify-center lg:gap-14">
-          <div className="max-w-md text-center lg:text-left">
-            <p className="font-bold text-[12px] tracking-widest uppercase text-[var(--brand)]">En video</p>
-            <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-[var(--foreground)] sm:text-4xl">Así de fácil es obtener tu certificado</h2>
-            <p className="mt-3 text-[17px] leading-relaxed text-[var(--muted)]">Mira en segundos cómo funciona el servicio. Toca el video para escuchar.</p>
-            <a href="#comprar" className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-[var(--brand)] px-6 py-3.5 font-bold text-white shadow-lg transition hover:bg-[var(--brand-600)]">
-              Solicitar ahora
-              <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-            </a>
-          </div>
-          <div className="w-full max-w-[300px] sm:max-w-[340px]">
-            <VideoPlayer />
-          </div>
-        </div>
-      </section>
-
-      {/* ===== SOLICITAR: ¿cómo encuentro mi matrícula? + formulario de pago ===== */}
+      {/* ===== SOLICITAR: ¿cómo encuentro mi matrícula? + formulario + video ===== */}
       <section id="comprar" className="scroll-mt-24 border-t border-[var(--border)] bg-white py-14 lg:py-20">
-        <div className="mx-auto flex max-w-4xl flex-col gap-12 px-4 sm:px-6">
-          <div className="flex flex-col items-center gap-4 text-center">
+        <div className="mx-auto flex max-w-6xl flex-col gap-12 px-4 sm:px-6">
+          <div className="mx-auto flex max-w-3xl flex-col items-center gap-4 text-center">
             <p className="font-bold text-[12px] tracking-widest uppercase text-[var(--brand)]">Antes de empezar</p>
             <h2 className="text-3xl font-extrabold tracking-tight text-[var(--foreground)] sm:text-4xl">¿Cómo encuentro mi matrícula inmobiliaria?</h2>
             <p className="max-w-2xl text-[17px] leading-relaxed text-[var(--muted)]">
@@ -170,12 +152,23 @@ export default function Home() {
             />
           </div>
 
-          <div className="flex flex-col gap-5">
+          {/* Solicita tu certificado: formulario + video AL LADO */}
+          <div className="flex flex-col gap-6">
             <div className="text-center">
               <h2 className="text-2xl font-extrabold tracking-tight text-[var(--foreground)] sm:text-3xl">Solicita tu certificado</h2>
               <p className="mt-1 text-[15px] text-[var(--muted)]">Completa el formulario y recíbelo en minutos.</p>
             </div>
-            <CheckoutForm />
+            <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-10">
+              <div className="w-full lg:w-7/12">
+                <CheckoutForm />
+              </div>
+              <div className="w-full lg:w-5/12 lg:sticky lg:top-24">
+                <div className="mx-auto w-full max-w-[340px]">
+                  <VideoPlayer />
+                  <p className="mt-3 text-center text-sm text-[var(--muted-2)]">Toca el video para escuchar</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

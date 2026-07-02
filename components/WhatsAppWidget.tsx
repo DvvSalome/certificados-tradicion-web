@@ -16,18 +16,15 @@ const WA_URL = `https://wa.me/573212258245?text=${encodeURIComponent(
 export default function WhatsAppWidget() {
   const [showBubble, setShowBubble] = useState(false);
 
+  // PERSISTENTE: el globo reaparece SIEMPRE (tras un pequeño retraso), en cada visita. Antes se guardaba
+  // "cerrado" en localStorage y no volvía a salir nunca ("a veces no sale"). La X ahora solo lo oculta en
+  // la sesión actual. El botón flotante se renderiza siempre (abajo).
   useEffect(() => {
-    let closed = false;
-    try { closed = localStorage.getItem('crt_wa_closed') === '1'; } catch {}
-    if (closed) return;
     const t = setTimeout(() => setShowBubble(true), 1800);
     return () => clearTimeout(t);
   }, []);
 
-  const dismiss = () => {
-    setShowBubble(false);
-    try { localStorage.setItem('crt_wa_closed', '1'); } catch {}
-  };
+  const dismiss = () => setShowBubble(false);
 
   return (
     <div className="fixed bottom-44 right-4 z-[60] flex flex-col items-end gap-3 sm:bottom-6 sm:right-5 print:hidden">
