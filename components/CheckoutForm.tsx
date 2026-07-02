@@ -164,12 +164,15 @@ export default function CheckoutForm() {
 
   const inputCls = "w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-[14.5px] text-[var(--foreground)] outline-none transition focus:border-[var(--brand-ring)] focus:ring-4 focus:ring-[var(--brand-50)] placeholder:text-gray-400";
   const labelCls = "mb-1.5 block text-[13px] font-semibold text-[var(--foreground)]";
-  const sectionTitleCls = "text-[11px] sm:text-xs font-bold uppercase tracking-widest text-[var(--foreground)] mb-6 mt-10 border-b pb-2";
+  const sectionTitleCls = "text-[13px] sm:text-sm font-extrabold uppercase tracking-widest text-[var(--brand)] mb-6 mt-10 border-b border-[var(--brand-50)] pb-2";
 
   return (
     <div className="w-full relative pb-40 sm:pb-0">
       <div className="rounded-[24px] sm:rounded-[28px] border border-[var(--border)] bg-[#fafafa] p-5 sm:p-8 shadow-sm">
         
+        <h2 className="text-center text-2xl sm:text-[28px] font-extrabold uppercase leading-tight tracking-tight text-[#84cc16] mb-2">
+          Compra tu Certificado de Tradición y Libertad
+        </h2>
         <p className="text-center text-sm sm:text-base text-gray-500 mb-2">
           Completa el formulario y obtén tu certificado de tradición en ¡segundos!
         </p>
@@ -181,7 +184,7 @@ export default function CheckoutForm() {
           </div>
         )}
 
-        <h3 className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-[var(--foreground)] mb-4">
+        <h3 className="text-[13px] sm:text-sm font-extrabold uppercase tracking-widest text-[var(--brand)] mb-4">
           Selecciona tu plan
         </h3>
         
@@ -231,7 +234,7 @@ export default function CheckoutForm() {
 
 
         {/* SECTION 1: PROPIEDAD */}
-        <h3 className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-[var(--foreground)] mb-6 mt-6 border-b pb-2">
+        <h3 className="text-[13px] sm:text-sm font-extrabold uppercase tracking-widest text-[var(--brand)] mb-6 mt-6 border-b border-[var(--brand-50)] pb-2">
           Información de la propiedad
         </h3>
         
