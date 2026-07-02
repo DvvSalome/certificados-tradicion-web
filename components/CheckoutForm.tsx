@@ -247,7 +247,7 @@ export default function CheckoutForm() {
               onChange={(e) => { setMatricula(e.target.value.replace(/\D/g, '')); setVResult(null); setError(null); }}
               onBlur={() => validarMatricula(true)}
               inputMode="numeric"
-              placeholder="Ej: 12345 sin el código de oficina"
+              placeholder="Ej: 12345 (sin la oficina)"
               className={`${inputCls} font-mono`}
             />
           </label>

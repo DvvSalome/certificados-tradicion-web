@@ -39,7 +39,7 @@ export default function OficinaSelect({
           onChange={(e) => { setQuery(e.target.value); if (!open) setOpen(true); }}
           onFocus={() => { setOpen(true); setQuery(''); }}
           disabled={disabled}
-          placeholder="Escribe la ciudad o el código (ej. Barranquilla o 040)"
+          placeholder="Ciudad o código (ej. 040)"
           autoComplete="off"
           className="w-full rounded-xl border border-[var(--border-strong)] bg-white px-4 py-3 pr-10 text-[15px] text-[var(--foreground)] shadow-sm outline-none transition placeholder:text-[var(--muted-2)] hover:border-[var(--muted-2)] focus:border-[var(--brand-ring)] focus:ring-4 focus:ring-[var(--brand-50)] disabled:cursor-not-allowed disabled:opacity-60"
         />
