@@ -15,7 +15,7 @@ const ID_TYPES = [
 ];
 
 export default function CheckoutForm() {
-  const [plan, setPlan] = useState<PlanId>('express');
+  const [plan, setPlan] = useState<PlanId>('basico');
   
   // Propiedad
   const [oficina, setOficina] = useState('');
@@ -180,6 +180,55 @@ export default function CheckoutForm() {
             {error}
           </div>
         )}
+
+        <h3 className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-[var(--foreground)] mb-4">
+          Selecciona tu plan
+        </h3>
+        
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-2">
+          {(['basico', 'express'] as PlanId[]).map((pid) => {
+            const p = PLANS[pid];
+            const sel = plan === pid;
+            return (
+              <label
+                key={pid}
+                className={`relative flex flex-col items-start rounded-2xl border-2 p-4 text-left transition-all cursor-pointer ${
+                  sel 
+                    ? 'border-[#84cc16] bg-[#f7fee7] shadow-sm' 
+                    : 'border-gray-200 bg-white hover:border-[#bde875]'
+                }`}
+              >
+                <input type="radio" name="plan" className="sr-only" checked={sel} onChange={() => setPlan(pid)} />
+                {p.recommended && (
+                  <span className="absolute -top-3 right-3 rounded-full bg-[#84cc16] px-3 py-1 text-[10px] font-bold tracking-wider text-white shadow-sm">
+                    RECOMENDADO
+                  </span>
+                )}
+                <div className="flex w-full items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <svg className="size-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <span className="text-[16px] font-bold text-[var(--foreground)]">{p.label}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg font-black text-[#15803d]">{formatCOP(p.priceCop)}</span>
+                    <div className={`flex size-5 items-center justify-center rounded-full border-2 ${sel ? 'border-[#15803d]' : 'border-gray-300'}`}>
+                      {sel && <div className="size-2.5 rounded-full bg-[#15803d]" />}
+                    </div>
+                  </div>
+                </div>
+                <ul className="mt-1 flex flex-col gap-1.5 text-xs text-gray-600 w-full">
+                  {p.features.map((f, i) => (
+                    <li key={i} className="flex items-center gap-1.5">
+                      <svg className="size-3.5 text-[#84cc16]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+              </label>
+            );
+          })}
+        </div>
+
 
         {/* SECTION 1: PROPIEDAD */}
         <h3 className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-[var(--foreground)] mb-6 mt-6 border-b pb-2">
@@ -364,54 +413,6 @@ export default function CheckoutForm() {
               Acepto la <button type="button" onClick={(e) => { e.preventDefault(); setShowPrivacy(true); }} className="underline font-semibold hover:text-[#0066ff]">política de privacidad de datos</button> y autorizo recibir comunicaciones por WhatsApp.
             </span>
           </label>
-        </div>
-
-        <h3 className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-[var(--foreground)] mb-4">
-          Selecciona tu plan
-        </h3>
-        
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-6 sm:mb-0">
-          {(['basico', 'express'] as PlanId[]).map((pid) => {
-            const p = PLANS[pid];
-            const sel = plan === pid;
-            return (
-              <label
-                key={pid}
-                className={`relative flex flex-col items-start rounded-2xl border-2 p-4 text-left transition-all cursor-pointer ${
-                  sel 
-                    ? 'border-[#84cc16] bg-[#f7fee7] shadow-sm' 
-                    : 'border-gray-200 bg-white hover:border-[#bde875]'
-                }`}
-              >
-                <input type="radio" name="plan" className="sr-only" checked={sel} onChange={() => setPlan(pid)} />
-                {p.recommended && (
-                  <span className="absolute -top-3 right-3 rounded-full bg-[#84cc16] px-3 py-1 text-[10px] font-bold tracking-wider text-white shadow-sm">
-                    RECOMENDADO
-                  </span>
-                )}
-                <div className="flex w-full items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <svg className="size-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                    <span className="text-[16px] font-bold text-[var(--foreground)]">{p.label}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-lg font-black text-[#15803d]">{formatCOP(p.priceCop)}</span>
-                    <div className={`flex size-5 items-center justify-center rounded-full border-2 ${sel ? 'border-[#15803d]' : 'border-gray-300'}`}>
-                      {sel && <div className="size-2.5 rounded-full bg-[#15803d]" />}
-                    </div>
-                  </div>
-                </div>
-                <ul className="mt-1 flex flex-col gap-1.5 text-xs text-gray-600 w-full">
-                  {p.features.map((f, i) => (
-                    <li key={i} className="flex items-center gap-1.5">
-                      <svg className="size-3.5 text-[#84cc16]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-              </label>
-            );
-          })}
         </div>
 
         {/* FOOTER "Total a pagar": barra que SIGUE EL SCROLL (como LegalCheck).
