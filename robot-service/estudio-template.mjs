@@ -23,7 +23,10 @@ export function estudioHtml(e, { matricula, oficina, fecha }) {
   const banderas = (e.banderas || []).map((b) => `<div class="flag ${nivelClass(b.nivel)}"><b>${esc(b.titulo)}</b><span>${esc(b.detalle)}</span></div>`).join('')
     || '<div class="flag ok"><b>Sin banderas de riesgo</b><span>No se detectaron alertas de riesgo en el documento.</span></div>';
   const props = (e.propietarios || []).map((p) => `<li><b>${esc(p.nombre)}</b>${p.identificacion ? ' · ' + esc(p.identificacion) : ''} <span class="muted">${esc(p.modo || '')}${p.anotacion ? ' (anot. ' + esc(p.anotacion) + ')' : ''}</span></li>`).join('') || '<li class="muted">No identificados en el texto.</li>';
-  const grav = (e.gravamenes || []).map((g) => `<li><b>${esc(g.tipo)}</b> ${g.vigente ? '<span class="tag v">VIGENTE</span>' : '<span class="tag">no vigente</span>'}<br><span class="muted">${esc(g.descripcion)}${g.anotacion ? ' · anot. ' + esc(g.anotacion) : ''}</span></li>`).join('')
+  const gravTag = (g) => !g.vigente ? '<span class="tag">no vigente</span>'
+    : g.naturaleza === 'normal' ? '<span class="tag n">normal (propiedad horizontal)</span>'
+    : '<span class="tag v">VIGENTE</span>';
+  const grav = (e.gravamenes || []).map((g) => `<li><b>${esc(g.tipo)}</b> ${gravTag(g)}<br><span class="muted">${esc(g.descripcion)}${g.anotacion ? ' · anot. ' + esc(g.anotacion) : ''}</span></li>`).join('')
     || '<li class="ok-li">✓ Sin gravámenes ni limitaciones vigentes encontrados.</li>';
   const A = e.alertas;
   const alertasHtml = !A || A.ok === false
@@ -49,7 +52,7 @@ export function estudioHtml(e, { matricula, oficina, fecha }) {
   h2{font-size:12px;color:#774B78;margin:22px 0 8px;text-transform:uppercase;letter-spacing:.08em;font-weight:800;border-bottom:1px solid #ECE6EE;padding-bottom:5px}
   table{width:100%;border-collapse:collapse;margin:2px 0} .k{color:#8593A3;width:170px;padding:6px 0;font-size:12px} .v{font-weight:600;padding:6px 0}
   ul{margin:6px 0;padding-left:18px;list-style:none} li{margin:8px 0;padding-left:2px} .ok-li{color:#0F7A52;font-weight:600;list-style:none;margin-left:-16px}
-  .tag{font-size:9.5px;font-weight:700;background:#eef1f7;color:#5B6B7E;border-radius:5px;padding:2px 7px;vertical-align:middle} .tag.v{background:#FDECEC;color:#B42318}
+  .tag{font-size:9.5px;font-weight:700;background:#eef1f7;color:#5B6B7E;border-radius:5px;padding:2px 7px;vertical-align:middle} .tag.v{background:#FDECEC;color:#B42318} .tag.n{background:#E8F5EF;color:#0F7A52}
   .flag{display:flex;flex-direction:column;border-left:4px solid #999;background:#fafbfd;padding:10px 14px;margin:8px 0;border-radius:8px}
   .flag b{font-size:13px} .flag.rojo{border-color:#B42318;background:#FDECEC} .flag.amarillo{border-color:#B7791F;background:#FEF6E7} .flag.ok{border-color:#0F7A52;background:#E8F5EF} .flag.ok b{color:#0F7A52}
   .flag span{font-size:11.5px;color:#5B6B7E;margin-top:2px}

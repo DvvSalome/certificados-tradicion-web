@@ -14,6 +14,13 @@ gravamen/embargo/demanda/limitación SOLO está vigente si NINGUNA anotación PO
 las anotaciones de principio a fin (incluidas las MÁS RECIENTES al final) y reporta en "gravamenes"/"banderas"
 ÚNICAMENTE lo que siga vigente hoy. Si una hipoteca/embargo/demanda vieja fue cancelada, NO la reportes.
 
+LIMITACIONES ADMINISTRATIVAS NORMALES (no son riesgo): el REGLAMENTO DE PROPIEDAD HORIZONTAL / COPROPIEDAD, la
+constitución o reforma de propiedad horizontal, englobe/desenglobe, y las servidumbres o afectaciones
+urbanísticas ordinarias son NORMALES (la mayoría de apartamentos y casas en conjunto los tienen). Repórtalos en
+"gravamenes" con "naturaleza":"normal", NO generes banderas por ellos y NO afectan el semáforo. En cambio,
+hipoteca, embargo, demanda, patrimonio de familia, afectación a vivienda familiar, extinción de dominio,
+falsa tradición y medidas cautelares SÍ son de riesgo → "naturaleza":"riesgo".
+
 Identifica propietarios actuales, la cadena de tradición, y los gravámenes/limitaciones VIGENTES (hipotecas,
 embargos, patrimonio de familia, afectación a vivienda familiar, demandas, falsa tradición, servidumbres). Marca
 banderas de riesgo (rojo = grave: embargo/demanda/extinción/falsa tradición VIGENTE; amarillo = atención:
@@ -21,7 +28,7 @@ hipoteca vigente, patrimonio de familia). Devuelve EXCLUSIVAMENTE un JSON con es
 {
   "inmueble": { "matricula": string, "direccion": string|null, "circulo": string|null, "area": string|null },
   "propietarios": [ { "nombre": string, "identificacion": string|null, "modo": string, "anotacion": string|null } ],
-  "gravamenes": [ { "tipo": string, "descripcion": string, "vigente": boolean, "anotacion": string|null } ],
+  "gravamenes": [ { "tipo": string, "descripcion": string, "vigente": boolean, "naturaleza": "riesgo"|"normal", "anotacion": string|null } ],
   "banderas": [ { "nivel": "rojo"|"amarillo", "titulo": string, "detalle": string } ],
   "semaforo": "verde"|"amarillo"|"rojo",
   "resumen": string
@@ -43,7 +50,8 @@ export async function generarEstudio(pdfBuffer, { matricula, oficina }) {
   const im = data.inmueble || {};
   data.inmueble = { matricula: String(matricula), direccion: im.direccion ?? null, circulo: im.circulo ?? (oficina || null), area: im.area ?? null };
   data.propietarios = Array.isArray(data.propietarios) ? data.propietarios : [];
-  data.gravamenes = Array.isArray(data.gravamenes) ? data.gravamenes : [];
+  data.gravamenes = (Array.isArray(data.gravamenes) ? data.gravamenes : [])
+    .map((g) => ({ ...g, naturaleza: g.naturaleza === 'normal' ? 'normal' : 'riesgo' }));
   data.banderas = Array.isArray(data.banderas) ? data.banderas : [];
   if (!['verde', 'amarillo', 'rojo'].includes(data.semaforo)) {
     data.semaforo = data.banderas.some((b) => b.nivel === 'rojo') ? 'rojo' : data.banderas.length ? 'amarillo' : 'verde';
