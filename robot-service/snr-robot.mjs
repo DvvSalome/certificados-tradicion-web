@@ -167,8 +167,13 @@ export class SnrRobot {
       const em = flat.match(/Estado\s+([A-Za-zÁÉÍÓÚáéíóúÑñ ]+?)\s+(?:Agregar|Cancelar|Pagar|$)/i);
       return { direccion: between('Direccion', 'Circulo'), circulo: between('Circulo', 'Estado'), estado: em ? em[1].trim() : null, raw: flat.slice(0, 500) };
     });
-    const notFound = /no se encuentra|no se encontr|no existe|no es posible generar|Error de validaci[oó]n|No se ha encontrado/i.test(info.raw);
+    // SOLO "no encontrada" GENUINO (el SNR dijo claramente que no existe). "Error de validación" / "no es
+    // posible generar" / "servicio no disponible" son errores del SISTEMA del SNR (portal lento/caído): NO
+    // significan "no existe" → deben LANZAR para que el web haga fail-open y NO bloquee a un cliente real.
+    const notFound = /no se encuentra|no se encontr[oó]|no existe|No se ha encontrado|matr[ií]cula no v[aá]lida/i.test(info.raw);
+    const snrError = /Error de validaci[oó]n|no es posible generar|error interno|servicio no (est[aá] )?disponible|intente (m[aá]s tarde|nuevamente)|502|503|timeout/i.test(info.raw);
     const hasInfo = /Estado\s+(Disponible|No)/i.test(info.raw) || !!info.estado;
+    if (snrError && !hasInfo && !notFound) throw Object.assign(new Error('portal SNR con error, no concluyente: ' + info.raw.slice(0, 120)), { code: 'SNR_ERROR' });
     if (!hasInfo && !notFound) throw new Error('consulta pública sin resultado: ' + info.raw.slice(0, 120));
     info.disponible = !notFound && /disponible/i.test(info.estado || '') && !/no\s*disponible/i.test(info.estado || '');
     if (notFound && !info.estado) info.estado = 'No encontrada';

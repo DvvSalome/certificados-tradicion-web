@@ -54,10 +54,15 @@ export async function consultaHttp(oficina, matricula) {
   const modal = mm ? mm[1] : '';
   const labels = [...modal.matchAll(/<span class="label">([^<]*)<\/span>/g)].map((m) => m[1].trim());
   const estado = labels[2] || null;
-  const notFound = /no es posible generar|Error de validaci|no se encuentra|No Disponible/i.test(xml);
-  if (estado && !notFound && /disponible/i.test(estado)) {
+  // "no encontrada" GENUINO vs error del SISTEMA del SNR. "Error de validación" / "no es posible generar" NO
+  // significan "no existe" (portal lento/caído) → deben LANZAR (→ fallback navegador y, si todo falla, el web
+  // hace fail-open y NO bloquea a un cliente real con una matrícula válida).
+  const notFound = /no se encuentra|No se ha encontrado|No Disponible/i.test(xml);
+  const snrError = /Error de validaci[oó]n|no es posible generar|error interno|servicio no (est[aá] )?disponible|intente (m[aá]s tarde|nuevamente)/i.test(xml);
+  if (estado && /disponible/i.test(estado) && !/no\s*disponible/i.test(estado)) {
     return { disponible: true, estado, direccion: labels[0] || null, circulo: labels[1] || null, cached: false };
   }
+  if (snrError) throw Object.assign(new Error('portal SNR con error (HTTP), no concluyente'), { code: 'SNR_ERROR' });
   if (notFound || (estado && /no\s*disponible/i.test(estado))) {
     return { disponible: false, estado: 'No encontrada', direccion: null, circulo: null, cached: false };
   }
