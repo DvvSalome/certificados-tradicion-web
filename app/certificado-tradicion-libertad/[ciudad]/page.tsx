@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: { params: Promise<{ ciudad: s
       type: 'website',
       siteName: 'Certitradición',
       locale: 'es_CO',
-      images: [{ url: `${BASE}/og-v2.png`, width: 1200, height: 630, alt: `Certificado de Tradición y Libertad en ${c.ciudad}` }],
+      images: [{ url: `${BASE}/og-v3.jpg`, width: 1200, height: 630, alt: `Certificado de Tradición y Libertad en ${c.ciudad}` }],
     },
   };
 }
