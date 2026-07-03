@@ -101,10 +101,10 @@ export default function CheckoutForm() {
   const isVerified = vResult?.disponible === true;
   // "No encontrada" GENUINO (el SNR dijo claramente que no existe). Un error/timeout NO es rechazo.
   const isRejected = vResult?.disponible === false && !vResult?.error;
-  // No se pudo verificar (portal del SNR lento/caído, timeout, o mock): PERMITIMOS continuar. El robot vuelve a
-  // consultar la matrícula ANTES de generar y, si de verdad no existe, la devolución automática es el respaldo.
+  // No se pudo verificar (portal del SNR caído/lento/en mantenimiento). NO dejamos pagar: si no podemos
+  // verificar, tampoco vamos a poder generar → mejor "intenta más tarde" que cobrar y devolver.
   const isUnverified = !!vResult && !isVerified && !isRejected;
-  const canProceed = isVerified || isUnverified;
+  const canProceed = isVerified;
 
   const isFormComplete =
     canProceed &&
@@ -119,7 +119,7 @@ export default function CheckoutForm() {
 
   async function confirmAndPay() {
     if (!isFormComplete || loading || validating) {
-      if (!canProceed) setError(isRejected ? 'No encontramos esa matrícula en esa oficina. Verifica los datos.' : 'Ingresa la oficina y la matrícula inmobiliaria primero.');
+      if (!canProceed) setError(isRejected ? 'No encontramos esa matrícula en esa oficina. Verifica los datos.' : isUnverified ? 'El portal oficial del SNR no está disponible en este momento. Intenta más tarde.' : 'Ingresa la oficina y la matrícula inmobiliaria primero.');
       else if (!nombres.trim() || !apellidos.trim()) setError('Debes ingresar nombres y apellidos.');
       else if (!cedula.trim()) setError('Ingresa tu número de identificación.');
       else if (!email.trim() || email !== emailConfirm) setError('Revisa que los correos coincidan.');
@@ -323,8 +323,8 @@ export default function CheckoutForm() {
                     <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 9v4M12 17h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
                   </div>
                   <div>
-                    <div className="font-bold text-amber-800 text-[13.5px]">No pudimos verificar la matrícula ahora</div>
-                    <div className="text-xs text-amber-700 mt-0.5 max-w-md">El portal oficial del SNR puede estar lento o intermitente. <b>Puedes continuar con tu compra</b>; si hubiera algún problema con la matrícula, te devolvemos el pago automáticamente.</div>
+                    <div className="font-bold text-amber-800 text-[13.5px]">El portal oficial del SNR no está disponible</div>
+                    <div className="text-xs text-amber-700 mt-0.5 max-w-md">El portal de la Superintendencia de Notariado y Registro puede estar en mantenimiento o caído. <b>No podemos procesar el pago hasta poder verificar tu matrícula.</b> Por favor, intenta de nuevo en unos minutos.</div>
                   </div>
                 </div>
                 <button type="button" onClick={() => validarMatricula(false)} className="text-xs font-bold text-amber-700 underline hover:text-amber-800 shrink-0">

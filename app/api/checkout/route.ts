@@ -46,14 +46,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Debes aceptar los términos y la política de tratamiento de datos para continuar.' }, { status: 400 });
   }
 
-  // VALIDAR ANTES DE COBRAR: si la consulta es conclusiva y la matrícula NO está disponible, no se crea
-  // la orden ni se redirige a Wompi (evita cobrar por una matrícula inexistente). Pega caché (el modal ya
-  // validó) → instantáneo. Si la validación no es concluyente (mock/timeout) se deja pasar (fail-open):
-  // el robot vuelve a consultar antes de generar y, si falla, la devolución automática es el respaldo.
+  // VALIDAR ANTES DE COBRAR (fail-CLOSED): solo se cobra si la matrícula está CONFIRMADA como disponible.
+  //  - disponible=true  → seguimos al pago.
+  //  - disponible=false → 422 "no encontrada" (no cobramos por algo inexistente).
+  //  - no verificable (portal del SNR caído/lento/error) → 503 "intenta más tarde": si no podemos verificar,
+  //    tampoco vamos a poder generar → mejor no cobrar. (mocked = entorno local sin robot → se permite.)
   const check = await verificar(oficina, matricula);
-  const inconclusive = check.mocked || !!check.error; // mock/timeout → fail-open (robot + devolución respaldan)
-  if (!inconclusive && check.disponible === false) {
-    return NextResponse.json({ error: 'No encontramos esa matrícula en esa oficina. Verifícala antes de pagar.' }, { status: 422 });
+  if (check.disponible !== true && !check.mocked) {
+    if (check.disponible === false && !check.error) {
+      return NextResponse.json({ error: 'No encontramos esa matrícula en esa oficina. Verifícala antes de pagar.' }, { status: 422 });
+    }
+    return NextResponse.json({ error: 'El portal oficial del SNR no está disponible en este momento. Por favor intenta más tarde.' }, { status: 503 });
   }
 
   const plan = body.plan === 'express' ? 'express' : 'basico';
