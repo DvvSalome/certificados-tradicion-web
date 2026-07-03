@@ -35,7 +35,7 @@ const data = {
         '@type': 'ImageObject',
         url: `${SITE_URL}/logo.png`,
       },
-      image: `${SITE_URL}/og.png`,
+      image: `${SITE_URL}/og-v2.png`,
       priceRange: '$',
       description:
         'Certitradición es un servicio privado de gestión que tramita en línea, en nombre del solicitante, el Certificado de Tradición y Libertad de inmuebles en Colombia. No somos canal oficial de la Superintendencia de Notariado y Registro (SNR).',
