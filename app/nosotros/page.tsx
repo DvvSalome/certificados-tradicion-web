@@ -6,9 +6,9 @@ const BASE = 'https://certitradicion.com';
 export const metadata: Metadata = {
   title: 'Sobre nosotros',
   description:
-    'Certitradición es un servicio privado de gestión documental operado por FourG Solutions en Barranquilla, Colombia. Ayudamos a obtener el Certificado de Tradición y Libertad en línea, rápido y seguro.',
+    'Certitradición es un servicio privado de gestión documental con sede en Barranquilla, Colombia. Ayudamos a obtener el Certificado de Tradición y Libertad en línea, rápido y seguro.',
   alternates: { canonical: '/nosotros' },
-  openGraph: { title: 'Sobre Certitradición | FourG Solutions', description: 'Servicio privado de gestión del Certificado de Tradición y Libertad en Colombia.', url: `${BASE}/nosotros`, type: 'website' },
+  openGraph: { title: 'Sobre Certitradición', description: 'Servicio privado de gestión del Certificado de Tradición y Libertad en Colombia.', url: `${BASE}/nosotros`, type: 'website' },
 };
 
 export default function Nosotros() {
@@ -48,8 +48,7 @@ export default function Nosotros() {
 
           <p className="text-[16px] leading-relaxed text-[var(--muted)]">
             <strong className="text-[var(--foreground)]">Certitradición</strong> es un servicio privado de gestión documental
-            operado por <strong className="text-[var(--foreground)]">FourG Solutions</strong>, con sede en Barranquilla, Colombia.
-            Ayudamos a personas, compradores, asesores inmobiliarios y abogados a obtener el
+            con sede en Barranquilla, Colombia. Ayudamos a personas, compradores, asesores inmobiliarios y abogados a obtener el
             <strong> Certificado de Tradición y Libertad</strong> de cualquier inmueble del país de forma 100% en línea, sin filas
             ni desplazamientos.
           </p>
@@ -88,7 +87,7 @@ export default function Nosotros() {
             <h2 className="text-lg font-semibold text-[var(--foreground)]">Contacto y sede</h2>
             <div className="rounded-2xl border border-[var(--border)] bg-white/60 p-5">
               <dl className="flex flex-col gap-2 text-[14.5px]">
-                <div className="flex gap-2"><dt className="w-24 shrink-0 text-[var(--muted-2)]">Operado por</dt><dd className="font-medium text-[var(--foreground)]">FourG Solutions</dd></div>
+                <div className="flex gap-2"><dt className="w-24 shrink-0 text-[var(--muted-2)]">Servicio</dt><dd className="font-medium text-[var(--foreground)]">Certitradición — gestión documental privada</dd></div>
                 <div className="flex gap-2"><dt className="w-24 shrink-0 text-[var(--muted-2)]">Dirección</dt><dd className="font-medium text-[var(--foreground)]">Calle 80 B #42 D, Barranquilla, Atlántico, Colombia</dd></div>
                 <div className="flex gap-2"><dt className="w-24 shrink-0 text-[var(--muted-2)]">Correo</dt><dd className="font-medium"><a href="mailto:certificados@certitradicion.com" className="text-[var(--brand)] hover:underline">certificados@certitradicion.com</a></dd></div>
                 <div className="flex gap-2"><dt className="w-24 shrink-0 text-[var(--muted-2)]">WhatsApp</dt><dd className="font-medium"><a href="https://wa.me/573212258245" className="text-[var(--brand)] hover:underline">+57 321 225 8245</a></dd></div>
@@ -102,7 +101,7 @@ export default function Nosotros() {
           <a href="/" className="mt-3 inline-flex items-center gap-2 rounded-full bg-[var(--brand)] px-5 py-2.5 text-[15px] font-semibold text-white transition-colors hover:bg-[var(--brand-600)]">Solicitar ahora</a>
         </div>
 
-        <p className="text-center text-xs text-[var(--muted-2)]">Certitradición · operado por FourG Solutions · Barranquilla, Colombia</p>
+        <p className="text-center text-xs text-[var(--muted-2)]">Certitradición · Barranquilla, Colombia</p>
       </main>
     </div>
   );

@@ -3,6 +3,7 @@ import SiteFooter from '@/components/SiteFooter';
 import { Seal, WompiLogo } from '@/components/Brand';
 import VideoPlayer from '@/components/VideoPlayer';
 import AnimatedCertificate from '@/components/AnimatedCertificate';
+import StructuredData from '@/components/StructuredData';
 import { RotatingTail } from '@/components/RotatingTail';
 import StatsCounter from '@/components/StatsCounter';
 import WhyUs from '@/components/WhyUs';
@@ -57,6 +58,8 @@ const FAQS = [
 export default function Home() {
   return (
     <div className="min-h-screen bg-[var(--background)] flex flex-col scroll-smooth">
+      {/* Schema específico del home (Service, FAQ, HowTo, Breadcrumb) — solo aquí, donde ese contenido se ve */}
+      <StructuredData variant="home" />
       {/* ===== HEADER ===== */}
       <header className="sticky top-0 z-50 w-full bg-[var(--brand)] shadow-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">

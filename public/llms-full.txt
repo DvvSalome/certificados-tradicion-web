@@ -1,0 +1,57 @@
+# Certitradición — Guía completa (llms-full)
+
+> Certitradición es un servicio privado de gestión documental (con sede en Barranquilla, Colombia) para obtener el Certificado de Tradición y Libertad (CTL) de cualquier inmueble en Colombia, 100% en línea, con entrega por correo y WhatsApp en minutos. No somos el canal oficial de la Superintendencia de Notariado y Registro (SNR); actuamos como intermediarios.
+
+## Qué es el Certificado de Tradición y Libertad (CTL)
+
+El Certificado de Tradición y Libertad es el documento oficial expedido por la Superintendencia de Notariado y Registro (SNR) que resume la historia jurídica de un inmueble en Colombia. Se genera a partir del folio de matrícula inmobiliaria, el registro donde se anotan, de forma cronológica y numerada, todos los actos jurídicos que afectan a un predio: compraventas, hipotecas, embargos, gravámenes, medidas cautelares, patrimonio de familia, afectación a vivienda familiar y demás anotaciones. Funciona como la "hoja de vida" del inmueble y tiene validez legal. Cada certificado incluye un código de verificación con el que se puede confirmar su autenticidad en el portal oficial de la SNR (supernotariado.gov.co).
+
+## Qué contiene el certificado
+
+- Identificación del inmueble: matrícula inmobiliaria, dirección, círculo registral y datos catastrales.
+- Propietarios y cadena de tradición: quién es el dueño actual y cómo se ha transferido la propiedad (compraventas, sucesiones, donaciones).
+- Gravámenes y limitaciones: hipotecas, patrimonio de familia, afectación a vivienda familiar, servidumbres, limitaciones al dominio.
+- Medidas cautelares: embargos, demandas, extinción de dominio y otras anotaciones judiciales.
+- Cancelaciones: qué gravámenes o medidas ya fueron cancelados y cuáles siguen vigentes hoy.
+
+## Para qué sirve
+
+Sirve para verificar la situación jurídica de un inmueble antes de comprar, vender, hipotecar o arrendar: confirmar quién es el dueño real y si el predio está libre de hipotecas, embargos o limitaciones. Lo exigen bancos, notarías, sucesiones y procesos judiciales. Cualquier comprador prudente lo revisa antes de firmar una promesa de compraventa o entregar dinero.
+
+## Vigencia
+
+El Certificado de Tradición y Libertad tiene una vigencia de 30 días calendario desde su expedición. Pasado ese plazo, bancos y notarías suelen exigir uno actualizado, porque la situación del inmueble puede cambiar con nuevas anotaciones.
+
+## Cómo se obtiene con Certitradición
+
+1. El usuario ingresa la oficina de registro y el número de matrícula inmobiliaria del predio.
+2. Se valida la disponibilidad de la matrícula ante el portal público de la SNR (antes de cobrar).
+3. Se realiza el pago de forma segura a través de Wompi (tarjetas, PSE, Nequi, Bancolombia).
+4. Se genera el certificado oficial y se entrega por correo electrónico y WhatsApp, normalmente en minutos.
+
+## Precio
+
+- Plan Básico: $38.900 COP — Certificado de Tradición y Libertad oficial (PDF), entrega en minutos por correo y WhatsApp, validez 30 días.
+- Plan Express: $44.900 COP — incluye el certificado más un Estudio de Títulos con análisis del inmueble: propietarios, gravámenes y limitaciones vigentes, banderas de riesgo (semáforo verde/amarillo/rojo), tamizaje de listas restrictivas (prevención de lavado de activos) y un avalúo comercial estimado.
+- El precio incluye la tarifa del certificado electrónico ante la SNR más el servicio de gestión, la entrega inmediata y el soporte.
+
+Certitradición es un intermediario/gestor privado; no somos el canal oficial de la SNR.
+
+## Estudio de Títulos (plan Express)
+
+El Estudio de Títulos es un análisis automatizado del certificado que resume, en lenguaje claro para el comprador: los propietarios actuales y cómo adquirieron el inmueble, los gravámenes y limitaciones que siguen vigentes hoy (distinguiendo los ya cancelados), las banderas de riesgo (embargos, demandas, hipotecas) con un semáforo, un tamizaje de los propietarios contra listas restrictivas de lavado de activos, y un avalúo comercial estimado del inmueble. Es información automatizada; no constituye asesoría jurídica ni reemplaza a un abogado.
+
+## Cómo leer un Certificado de Tradición y Libertad
+
+El certificado se lee por anotaciones numeradas en orden cronológico. Cada anotación describe un acto (por ejemplo "COMPRAVENTA", "HIPOTECA", "EMBARGO") con su fecha y documento soporte. Una anotación que dice "Se cancela anotación No: X" deja sin efecto la anotación X: por eso, para saber la situación actual del inmueble, hay que recorrer todas las anotaciones e identificar solo las que siguen vigentes (las que no fueron canceladas por una anotación posterior). Términos frecuentes: falsa tradición (quien transfiere no es el verdadero dueño), gravamen (carga sobre el inmueble, como una hipoteca), medida cautelar (embargo o demanda que limita la disposición del predio), y limitación al dominio (como el reglamento de propiedad horizontal, que es normal en apartamentos).
+
+## Ciudades
+
+Certitradición genera el certificado de inmuebles en toda Colombia. Hay páginas por ciudad (Bogotá, Medellín, Cali, Barranquilla, Cartagena y muchas más) en /certificado-tradicion-libertad/[ciudad]. Cada oficina de registro tiene un código (por ejemplo 040 Barranquilla, 50N Bogotá Zona Norte, 001 Medellín Sur) que es el prefijo de la matrícula inmobiliaria.
+
+## Contacto
+
+- Sitio: https://certitradicion.com
+- Sede: Calle 80 B #42 D, Barranquilla, Atlántico, Colombia.
+- Correo: certificados@certitradicion.com
+- WhatsApp: +57 321 225 8245

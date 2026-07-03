@@ -25,9 +25,9 @@ const SERVICE_ID = `${SITE_URL}/#service`;
 const data = {
   '@context': 'https://schema.org',
   '@graph': [
-    /* ── Organización (gestor privado, NO entidad oficial) ───────────── */
+    /* ── Organización / ProfessionalService (gestor privado, NO entidad oficial) ── */
     {
-      '@type': 'Organization',
+      '@type': ['Organization', 'ProfessionalService'],
       '@id': ORG_ID,
       name: 'Certitradición',
       url: SITE_URL,
@@ -35,24 +35,32 @@ const data = {
         '@type': 'ImageObject',
         url: `${SITE_URL}/logo.png`,
       },
+      image: `${SITE_URL}/og.png`,
+      priceRange: '$',
       description:
         'Certitradición es un servicio privado de gestión que tramita en línea, en nombre del solicitante, el Certificado de Tradición y Libertad de inmuebles en Colombia. No somos canal oficial de la Superintendencia de Notariado y Registro (SNR).',
-      // sameAs: perfiles oficiales de la marca para resolver la entidad en
-      // buscadores e IA. PLACEHOLDERS — el equipo debe reemplazar cada URL por
-      // el perfil real (o borrar las líneas que aún no existan) antes de publicar.
-      sameAs: [
-        'https://www.linkedin.com/company/certitradicion', // placeholder LinkedIn
-        'https://www.instagram.com/certitradicion', // placeholder Instagram
-        'https://www.facebook.com/certitradicion', // placeholder Facebook
-        'https://www.youtube.com/@certitradicion', // placeholder YouTube
-      ],
+      // sameAs: perfiles oficiales de la marca (Google Business Profile, LinkedIn, YouTube, etc.).
+      // Se agregan cuando existan las URLs REALES (un sameAs muerto resta confianza). Ver plan off-page.
       telephone: '+573212258245',
       address: {
         '@type': 'PostalAddress',
         streetAddress: 'Calle 80 B #42 D',
         addressLocality: 'Barranquilla',
         addressRegion: 'Atlántico',
+        postalCode: '080020',
         addressCountry: 'CO',
+      },
+      geo: {
+        '@type': 'GeoCoordinates',
+        latitude: 10.9878,
+        longitude: -74.7889,
+      },
+      areaServed: { '@type': 'Country', name: 'Colombia' },
+      openingHoursSpecification: {
+        '@type': 'OpeningHoursSpecification',
+        dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+        opens: '08:00',
+        closes: '18:00',
       },
       contactPoint: {
         '@type': 'ContactPoint',
@@ -72,14 +80,7 @@ const data = {
       name: 'Certitradición',
       inLanguage: 'es-CO',
       publisher: { '@id': ORG_ID },
-      potentialAction: {
-        '@type': 'SearchAction',
-        target: {
-          '@type': 'EntryPoint',
-          urlTemplate: `${SITE_URL}/?q={search_term_string}`,
-        },
-        'query-input': 'required name=search_term_string',
-      },
+      // (Sin SearchAction: no hay un buscador real que procese ?q= en el sitio.)
     },
 
     /* ── Servicio (+ Offer) ──────────────────────────────────────────── */
@@ -228,11 +229,23 @@ const data = {
   ],
 };
 
-export default function StructuredData() {
+// Schema condicional:
+//  - 'global' (en el layout, TODAS las páginas): solo las ENTIDADES del sitio (Organization + WebSite).
+//  - 'home'   (solo en la homepage): el contenido específico VISIBLE ahí (Service + FAQPage + HowTo +
+//    BreadcrumbList). No inyectar FAQ/HowTo en páginas donde ese contenido no se muestra → Google lo marca
+//    como spam (FAQ no visible). Las demás páginas (pilar, guías, nosotros) traen su propio schema.
+export default function StructuredData({ variant = 'global' }: { variant?: 'global' | 'home' }) {
+  const graph = data['@graph'] as { '@type': string | string[] }[];
+  const isEntity = (n: { '@type': string | string[] }) => {
+    const t = Array.isArray(n['@type']) ? n['@type'] : [n['@type']];
+    return t.includes('Organization') || t.includes('WebSite');
+  };
+  const selected = variant === 'global' ? graph.filter(isEntity) : graph.filter((n) => !isEntity(n));
+  const out = { '@context': data['@context'], '@graph': selected };
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(out) }}
     />
   );
 }

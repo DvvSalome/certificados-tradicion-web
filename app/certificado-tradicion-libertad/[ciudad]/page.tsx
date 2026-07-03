@@ -23,7 +23,15 @@ export async function generateMetadata({ params }: { params: Promise<{ ciudad: s
     title: baseTitle,
     description: c.metaDescription,
     alternates: { canonical: `/certificado-tradicion-libertad/${c.slug}` },
-    openGraph: { title: `${baseTitle} | Certitradición`, description: c.metaDescription, url, type: 'website' },
+    openGraph: {
+      title: `${baseTitle} | Certitradición`,
+      description: c.metaDescription,
+      url,
+      type: 'website',
+      siteName: 'Certitradición',
+      locale: 'es_CO',
+      images: [{ url: `${BASE}/og.png`, width: 1200, height: 630, alt: `Certificado de Tradición y Libertad en ${c.ciudad}` }],
+    },
   };
 }
 

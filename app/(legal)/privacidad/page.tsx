@@ -13,7 +13,7 @@ export default function Privacidad() {
       <p>En Certitradición protegemos tus datos personales conforme a la Ley 1581 de 2012 y el Decreto 1377 de 2013 (Habeas Data). Al usar nuestro servicio aceptas esta política.</p>
 
       <h2>Responsable</h2>
-      <p>Certitradición, operado por FourG Solutions, con domicilio en Calle 80 B #42 D, Barranquilla, Atlántico, Colombia. Servicio privado de gestión documental. Contacto y ejercicio de derechos: <a href="mailto:certificados@certitradicion.com">certificados@certitradicion.com</a> · WhatsApp +57 321 225 8245.</p>
+      <p>Certitradición, servicio privado de gestión documental con domicilio en Calle 80 B #42 D, Barranquilla, Atlántico, Colombia. Contacto y ejercicio de derechos: <a href="mailto:certificados@certitradicion.com">certificados@certitradicion.com</a> · WhatsApp +57 321 225 8245.</p>
 
       <h2>Qué datos tratamos</h2>
       <ul>
