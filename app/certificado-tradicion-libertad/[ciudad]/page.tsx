@@ -13,11 +13,17 @@ export async function generateMetadata({ params }: { params: Promise<{ ciudad: s
   const c = getCiudad(ciudad);
   if (!c) return {};
   const url = `${BASE}/certificado-tradicion-libertad/${c.slug}`;
+  // Normaliza el título: quita sufijos viejos (marca duplicada o precios desactualizados como "| $39.900")
+  // del metaTitle; el template del layout ("%s | Certitradición") agrega la marca UNA sola vez.
+  let baseTitle = c.metaTitle;
+  while (/\s*\|\s*(Certitradici[oó]n|\$[\d.,]+)\s*$/i.test(baseTitle)) {
+    baseTitle = baseTitle.replace(/\s*\|\s*(Certitradici[oó]n|\$[\d.,]+)\s*$/i, '').trim();
+  }
   return {
-    title: c.metaTitle,
+    title: baseTitle,
     description: c.metaDescription,
     alternates: { canonical: `/certificado-tradicion-libertad/${c.slug}` },
-    openGraph: { title: c.metaTitle, description: c.metaDescription, url, type: 'website' },
+    openGraph: { title: `${baseTitle} | Certitradición`, description: c.metaDescription, url, type: 'website' },
   };
 }
 

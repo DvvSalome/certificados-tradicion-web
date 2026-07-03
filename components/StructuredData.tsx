@@ -12,7 +12,12 @@
  * integración la hace el orquestador, este archivo no se autoinyecta).
  */
 
+import { PLANS } from '@/lib/config';
+
 const SITE_URL = 'https://certitradicion.com';
+// Precios reales (fuente única en lib/config) → el schema NUNCA queda desincronizado con la web.
+const PRICE_BASICO = String(PLANS.basico.priceCop);
+const PRICE_EXPRESS = String(PLANS.express.priceCop);
 const ORG_ID = `${SITE_URL}/#organization`;
 const WEBSITE_ID = `${SITE_URL}/#website`;
 const SERVICE_ID = `${SITE_URL}/#service`;
@@ -95,9 +100,11 @@ const data = {
         serviceUrl: SITE_URL,
       },
       offers: {
-        '@type': 'Offer',
-        price: '39900',
+        '@type': 'AggregateOffer',
         priceCurrency: 'COP',
+        lowPrice: PRICE_BASICO,
+        highPrice: PRICE_EXPRESS,
+        offerCount: '2',
         availability: 'https://schema.org/InStock',
         url: SITE_URL,
         category: 'Trámite documental',
@@ -192,7 +199,7 @@ const data = {
       estimatedCost: {
         '@type': 'MonetaryAmount',
         currency: 'COP',
-        value: '39900',
+        value: PRICE_BASICO,
       },
       step: [
         {
