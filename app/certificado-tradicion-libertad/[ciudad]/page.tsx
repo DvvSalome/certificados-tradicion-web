@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { CIUDADES, getCiudad } from '@/lib/ciudades';
+import { PLANS } from '@/lib/config';
+import { ArticleMeta } from '@/components/ArticleMeta';
 
 const BASE = 'https://certitradicion.com';
 
@@ -40,6 +42,10 @@ export default async function CiudadPage({ params }: { params: Promise<{ ciudad:
   const c = getCiudad(ciudad);
   if (!c) notFound();
 
+  const codigos = c.oficinas.map((o) => o.codigo);
+  const primaryCode = codigos[0] || '000';
+  const codigosTxt = codigos.length > 1 ? codigos.join(' / ') : primaryCode;
+
   const ld = {
     '@context': 'https://schema.org',
     '@graph': [
@@ -48,8 +54,15 @@ export default async function CiudadPage({ params }: { params: Promise<{ ciudad:
         name: `Certificado de Tradición y Libertad en ${c.ciudad}`,
         serviceType: 'Gestión de Certificado de Tradición y Libertad',
         areaServed: { '@type': 'City', name: c.ciudad, containedInPlace: { '@type': 'AdministrativeArea', name: c.departamento } },
-        provider: { '@type': 'Organization', name: 'Certitradición', url: BASE },
-        offers: { '@type': 'Offer', price: '39900', priceCurrency: 'COP' },
+        provider: { '@id': `${BASE}/#organization` },
+        offers: {
+          '@type': 'AggregateOffer',
+          priceCurrency: 'COP',
+          lowPrice: String(PLANS.basico.priceCop),
+          highPrice: String(PLANS.express.priceCop),
+          offerCount: '2',
+          availability: 'https://schema.org/InStock',
+        },
       },
       {
         '@type': 'FAQPage',
@@ -90,7 +103,24 @@ export default async function CiudadPage({ params }: { params: Promise<{ ciudad:
         <div className="flex flex-col gap-3">
           <span className="inline-flex w-fit items-center gap-2 rounded-full bg-[var(--accent-50)] px-3 py-1.5 text-xs font-semibold text-[var(--accent)]">{c.departamento}</span>
           <h1 className="text-[clamp(1.8rem,6vw,2.5rem)] font-bold leading-tight tracking-[-0.02em] text-[var(--foreground)]">{c.h1}</h1>
+          <ArticleMeta />
           <p className="text-[16px] leading-relaxed text-[var(--muted)]">{c.intro}</p>
+        </div>
+
+        {/* Datos rápidos locales (únicos por ciudad, citables) */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-[var(--border)] bg-white/60 p-3.5">
+            <p className="text-[10.5px] font-bold uppercase tracking-wide text-[var(--muted-2)]">Departamento</p>
+            <p className="mt-1 text-[15px] font-semibold text-[var(--foreground)]">{c.departamento}</p>
+          </div>
+          <div className="rounded-xl border border-[var(--border)] bg-white/60 p-3.5">
+            <p className="text-[10.5px] font-bold uppercase tracking-wide text-[var(--muted-2)]">Prefijo de matrícula</p>
+            <p className="mt-1 font-mono text-[15px] font-semibold text-[var(--brand)]">{codigosTxt}</p>
+          </div>
+          <div className="col-span-2 rounded-xl border border-[var(--border)] bg-white/60 p-3.5 sm:col-span-1">
+            <p className="text-[10.5px] font-bold uppercase tracking-wide text-[var(--muted-2)]">Entrega</p>
+            <p className="mt-1 text-[15px] font-semibold text-[var(--foreground)]">Correo y WhatsApp · minutos</p>
+          </div>
         </div>
 
         <div className="rounded-2xl border border-[var(--brand)]/15 bg-[var(--brand-50)] p-6 text-center">
@@ -115,6 +145,22 @@ export default async function CiudadPage({ params }: { params: Promise<{ ciudad:
           </div>
         </section>
 
+        {/* Cómo identificar la matrícula en la ciudad (contenido local único, usa el código real de oficina) */}
+        <section className="flex flex-col gap-2">
+          <h2 className="text-lg font-semibold text-[var(--foreground)]">¿Cómo identificar tu matrícula inmobiliaria en {c.ciudad}?</h2>
+          <p className="text-[15px] leading-relaxed text-[var(--muted)]">
+            En {c.ciudad}, la Oficina de Registro de Instrumentos Públicos usa el código{' '}
+            <span className="font-mono font-semibold text-[var(--brand)]">{primaryCode}</span>, que es el <strong>prefijo del número de matrícula inmobiliaria</strong>.
+            Una matrícula de {c.ciudad} se ve así:{' '}
+            <span className="font-mono font-semibold text-[var(--foreground)]">{primaryCode}-123456</span> — el prefijo identifica la oficina y el resto es el número del predio.
+            Encuentras la matrícula completa en un <strong>certificado anterior</strong> o en tu <strong>factura de impuesto predial</strong>. Al solicitarlo aquí, ingresas solo el número (sin el prefijo) y eliges la oficina de {c.ciudad}.
+          </p>
+          <p className="text-[14px] text-[var(--muted-2)]">
+            ¿No sabes leer las anotaciones? Revisa la guía{' '}
+            <a href="/como-leer-certificado" className="font-semibold text-[var(--brand)] hover:underline">cómo leer un Certificado de Tradición y Libertad</a>.
+          </p>
+        </section>
+
         <section className="flex flex-col gap-3">
           <h2 className="text-lg font-semibold text-[var(--foreground)]">Preguntas frecuentes — {c.ciudad}</h2>
           <div className="flex flex-col gap-3">
@@ -125,6 +171,15 @@ export default async function CiudadPage({ params }: { params: Promise<{ ciudad:
               </div>
             ))}
           </div>
+        </section>
+
+        <section className="border-t border-[var(--border)] pt-5">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[var(--muted-2)]">Aprende más</p>
+          <ul className="flex flex-col gap-2">
+            <li><a href="/certificado-tradicion-libertad" className="text-[14px] font-medium text-[var(--brand)] hover:underline">› ¿Qué es el Certificado de Tradición y Libertad?</a></li>
+            <li><a href="/como-leer-certificado" className="text-[14px] font-medium text-[var(--brand)] hover:underline">› Cómo leer un Certificado de Tradición y Libertad</a></li>
+            <li><a href="/guias" className="text-[14px] font-medium text-[var(--brand)] hover:underline">› Guías sobre el Certificado de Tradición y Libertad</a></li>
+          </ul>
         </section>
 
         <p className="text-center text-xs text-[var(--muted-2)]">
