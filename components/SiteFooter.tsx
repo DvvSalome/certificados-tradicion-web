@@ -15,10 +15,12 @@ export default function SiteFooter() {
             </div>
           </div>
           <nav className="flex flex-wrap gap-x-6 gap-y-2 text-[13.5px] font-medium text-white/70">
+            <a href="/certificado-tradicion-libertad" className="transition-colors hover:text-white">Qué es el certificado</a>
             <a href="/verificar" className="transition-colors hover:text-white">Tu matrícula</a>
             <a href="/preguntas-frecuentes" className="transition-colors hover:text-white">Preguntas frecuentes</a>
             <a href="/precio" className="transition-colors hover:text-white">¿Cuánto cuesta?</a>
             <a href="/como-leer-certificado" className="transition-colors hover:text-white">Cómo leer tu certificado</a>
+            <a href="/nosotros" className="transition-colors hover:text-white">Nosotros</a>
           </nav>
         </div>
 

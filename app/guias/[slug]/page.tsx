@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { GUIAS, getGuia } from '@/lib/guias';
+import { ArticleMeta, UPDATED_ISO } from '@/components/ArticleMeta';
 
 const BASE = 'https://certitradicion.com';
 
@@ -35,7 +36,9 @@ export default async function GuiaPage({ params }: { params: Promise<{ slug: str
         description: g.metaDescription,
         about: g.tema,
         inLanguage: 'es-CO',
-        author: { '@type': 'Organization', name: 'Certitradición' },
+        datePublished: '2026-06-01',
+        dateModified: UPDATED_ISO,
+        author: { '@type': 'Organization', name: 'Certitradición', url: BASE },
         publisher: { '@type': 'Organization', name: 'Certitradición', url: BASE },
         mainEntityOfPage: `${BASE}/guias/${g.slug}`,
       },
@@ -74,6 +77,7 @@ export default async function GuiaPage({ params }: { params: Promise<{ slug: str
         <article className="flex flex-col gap-6">
           <header className="flex flex-col gap-3">
             <h1 className="text-[clamp(1.7rem,5.5vw,2.3rem)] font-bold leading-tight tracking-[-0.02em] text-[var(--foreground)]">{g.h1}</h1>
+            <ArticleMeta />
             <p className="text-[16px] leading-relaxed text-[var(--muted)]">{g.intro}</p>
           </header>
 

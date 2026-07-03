@@ -26,9 +26,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     url: `${BASE_URL}/${s}`, lastModified, changeFrequency: 'yearly' as const, priority: 0.3,
   }))
 
+  const institucionales: MetadataRoute.Sitemap = [
+    { url: `${BASE_URL}/nosotros`, lastModified, changeFrequency: 'monthly', priority: 0.5 },
+  ]
+
   return [
     ...ciudades,
     ...guias,
+    ...institucionales,
     ...legales,
     {
       url: BASE_URL,
