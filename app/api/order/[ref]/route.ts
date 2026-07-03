@@ -7,5 +7,13 @@ export async function GET(_req: Request, ctx: { params: Promise<{ ref: string }>
   const { ref } = await ctx.params;
   const o = await orders.get(ref);
   if (!o) return NextResponse.json({ error: 'No encontrado' }, { status: 404 });
-  return NextResponse.json({ reference: o.reference, status: o.status, matricula: o.matricula, oficina: o.oficina });
+  return NextResponse.json({
+    reference: o.reference,
+    status: o.status,
+    matricula: o.matricula,
+    oficina: o.oficina,
+    // Valor de la venta en COP (para la conversión de Google Ads / ROAS).
+    amountCop: Math.round((o.amountInCents ?? 0) / 100),
+    plan: o.plan ?? null,
+  });
 }

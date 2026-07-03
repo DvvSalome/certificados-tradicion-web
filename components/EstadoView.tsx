@@ -85,7 +85,7 @@ export default function EstadoView() {
   const sp = useSearchParams();
   const ref = sp.get('ref');
   const [status, setStatus] = useState<string | null>(null);
-  const [info, setInfo] = useState<{ matricula?: string; oficina?: string }>({});
+  const [info, setInfo] = useState<{ matricula?: string; oficina?: string; amountCop?: number }>({});
 
   useEffect(() => {
     if (!ref) return;
@@ -96,7 +96,7 @@ export default function EstadoView() {
         if (!r.ok || !active) return;
         const j = await r.json();
         setStatus(j.status);
-        setInfo({ matricula: j.matricula, oficina: j.oficina });
+        setInfo({ matricula: j.matricula, oficina: j.oficina, amountCop: j.amountCop });
       } catch {
         /* reintenta en el siguiente tick */
       }
@@ -108,6 +108,24 @@ export default function EstadoView() {
       clearInterval(iv);
     };
   }, [ref]);
+
+  // Conversión de Google Ads: se reporta UNA sola vez por pedido cuando el pago queda confirmado.
+  // Inerte hasta que definas NEXT_PUBLIC_GADS_ID y NEXT_PUBLIC_GADS_CONVERSION_LABEL en Vercel.
+  useEffect(() => {
+    if (!ref || (status !== 'PAID' && status !== 'DELIVERED')) return;
+    const gadsId = process.env.NEXT_PUBLIC_GADS_ID;
+    const label = process.env.NEXT_PUBLIC_GADS_CONVERSION_LABEL;
+    if (!gadsId || !label) return;
+    const key = `crt_conv_${ref}`;
+    if (localStorage.getItem(key)) return; // ya reportada
+    localStorage.setItem(key, '1');
+    (window as unknown as { gtag?: (...a: unknown[]) => void }).gtag?.('event', 'conversion', {
+      send_to: `${gadsId}/${label}`,
+      value: info.amountCop || undefined,
+      currency: 'COP',
+      transaction_id: ref,
+    });
+  }, [status, ref, info.amountCop]);
 
   if (!ref) {
     return (
