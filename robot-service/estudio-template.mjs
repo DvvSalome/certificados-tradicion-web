@@ -1,8 +1,16 @@
-// HTML del Estudio de Títulos → se renderiza a PDF con Chrome (browserless). Branded Certitradición (con sello).
+// HTML del Estudio de Títulos v2 → se renderiza a PDF con Chrome (browserless). Branded Certitradición.
+// Estructura calcada de un estudio de títulos profesional: concepto, situación jurídica, cadena de
+// tradición, gravámenes, medidas cautelares, documentos a exigir, recomendaciones y salvedades.
+// Tolerante a data v1 (todo campo nuevo es opcional; estados vacíos honestos).
 const SEMA = {
   verde: { c: '#0F7A52', bg: '#E8F5EF', ring: '#B7E4CE', t: 'Sin alertas relevantes' },
   amarillo: { c: '#B7791F', bg: '#FEF6E7', ring: '#F6DFA8', t: 'Requiere atención' },
   rojo: { c: '#B42318', bg: '#FDECEC', ring: '#F5C2C0', t: 'Riesgo alto' },
+};
+const CONCEPTO = {
+  favorable: { label: 'FAVORABLE', pal: SEMA.verde, sub: 'El folio no registra obstáculos para la negociación.' },
+  favorable_condicionado: { label: 'FAVORABLE · CONDICIONADO', pal: SEMA.amarillo, sub: 'Viable, sujeto a subsanar las condiciones listadas antes de firmar.' },
+  desfavorable: { label: 'DESFAVORABLE', pal: SEMA.rojo, sub: 'Se desaconseja negociar hasta resolver los impedimentos listados.' },
 };
 const esc = (s) => String(s ?? '').replace(/[&<>]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
 
@@ -20,20 +28,102 @@ export function estudioHtml(e, { matricula, oficina, fecha }) {
   const s = SEMA[e.semaforo] || SEMA.amarillo;
   const row = (k, v) => v ? `<tr><td class="k">${esc(k)}</td><td class="v">${esc(v)}</td></tr>` : '';
   const nivelClass = (n) => (n === 'rojo' || n === 'amarillo' ? n : '');
-  const banderas = (e.banderas || []).map((b) => `<div class="flag ${nivelClass(b.nivel)}"><b>${esc(b.titulo)}</b><span>${esc(b.detalle)}</span></div>`).join('')
-    || '<div class="flag ok"><b>Sin banderas de riesgo</b><span>No se detectaron alertas de riesgo en el documento.</span></div>';
-  const props = (e.propietarios || []).map((p) => `<li><b>${esc(p.nombre)}</b>${p.identificacion ? ' · ' + esc(p.identificacion) : ''} <span class="muted">${esc(p.modo || '')}${p.anotacion ? ' (anot. ' + esc(p.anotacion) + ')' : ''}</span></li>`).join('') || '<li class="muted">No identificados en el texto.</li>';
+
+  /* ── Alcance (línea bajo el lead) ── */
+  const al = e.alcance || {};
+  const alcanceBits = [
+    al.fechaApertura || al.fechaExpedicionCTL
+      ? `Período analizado: ${esc(al.fechaApertura || 'apertura del folio')} — ${esc(al.fechaExpedicionCTL || 'fecha de expedición')}` : '',
+    al.totalAnotaciones ? `${esc(al.totalAnotaciones)} anotaciones` : '',
+    e.inmueble?.estadoFolio ? `Folio ${esc(e.inmueble.estadoFolio)}` : '',
+  ].filter(Boolean).join(' · ');
+  const alcanceHtml = alcanceBits ? `<p class="alcance">${alcanceBits}</p>` : '';
+
+  /* ── Concepto (caja destacada, veredicto derivado en código) ── */
+  const co = e.concepto && CONCEPTO[e.concepto.estado] ? e.concepto : null;
+  const coPal = co ? CONCEPTO[co.estado] : null;
+  const conceptoHtml = co ? `
+    <div class="concepto" style="border-color:${coPal.pal.ring};background:${coPal.pal.bg}">
+      <div class="co-lbl">CONCEPTO PRELIMINAR · ANÁLISIS AUTOMATIZADO</div>
+      <div class="co-estado" style="color:${coPal.pal.c}">${coPal.label}</div>
+      <div class="co-sub">${coPal.sub}</div>
+      ${co.condiciones?.length ? `<ol class="co-conds">${co.condiciones.map((c) => `<li>${esc(c)}</li>`).join('')}</ol>` : ''}
+    </div>` : '';
+
+  /* ── Resumen multi-párrafo ── */
+  const resumenHtml = (esc(e.resumen) || 'Resumen no disponible.')
+    .split(/\n{2,}/).map((p) => `<p>${p.replace(/\n/g, ' ')}</p>`).join('');
+
+  /* ── Situación jurídica ── */
+  const sj = e.situacionJuridica || null;
+  const domBadge = !sj ? '' : sj.tipoDominio === 'pleno'
+    ? '<span class="tag n">DOMINIO PLENO</span>'
+    : sj.tipoDominio === 'falsa_tradicion'
+      ? '<span class="tag v">FALSA TRADICIÓN</span>'
+      : '<span class="tag">INDETERMINADO</span>';
+  const situacionHtml = !sj ? '' : `
+    <h2>Situación jurídica actual</h2>
+    <table>
+      <tr><td class="k">Tipo de dominio</td><td class="v">${domBadge}${sj.tipoDominio === 'falsa_tradicion' ? '<div class="mini muted">El titular no tiene propiedad plena: no puede hipotecar ni transferir dominio pleno. Se sanea mediante proceso de pertenencia.</div>' : ''}</td></tr>
+      ${row('Copropiedad / cuotas', sj.cuotas)}
+      ${sj.anioAdquisicionTitular ? `<tr><td class="k">Titular actual desde</td><td class="v">${esc(sj.anioAdquisicionTitular)}${sj.tiempoTitularAnios != null ? ` <span class="muted">(${esc(sj.tiempoTitularAnios)} año${sj.tiempoTitularAnios === 1 ? '' : 's'})</span>` : ''}${sj.riesgoLesionEnorme ? '<div class="mini warn">⚠ Compraventa hace menos de 4 años: verificar precio pagado vs. valor comercial — la acción de lesión enorme procede durante 4 años si se pagó menos de la mitad del valor real.</div>' : ''}</td></tr>` : ''}
+      ${sj.tractoSucesivo && sj.tractoSucesivo !== 'indeterminado' ? `<tr><td class="k">Tracto sucesivo</td><td class="v">${sj.tractoSucesivo === 'continuo' ? '<span class="okc">✓ Ininterrumpido</span>' : `<span class="warnc">Con observaciones</span>${sj.tractoObservaciones ? `<div class="mini muted">${esc(sj.tractoObservaciones)}</div>` : ''}`}</td></tr>` : ''}
+      ${sj.sucesionIliquida ? `<tr><td class="k">Sucesión</td><td class="v"><span class="warnc">Sucesión ilíquida detectada</span>${sj.sucesionDetalle ? `<div class="mini muted">${esc(sj.sucesionDetalle)}</div>` : ''}</td></tr>` : ''}
+    </table>`;
+
+  /* ── Propietarios ── */
+  const props = (e.propietarios || []).map((p) => `<li><b>${esc(p.nombre)}</b>${p.identificacion ? ' · ' + esc(p.identificacion) : ''}${p.cuota ? ` <span class="tag">${esc(p.cuota)}</span>` : ''} <span class="muted">${esc(p.modo || '')}${p.anotacion ? ' (anot. ' + esc(p.anotacion) + ')' : ''}</span></li>`).join('') || '<li class="muted">No identificados en el texto.</li>';
+
+  /* ── Estudio de la tradición (tabla que SÍ puede partirse entre páginas) ── */
+  const cadena = e.cadenaTradicion || [];
+  const cadenaHtml = !cadena.length ? '' : `
+    <h2>Estudio de la tradición</h2>
+    <p class="mini muted" style="margin:0 0 6px">Cadena de actos inscritos en el folio, en orden cronológico. Las filas atenuadas fueron canceladas por una anotación posterior.</p>
+    <table class="cadena">
+      <thead><tr><th style="width:38px">Anot.</th><th style="width:70px">Fecha</th><th>Acto</th><th>De → A</th><th style="width:88px">Valor</th></tr></thead>
+      <tbody>
+      ${cadena.map((f) => {
+        const cls = [f.esFalsaTradicion ? 'ft' : '', f.cancelada ? 'cancel' : ''].filter(Boolean).join(' ');
+        const deA = f.de || f.a ? `${esc(f.de || '—')}${f.a ? ' → ' + esc(f.a) : ''}` : '<span class="muted">—</span>';
+        return `<tr class="${cls}"><td><b>${esc(f.anotacion)}</b></td><td>${esc(f.fecha || '—')}</td><td>${esc(f.acto)}${f.codigo ? ` <span class="cod">${esc(f.codigo)}</span>` : ''}${f.esFalsaTradicion ? ' <span class="tag v">FALSA TRAD.</span>' : ''}${f.cancelada ? ` <span class="tag">cancelada por anot. ${esc(f.cancelada)}</span>` : ''}</td><td>${deA}</td><td>${esc(f.valor || '—')}</td></tr>`;
+      }).join('')}
+      </tbody>
+    </table>`;
+
+  /* ── Gravámenes (enriquecidos) ── */
   const gravTag = (g) => !g.vigente ? '<span class="tag">no vigente</span>'
     : g.naturaleza === 'normal' ? '<span class="tag n">normal (propiedad horizontal)</span>'
     : '<span class="tag v">VIGENTE</span>';
-  const grav = (e.gravamenes || []).map((g) => `<li><b>${esc(g.tipo)}</b> ${gravTag(g)}<br><span class="muted">${esc(g.descripcion)}${g.anotacion ? ' · anot. ' + esc(g.anotacion) : ''}</span></li>`).join('')
+  const gravExtra = (g) => {
+    const bits = [];
+    if (g.cuantia) bits.push(`Cuantía: ${esc(g.cuantia)}`);
+    if (g.acreedor) bits.push(`Acreedor/beneficiario: ${esc(g.acreedor)}`);
+    if (g.fechaAnotacion) bits.push(esc(g.fechaAnotacion));
+    if (!g.vigente && g.canceladoPor) bits.push(`cancelado por anot. ${esc(g.canceladoPor)}`);
+    return bits.length ? `<br><span class="muted mini">${bits.join(' · ')}</span>` : '';
+  };
+  const grav = (e.gravamenes || []).map((g) => `<li><b>${esc(g.tipo)}</b> ${gravTag(g)}<br><span class="muted">${esc(g.descripcion)}${g.anotacion ? ' · anot. ' + esc(g.anotacion) : ''}</span>${gravExtra(g)}</li>`).join('')
     || '<li class="ok-li">✓ Sin gravámenes ni limitaciones vigentes encontrados.</li>';
+
+  /* ── Medidas cautelares (sección propia) ── */
+  const medidas = e.medidasCautelares || [];
+  const medidasHtml = medidas.length
+    ? medidas.map((m) => `<div class="flag ${m.vigente ? 'rojo' : ''}"><b>${esc(m.tipo)}${m.vigente ? ' · VIGENTE' : ' · levantada'}</b><span>${esc(m.descripcion)}${m.demandante ? ' · Demandante: ' + esc(m.demandante) : ''}${m.anotacion ? ' · anot. ' + esc(m.anotacion) : ''}${m.fechaAnotacion ? ' · ' + esc(m.fechaAnotacion) : ''}${!m.vigente && m.canceladoPor ? ' · cancelada por anot. ' + esc(m.canceladoPor) : ''}</span></div>`).join('')
+    : '<div class="flag ok"><b>Sin medidas cautelares vigentes</b><span>El folio no registra embargos, demandas ni otras medidas cautelares vigentes.</span></div>';
+
+  /* ── Banderas ── */
+  const banderas = (e.banderas || []).map((x) => `<div class="flag ${nivelClass(x.nivel)}"><b>${esc(x.titulo)}</b><span>${esc(x.detalle)}</span></div>`).join('')
+    || '<div class="flag ok"><b>Sin banderas de riesgo</b><span>No se detectaron alertas de riesgo en el documento.</span></div>';
+
+  /* ── Alertas listas restrictivas ── */
   const A = e.alertas;
   const alertasHtml = !A || A.ok === false
     ? '<p class="muted">Tamizaje de listas restrictivas no disponible en esta emisión.</p>'
     : (A.coincidencias && A.coincidencias.length)
       ? A.coincidencias.map((c) => `<div class="flag rojo"><b>Posible coincidencia: ${esc(c.propietario)}</b><span>${esc(c.lista)} · ${esc(c.entrada)}${c.programa ? ' (' + esc(c.programa) + ')' : ''}. Coincidencia POSIBLE por nombre — requiere verificación manual, no es una determinación.</span></div>`).join('')
       : '<div class="flag ok"><b>Sin coincidencias en listas restrictivas</b><span>Los propietarios no aparecen en la Lista OFAC/SDN (Clinton) de lavado de activos.</span></div>';
+
+  /* ── Avalúo ── */
   const V = e.avaluo;
   const avaluoHtml = !V || !V.disponible
     ? '<p class="muted">Estimado no disponible: no se pudo determinar el área del inmueble en el CTL.</p>'
@@ -49,23 +139,55 @@ export function estudioHtml(e, { matricula, oficina, fecha }) {
         <div class="muted" style="font-size:11px;margin-top:8px;line-height:1.5">${esc(V.nota)}</div>
       </div>`;
 
+  /* ── Documentos a exigir ── */
+  const docs = e.documentosExigir || [];
+  const docsHtml = !docs.length ? '' : `
+    <h2>Documentos a exigir antes de firmar</h2>
+    <ul class="docs">${docs.map((x) => `<li><span class="chk">☐</span> <b>${esc(x.doc)}</b><br><span class="muted mini">${esc(x.motivo)}</span></li>`).join('')}</ul>`;
+
+  /* ── Recomendaciones ── */
+  const recos = e.recomendaciones || [];
+  const recosHtml = !recos.length ? '' : `
+    <h2>Recomendaciones</h2>
+    <ol class="recos">${recos.map((r) => `<li>${esc(r)}</li>`).join('')}</ol>`;
+
+  /* ── Salvedades ── */
+  const salv = e.salvedades || [];
+  const salvHtml = !salv.length ? '' : `
+    <h2>Salvedades y alcance</h2>
+    <ul class="salv">${salv.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`;
+
   return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><style>
   *{box-sizing:border-box;font-family:'Segoe UI',Arial,sans-serif} body{margin:0;color:#0D1B2A;font-size:13px;line-height:1.5}
-  /* Salto de página: página 1 a sangre (header morado pegado al borde); páginas siguientes con margen
-     para que el contenido no aparezca recortado contra el borde superior. Y ninguna tarjeta se parte. */
+  /* Página 1 a sangre (header morado); siguientes con margen. Tarjetas no se parten — EXCEPTO la tabla
+     de la cadena de tradición, que puede ocupar varias páginas (sus FILAS sí van completas). */
   @page{size:A4;margin:14mm 0} @page :first{margin:0}
   h2{break-after:avoid;page-break-after:avoid}
-  .sema,.resumen,.avaluo,.flag,li,table{break-inside:avoid;page-break-inside:avoid}
+  .sema,.resumen,.avaluo,.flag,li,table:not(.cadena),.concepto{break-inside:avoid;page-break-inside:avoid}
+  table.cadena{break-inside:auto;page-break-inside:auto} .cadena tr{break-inside:avoid;page-break-inside:avoid}
+  .cadena thead{display:table-header-group}
   .header{display:flex;align-items:center;gap:14px;background:#774B78;color:#fff;padding:22px 44px}
   .header .brand{font-weight:800;font-size:21px;letter-spacing:-.2px} .header .sub{font-size:10px;letter-spacing:.22em;color:rgba(255,255,255,.72);margin-top:2px}
   .header .meta{margin-left:auto;text-align:right;font-size:11px;color:rgba(255,255,255,.85);line-height:1.6}
   .page{padding:30px 44px 40px}
   h1{font-size:23px;margin:4px 0 2px;letter-spacing:-.3px} .lead{color:#5B6B7E;font-size:12.5px;margin:0 0 4px} .muted{color:#5B6B7E}
-  .sema{display:flex;align-items:center;gap:14px;background:${s.bg};border:1px solid ${s.ring};border-radius:14px;padding:16px 20px;margin:18px 0}
+  .alcance{font-size:11px;color:#774B78;font-weight:600;margin:0 0 4px;letter-spacing:.02em}
+  .mini{font-size:11px;line-height:1.5} .warn{color:#B7791F;font-weight:600;margin-top:3px} .okc{color:#0F7A52;font-weight:700} .warnc{color:#B7791F;font-weight:700}
+  .sema{display:flex;align-items:center;gap:14px;background:${s.bg};border:1px solid ${s.ring};border-radius:14px;padding:14px 20px;margin:16px 0 10px}
   .dot{width:30px;height:30px;border-radius:999px;background:${s.c};flex-shrink:0;box-shadow:0 0 0 5px ${s.bg},0 0 0 6px ${s.ring}} .sema b{color:${s.c};font-size:17px}
-  .resumen{background:#F7F5F9;border-left:4px solid #774B78;border-radius:10px;padding:15px 18px;margin:14px 0;font-size:13.5px;line-height:1.6}
+  .concepto{border:1.5px solid;border-radius:14px;padding:15px 20px;margin:0 0 12px}
+  .co-lbl{font-size:9px;letter-spacing:.16em;font-weight:800;color:#8593A3}
+  .co-estado{font-size:20px;font-weight:800;letter-spacing:-.3px;margin-top:3px}
+  .co-sub{font-size:12px;color:#5B6B7E;margin-top:2px}
+  .co-conds{margin:9px 0 0;padding-left:20px;font-size:12px;line-height:1.55} .co-conds li{margin:4px 0}
+  .resumen{background:#F7F5F9;border-left:4px solid #774B78;border-radius:10px;padding:14px 18px;margin:12px 0;font-size:13.5px;line-height:1.6}
+  .resumen p{margin:0 0 9px} .resumen p:last-child{margin-bottom:0}
   h2{font-size:12px;color:#774B78;margin:22px 0 8px;text-transform:uppercase;letter-spacing:.08em;font-weight:800;border-bottom:1px solid #ECE6EE;padding-bottom:5px}
-  table{width:100%;border-collapse:collapse;margin:2px 0} .k{color:#8593A3;width:170px;padding:6px 0;font-size:12px} .v{font-weight:600;padding:6px 0}
+  table{width:100%;border-collapse:collapse;margin:2px 0} .k{color:#8593A3;width:170px;padding:6px 0;font-size:12px;vertical-align:top} .v{font-weight:600;padding:6px 0}
+  .cadena{font-size:10.5px} .cadena th{text-align:left;color:#8593A3;font-size:9px;text-transform:uppercase;letter-spacing:.07em;padding:4px 6px;border-bottom:1.5px solid #ECE6EE}
+  .cadena td{padding:5px 6px;border-bottom:1px solid #F1EDF3;vertical-align:top;font-weight:400}
+  .cadena tr.ft td{background:#FDECEC} .cadena tr.cancel td{color:#9aa3ad}
+  .cod{font-size:8.5px;color:#8593A3;background:#F3EFF5;border-radius:4px;padding:1px 4px;font-weight:700}
   ul{margin:6px 0;padding-left:18px;list-style:none} li{margin:8px 0;padding-left:2px} .ok-li{color:#0F7A52;font-weight:600;list-style:none;margin-left:-16px}
   .tag{font-size:9.5px;font-weight:700;background:#eef1f7;color:#5B6B7E;border-radius:5px;padding:2px 7px;vertical-align:middle} .tag.v{background:#FDECEC;color:#B42318} .tag.n{background:#E8F5EF;color:#0F7A52}
   .flag{display:flex;flex-direction:column;border-left:4px solid #999;background:#fafbfd;padding:10px 14px;margin:8px 0;border-radius:8px}
@@ -79,6 +201,9 @@ export function estudioHtml(e, { matricula, oficina, fecha }) {
   .av-range{display:flex;align-items:center;gap:8px;margin-top:10px} .av-range .av-min,.av-range .av-max{font-size:11.5px;color:#5B6B7E;font-weight:600;white-space:nowrap}
   .av-bar{flex:1;height:5px;border-radius:999px;background:linear-gradient(90deg,#B7E4CE,#774B78)}
   .av-meto{font-size:11px;color:#5B6B7E;margin-top:9px;background:#fff;border:1px solid #ECE6EE;border-radius:8px;padding:7px 10px}
+  .docs li{margin:9px 0} .docs .chk{color:#774B78;font-weight:800;margin-right:2px}
+  .recos{margin:6px 0;padding-left:20px} .recos li{margin:7px 0;font-size:12.5px;line-height:1.55}
+  .salv{margin:6px 0;padding-left:18px;list-style:disc} .salv li{margin:5px 0;font-size:10.5px;color:#5B6B7E;line-height:1.5}
   .disc{font-size:10px;color:#8593A3;border-top:1px solid #E3E9F1;margin-top:26px;padding-top:12px;line-height:1.55}
   .foot{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:10px;color:#8593A3}
   </style></head><body>
@@ -90,16 +215,24 @@ export function estudioHtml(e, { matricula, oficina, fecha }) {
     <div class="page">
       <h1>Estudio de Títulos del inmueble</h1>
       <p class="lead">Análisis automatizado del Certificado de Tradición y Libertad</p>
+      ${alcanceHtml}
       <div class="sema"><div class="dot"></div><div><b>${s.t}</b><br><span class="muted">Semáforo de riesgo según las anotaciones vigentes del folio.</span></div></div>
-      <div class="resumen">${esc(e.resumen) || 'Resumen no disponible.'}</div>
+      ${conceptoHtml}
+      <div class="resumen">${resumenHtml}</div>
       <h2>Identificación del inmueble</h2>
-      <table>${row('Matrícula', e.inmueble?.matricula)}${row('Dirección', e.inmueble?.direccion)}${row('Círculo registral', e.inmueble?.circulo)}${row('Área', e.inmueble?.area)}</table>
-      <h2>Propietarios y tradición</h2><ul>${props}</ul>
-      <h2>Gravámenes y limitaciones vigentes</h2><ul>${grav}</ul>
+      <table>${row('Matrícula', e.inmueble?.matricula)}${row('Dirección', e.inmueble?.direccion)}${row('Círculo registral', e.inmueble?.circulo)}${row('Área', e.inmueble?.area)}${row('Ficha catastral', e.inmueble?.fichaCatastral)}${row('Tipo de predio', e.inmueble?.tipoPredio)}${row('Linderos (resumen)', e.inmueble?.linderosResumen)}</table>
+      ${situacionHtml}
+      <h2>Propietarios actuales</h2><ul>${props}</ul>
+      ${cadenaHtml}
+      <h2>Gravámenes y limitaciones</h2><ul>${grav}</ul>
+      <h2>Medidas cautelares</h2>${medidasHtml}
       <h2>Banderas de riesgo</h2>${banderas}
       <h2>Alertas · listas restrictivas (lavado de activos)</h2>${alertasHtml}
       <h2>Avalúo comercial · estimado digital</h2>${avaluoHtml}
-      <p class="disc">Análisis informativo automatizado generado a partir del Certificado de Tradición y Libertad. No constituye asesoría jurídica profesional ni reemplaza el estudio de un abogado. El avalúo es un estimado referencial, no un avalúo formal de perito.</p>
+      ${docsHtml}
+      ${recosHtml}
+      ${salvHtml}
+      <p class="disc">Análisis informativo automatizado generado a partir del Certificado de Tradición y Libertad. El "concepto preliminar" es el resultado de reglas automáticas sobre las anotaciones del folio: no constituye dictamen jurídico de abogado titulado ni reemplaza el estudio de títulos de un profesional del derecho. El avalúo es un estimado referencial, no un avalúo formal de perito.</p>
       <div class="foot">${SELLO.replace('width="46" height="46"', 'width="16" height="16"').replace(/stroke="#fff"/g, 'stroke="#8593A3"').replace(/fill="#fff"/g, 'fill="#8593A3"')} Certitradición · certitradicion.com</div>
     </div>
   </body></html>`;
