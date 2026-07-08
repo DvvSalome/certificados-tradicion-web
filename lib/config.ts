@@ -28,7 +28,7 @@ export const PLANS: Record<PlanId, Plan> = {
     priceCop: Number(process.env.PRICE_AVANZADO_COP || 79900), requiresConsent: true,
     features: [
       'Todo lo del plan Express',
-      'Verificación de antecedentes judiciales del propietario (Policía Nacional)',
+      'Verificación de antecedentes judiciales del propietario',
       'Ideal para comprar con tranquilidad: sabes a quién le compras',
     ],
   },
