@@ -31,6 +31,9 @@ const ICONS = {
   info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.6h.01"/>',
 };
 const sec = (icon, t) => `<h2><svg class="h2ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[icon] || ''}</svg><span>${esc(t)}</span></h2>`;
+// Envuelve una sección (header + contenido) en su propia tarjeta. `wide` permite que se parta entre páginas
+// (para la tabla larga de la cadena de tradición).
+const block = (inner, wide) => inner ? `<section class="block${wide ? ' block-wide' : ''}">${inner}</section>` : '';
 
 // Sello Certitradición (documento + firma + pluma) — trazo blanco para el header morado.
 const SELLO = `<svg width="46" height="46" viewBox="0 0 96 96" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
@@ -198,7 +201,11 @@ export function estudioHtml(e, { matricula, oficina, fecha }) {
     <ul class="salv">${salv.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`;
 
   return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><style>
-  *{box-sizing:border-box;font-family:'Segoe UI',Arial,sans-serif} body{margin:0;color:#0D1B2A;font-size:13px;line-height:1.5}
+  *{box-sizing:border-box;font-family:'Segoe UI',Arial,sans-serif} body{margin:0;color:#0D1B2A;font-size:13px;line-height:1.5;background:#F1EEF5}
+  /* Cada seccion en su propia tarjeta sobre el fondo suave → look "seccionado". */
+  .block{background:#fff;border:1px solid #EAE4EE;border-radius:14px;padding:6px 20px 16px;margin:11px 0;box-shadow:0 1px 3px rgba(13,27,42,.05);break-inside:avoid;page-break-inside:avoid}
+  .block>h2:first-child{margin-top:12px}
+  .block-wide{break-inside:auto;page-break-inside:auto}
   /* Página 1 a sangre (header morado); siguientes con margen. Tarjetas no se parten — EXCEPTO la tabla
      de la cadena de tradición, que puede ocupar varias páginas (sus FILAS sí van completas). */
   @page{size:A4;margin:14mm 0} @page :first{margin:0}
@@ -260,20 +267,19 @@ export function estudioHtml(e, { matricula, oficina, fecha }) {
       <div class="sema"><div class="dot"></div><div><b>${s.t}</b><br><span class="muted">Semáforo de riesgo según las anotaciones vigentes del folio.</span></div></div>
       ${conceptoHtml}
       <div class="resumen">${resumenHtml}</div>
-      ${sec('home', 'Identificación del inmueble')}
-      <table>${row('Matrícula', e.inmueble?.matricula)}${row('Dirección', e.inmueble?.direccion)}${row('Círculo registral', e.inmueble?.circulo)}${row('Área', e.inmueble?.area)}${row('Ficha catastral', e.inmueble?.fichaCatastral)}${row('Tipo de predio', e.inmueble?.tipoPredio)}${row('Linderos (resumen)', e.inmueble?.linderosResumen)}</table>
-      ${situacionHtml}
-      ${sec('users', 'Propietarios actuales')}<ul>${props}</ul>
-      ${cadenaHtml}
-      ${sec('lock', 'Gravámenes y limitaciones')}<ul>${grav}</ul>
-      ${sec('gavel', 'Medidas cautelares')}${medidasHtml}
-      ${sec('flag', 'Banderas de riesgo')}${banderas}
-      ${sec('shield', 'Alertas · listas restrictivas (lavado de activos)')}${alertasHtml}
-      ${antecedentesHtml ? `${sec('usercheck', 'Verificación de antecedentes judiciales del propietario')}${antecedentesHtml}` : ''}
-      ${sec('money', 'Avalúo comercial · estimado digital')}${avaluoHtml}
-      ${docsHtml}
-      ${recosHtml}
-      ${salvHtml}
+      ${block(`${sec('home', 'Identificación del inmueble')}<table>${row('Matrícula', e.inmueble?.matricula)}${row('Dirección', e.inmueble?.direccion)}${row('Círculo registral', e.inmueble?.circulo)}${row('Área', e.inmueble?.area)}${row('Ficha catastral', e.inmueble?.fichaCatastral)}${row('Tipo de predio', e.inmueble?.tipoPredio)}${row('Linderos (resumen)', e.inmueble?.linderosResumen)}</table>`)}
+      ${block(situacionHtml)}
+      ${block(`${sec('users', 'Propietarios actuales')}<ul>${props}</ul>`)}
+      ${block(cadenaHtml, true)}
+      ${block(`${sec('lock', 'Gravámenes y limitaciones')}<ul>${grav}</ul>`)}
+      ${block(`${sec('gavel', 'Medidas cautelares')}${medidasHtml}`)}
+      ${block(`${sec('flag', 'Banderas de riesgo')}${banderas}`)}
+      ${block(`${sec('shield', 'Alertas · listas restrictivas (lavado de activos)')}${alertasHtml}`)}
+      ${antecedentesHtml ? block(`${sec('usercheck', 'Verificación de antecedentes judiciales del propietario')}${antecedentesHtml}`) : ''}
+      ${block(`${sec('money', 'Avalúo comercial · estimado digital')}${avaluoHtml}`)}
+      ${block(docsHtml)}
+      ${block(recosHtml)}
+      ${block(salvHtml)}
       <p class="disc">Análisis informativo automatizado generado a partir del Certificado de Tradición y Libertad. El "concepto preliminar" es el resultado de reglas automáticas sobre las anotaciones del folio: no constituye dictamen jurídico de abogado titulado ni reemplaza el estudio de títulos de un profesional del derecho. El avalúo es un estimado referencial, no un avalúo formal de perito.</p>
       <div class="foot">${SELLO.replace('width="46" height="46"', 'width="16" height="16"').replace(/stroke="#fff"/g, 'stroke="#8593A3"').replace(/fill="#fff"/g, 'fill="#8593A3"')} Certitradición · certitradicion.com</div>
     </div>
