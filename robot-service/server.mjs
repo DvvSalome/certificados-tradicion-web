@@ -6,7 +6,7 @@ import http from 'http';
 import { SnrRobot } from './snr-robot.mjs';
 import { entregarCorreo, entregarEstudio, enviarAlerta } from './deliver.mjs';
 import { consultaHttp } from './snr-consulta-http.mjs';
-import { pickAccount, marcarBloqueada, totalCuentas, estado as estadoCuentas, setSaldo, descontarCert, saldoConocido, debeAlertar, certsRestantes } from './snr-accounts.mjs';
+import { pickAccount, marcarBloqueada, totalCuentas, estado as estadoCuentas, setSaldo, descontarCert, saldoConocido, saldoCents, debeAlertar, certsRestantes } from './snr-accounts.mjs';
 
 const PORT = Number(process.env.PORT || 3000);
 const SECRET = process.env.N8N_WEBHOOK_SECRET || '';
@@ -145,6 +145,10 @@ async function generarConCuenta(robot, cuenta, { reference, oficina, matricula, 
       const UMBRAL = Number(process.env.SNR_ALERTA_CERTS || 5);
       if (!saldoConocido(cuenta)) { const cop = await robot.leerSaldo(); if (cop != null) setSaldo(cuenta, cop * 100); }
       else descontarCert(cuenta);
+      // Publicar el saldo REAL actual al panel (card agregado + estado por cuenta) tras cada generación.
+      const cents = saldoCents(cuenta);
+      if (cents != null) pushSaldo(cents);
+      pushSnrStatus();
       if (debeAlertar(cuenta, UMBRAL)) {
         const n = certsRestantes(cuenta);
         console.error(`[saldo] ⚠ ALERTA: cuenta ${cuenta} con saldo para ~${n} certificado(s)`);
@@ -350,4 +354,11 @@ function pushSnrStatus() {
   fetch(`${PANEL}/api/admin/snr-status`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-webhook-secret': SECRET }, body })
     .then((r) => { if (!r.ok) console.error('[snr-status] HTTP ' + r.status); })
     .catch((e) => console.error('[snr-status] ' + e.message));
+}
+// Publica el saldo (centavos COP) al card agregado del panel (saldo_snapshots). Best-effort.
+function pushSaldo(cents) {
+  if (!(PANEL && SECRET) || !Number.isFinite(cents)) return;
+  fetch(`${PANEL}/api/admin/saldo`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-webhook-secret': SECRET }, body: JSON.stringify({ saldoCents: cents }) })
+    .then((r) => { if (!r.ok) console.error('[saldo] push HTTP ' + r.status); })
+    .catch((e) => console.error('[saldo] push ' + e.message));
 }

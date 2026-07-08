@@ -106,6 +106,7 @@ export default async function AdminDashboard() {
                     </div>
                     <p className="mt-2 text-[13px] text-[var(--foreground)]">
                       Saldo: <span className="font-semibold">{c.saldoCents === null || c.saldoCents === undefined ? '—' : fmt(c.saldoCents)}</span>
+                      {c.saldoCents != null && <span className="text-[var(--muted-2)]"> · ~{Math.floor(c.saldoCents / 2_300_000)} certificados</span>}
                     </p>
                     {!c.disponible && c.reason && <p className="mt-0.5 text-[11px] text-[#b42318]">{c.reason}</p>}
                   </div>
