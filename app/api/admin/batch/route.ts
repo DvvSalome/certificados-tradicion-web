@@ -20,9 +20,13 @@ export async function POST(req: Request) {
   if (role !== 'superadmin') return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
   const body = (await req.json().catch(() => ({}))) as { items?: BatchItemInput[] };
-  const items = (body.items ?? [])
+  const raw = (body.items ?? [])
     .map((i) => ({ matricula: String(i.matricula ?? '').trim(), oficina: String(i.oficina ?? '').trim() }))
     .filter((i) => i.matricula && i.oficina);
+  // Dedup por (oficina, matrícula): cada duplicado generaría un CTL real = ~$23.000 gastados de más.
+  const seen = new Set<string>();
+  const items = raw.filter((i) => { const k = i.oficina + '|' + i.matricula; if (seen.has(k)) return false; seen.add(k); return true; });
+  const duplicados = raw.length - items.length;
   if (items.length === 0) return NextResponse.json({ error: 'No hay matrículas válidas' }, { status: 400 });
   if (items.length > MAX_ITEMS) return NextResponse.json({ error: `Máximo ${MAX_ITEMS} por lote` }, { status: 400 });
 
@@ -40,5 +44,5 @@ export async function POST(req: Request) {
     console.log('[batch mock] lote', batchId, 'con', total, 'ítems — configura N8N_BATCH_URL para procesarlo');
   }
 
-  return NextResponse.json({ ok: true, batchId, total, triggered: !!url });
+  return NextResponse.json({ ok: true, batchId, total, duplicados, triggered: !!url });
 }

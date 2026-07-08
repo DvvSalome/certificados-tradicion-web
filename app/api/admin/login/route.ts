@@ -3,7 +3,28 @@ import { login, COOKIE, type Role } from '@/lib/admin';
 
 export const runtime = 'nodejs';
 
+// Anti-brute-force del login admin (por IP). En memoria: no es perfecto en serverless (varias instancias),
+// pero frena de forma significativa un ataque de fuerza bruta contra superadmin (gobierna ingresos, PII y
+// generación con costo real). Ventana estricta.
+const attempts = new Map<string, number[]>();
+const LOGIN_MAX = 8;
+const LOGIN_WINDOW_MS = 15 * 60_000;
+function clientIp(req: Request): string {
+  const xff = req.headers.get('x-forwarded-for');
+  return (xff ? xff.split(',')[0] : '') || req.headers.get('x-real-ip') || 'anon';
+}
+function loginRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const arr = (attempts.get(ip) || []).filter((t) => now - t < LOGIN_WINDOW_MS);
+  arr.push(now);
+  attempts.set(ip, arr);
+  return arr.length > LOGIN_MAX;
+}
+
 export async function POST(req: Request) {
+  if (loginRateLimited(clientIp(req))) {
+    return NextResponse.json({ error: 'Demasiados intentos. Espera unos minutos.' }, { status: 429 });
+  }
   const { role, password } = (await req.json().catch(() => ({}))) as { role?: Role; password?: string };
   if (role !== 'cliente' && role !== 'superadmin') return NextResponse.json({ error: 'Rol inválido' }, { status: 400 });
 

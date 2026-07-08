@@ -24,17 +24,24 @@ const PASSWORDS: Record<Role, string | undefined> = {
   superadmin: process.env.ADMIN_PASS_SUPERADMIN,
 };
 
+// La sesión caduca a las 12h. `exp` va DENTRO del HMAC → no se puede alterar, y verify() lo rechaza
+// vencido. Así un token filtrado no sirve para siempre (antes era estático por rol, sin caducidad).
+const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+
 function sign(role: Role): string {
-  const mac = createHmac('sha256', SECRET).update(role).digest('hex');
-  return `${role}.${mac}`;
+  const exp = Date.now() + SESSION_TTL_MS;
+  const mac = createHmac('sha256', SECRET).update(`${role}.${exp}`).digest('hex');
+  return `${role}.${exp}.${mac}`;
 }
 
 export function verify(token: string | undefined): Role | null {
   if (secretInseguro()) return null;
   if (!token) return null;
-  const [role, mac] = token.split('.');
-  if ((role !== 'cliente' && role !== 'superadmin') || !mac) return null;
-  const expected = createHmac('sha256', SECRET).update(role).digest('hex');
+  const [role, expStr, mac] = token.split('.');
+  if ((role !== 'cliente' && role !== 'superadmin') || !expStr || !mac) return null;
+  const exp = Number(expStr);
+  if (!Number.isFinite(exp) || Date.now() > exp) return null; // sesión caducada
+  const expected = createHmac('sha256', SECRET).update(`${role}.${expStr}`).digest('hex');
   const a = Buffer.from(mac), b = Buffer.from(expected);
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
   return role;
