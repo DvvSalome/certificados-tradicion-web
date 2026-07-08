@@ -33,6 +33,9 @@ export default function CheckoutForm() {
   // Checks
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
+  // Plan Avanzado: consulta antecedentes del propietario → se exige declarar autorización.
+  const [consentAntecedentes, setConsentAntecedentes] = useState(false);
+  const needsConsent = !!PLANS[plan].requiresConsent;
   
   // UI State
   const [error, setError] = useState<string | null>(null);
@@ -115,7 +118,8 @@ export default function CheckoutForm() {
     email === emailConfirm &&
     phone.trim().length > 7 &&
     termsAccepted &&
-    privacyAccepted;
+    privacyAccepted &&
+    (!needsConsent || consentAntecedentes);
 
   async function confirmAndPay() {
     if (!isFormComplete || loading || validating) {
@@ -125,6 +129,7 @@ export default function CheckoutForm() {
       else if (!email.trim() || email !== emailConfirm) setError('Revisa que los correos coincidan.');
       else if (phone.trim().length < 8) setError('Ingresa un teléfono válido.');
       else if (!termsAccepted || !privacyAccepted) setError('Debes aceptar los términos y políticas para continuar.');
+      else if (needsConsent && !consentAntecedentes) setError('Para el plan Avanzado debes confirmar que cuentas con la autorización del propietario para verificar sus antecedentes.');
       return;
     }
     
@@ -154,7 +159,8 @@ export default function CheckoutForm() {
           apellidos: apellidos.trim(),
           tipoId,
           termsAccepted,
-          privacyAccepted
+          privacyAccepted,
+          consentAntecedentes: needsConsent ? consentAntecedentes : undefined
         }),
       });
       const j = await res.json();
@@ -194,7 +200,7 @@ export default function CheckoutForm() {
         </h3>
         
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-2">
-          {(['basico', 'express'] as PlanId[]).map((pid) => {
+          {(['basico', 'express', 'avanzado'] as PlanId[]).map((pid) => {
             const p = PLANS[pid];
             const sel = plan === pid;
             return (
@@ -236,6 +242,16 @@ export default function CheckoutForm() {
             );
           })}
         </div>
+
+        {/* Consentimiento obligatorio para el plan Avanzado (consulta antecedentes de un tercero) */}
+        {needsConsent && (
+          <label className="mt-3 flex items-start gap-2.5 rounded-xl border-2 border-[#d9f99d] bg-[#f7fee7] p-3.5 text-left cursor-pointer">
+            <input type="checkbox" className="mt-0.5 size-4 accent-[#65a30d]" checked={consentAntecedentes} onChange={(e) => setConsentAntecedentes(e.target.checked)} />
+            <span className="text-xs leading-relaxed text-gray-700">
+              Declaro que <strong>cuento con la autorización del propietario</strong> del inmueble (o tengo una finalidad legítima conforme a la ley) para consultar sus antecedentes judiciales, y entiendo que Certitradición actúa como intermediario de esta verificación. <span className="text-gray-500">Requerido por la Ley 1581 de 2012 (Habeas Data).</span>
+            </span>
+          </label>
+        )}
 
 
         {/* SECTION 1: PROPIEDAD */}

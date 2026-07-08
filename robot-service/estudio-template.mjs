@@ -123,6 +123,18 @@ export function estudioHtml(e, { matricula, oficina, fecha }) {
       ? A.coincidencias.map((c) => `<div class="flag rojo"><b>Posible coincidencia: ${esc(c.propietario)}</b><span>${esc(c.lista)} · ${esc(c.entrada)}${c.programa ? ' (' + esc(c.programa) + ')' : ''}. Coincidencia POSIBLE por nombre — requiere verificación manual, no es una determinación.</span></div>`).join('')
       : '<div class="flag ok"><b>Sin coincidencias en listas restrictivas</b><span>Los propietarios no aparecen en la Lista OFAC/SDN (Clinton) de lavado de activos.</span></div>';
 
+  /* ── Verificación de antecedentes judiciales (solo plan Avanzado) ── */
+  const ant = e.antecedentes;
+  const antecedentesHtml = !ant ? '' : (!ant.ok
+    ? `<p class="muted">${esc(ant.motivo || 'Verificación de antecedentes no disponible en esta emisión.')}</p>`
+    : (ant.resultados || []).map((r) => {
+        const rojo = r.tieneAntecedentes === true, limpio = r.tieneAntecedentes === false;
+        const cls = r.error ? '' : rojo ? 'rojo' : limpio ? 'ok' : '';
+        const label = r.error ? 'No se pudo verificar' : rojo ? 'TIENE asuntos pendientes con las autoridades judiciales' : limpio ? 'Sin asuntos pendientes con las autoridades judiciales' : 'Resultado no determinado';
+        return `<div class="flag ${cls}"><b>${esc(r.nombre || 'Propietario')}${r.cedula ? ' · C.C. ' + esc(r.cedula) : ''}</b><span>${label}.${r.hora ? ' Consulta oficial: ' + esc(r.hora) + '.' : ''}${r.error ? ' (' + esc(r.error) + ')' : ''}</span></div>`;
+      }).join(''))
+    + (ant.ok ? `<p class="mini muted" style="margin-top:6px">Fuente: ${esc(ant.fuente || 'Policía Nacional de Colombia')}. Consulta realizada en el marco de la debida diligencia de una compraventa y con la autorización declarada por el solicitante. Refleja el estado al momento de la consulta; cada persona puede descargar su certificado oficial en el portal de la Policía Nacional.</p>` : '');
+
   /* ── Avalúo ── */
   const V = e.avaluo;
   const avaluoHtml = !V || !V.disponible
@@ -228,6 +240,7 @@ export function estudioHtml(e, { matricula, oficina, fecha }) {
       <h2>Medidas cautelares</h2>${medidasHtml}
       <h2>Banderas de riesgo</h2>${banderas}
       <h2>Alertas · listas restrictivas (lavado de activos)</h2>${alertasHtml}
+      ${antecedentesHtml ? `<h2>Verificación de antecedentes judiciales del propietario</h2>${antecedentesHtml}` : ''}
       <h2>Avalúo comercial · estimado digital</h2>${avaluoHtml}
       ${docsHtml}
       ${recosHtml}

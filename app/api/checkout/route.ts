@@ -59,7 +59,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'El portal oficial del SNR no está disponible en este momento. Por favor intenta más tarde.' }, { status: 503 });
   }
 
-  const plan = body.plan === 'express' ? 'express' : 'basico';
+  const plan = body.plan === 'express' || body.plan === 'avanzado' ? body.plan : 'basico';
+  // El plan Avanzado consulta antecedentes de un tercero → exige declaración de autorización (Ley 1581).
+  if (plan === 'avanzado' && body.consentAntecedentes !== true) {
+    return NextResponse.json({ error: 'El plan Avanzado requiere confirmar la autorización del propietario para consultar sus antecedentes.' }, { status: 422 });
+  }
   const amountInCents = planAmountCents(plan);
 
   const reference = 'CTL-' + randomUUID().replace(/-/g, '').slice(0, 20);

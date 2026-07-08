@@ -10,7 +10,7 @@ export interface GenerarCTLPayload {
   email: string | null;
   phone: string | null;
   transactionId: string;
-  plan?: 'basico' | 'express';
+  plan?: 'basico' | 'express' | 'avanzado';
 }
 
 export interface N8nResult {

@@ -100,6 +100,28 @@ async function generarOne(job) {
   }
 }
 
+// Planes que llevan Estudio de Títulos. 'avanzado' agrega la verificación de antecedentes.
+const ESTUDIO_PLANS = new Set(['express', 'avanzado']);
+
+// Construye el PDF del Estudio de Títulos (express y avanzado). Cada add-on es best-effort: si uno
+// falla, el estudio igual sale. 'avanzado' agrega la verificación de antecedentes de los propietarios.
+async function construirEstudioPdf(pdf, { matricula, oficina, plan }) {
+  const { generarEstudio } = await import('./estudio.mjs');
+  const { renderEstudioPdf } = await import('./estudio-pdf.mjs');
+  const fecha = new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date());
+  const data = await generarEstudio(pdf, { matricula, oficina });
+  try { const { chequearAlertas } = await import('./alertas.mjs'); data.alertas = await chequearAlertas(data.propietarios); }
+  catch (ae) { console.error(`[alertas] ✕ ${matricula}: ${ae.message}`); }
+  try { const { estimarAvaluo } = await import('./avaluo.mjs'); data.avaluo = estimarAvaluo({ area: data.inmueble?.area, ciudad: oficina }); }
+  catch (ve) { console.error(`[avaluo] ✕ ${matricula}: ${ve.message}`); }
+  if (plan === 'avanzado') {
+    try { const { verificarAntecedentes } = await import('./antecedentes.mjs'); data.antecedentes = await verificarAntecedentes(data.propietarios); }
+    catch (ne) { console.error(`[antecedentes] ✕ ${matricula}: ${ne.message}`); data.antecedentes = { ok: false, motivo: ne.message }; }
+  }
+  const estudioPdf = await renderEstudioPdf(data, { matricula, oficina, fecha });
+  return { data, estudioPdf };
+}
+
 // Una generación con una cuenta ya elegida. Lanza si falla (el caller decide fallback/no según el código).
 async function generarConCuenta(robot, cuenta, { reference, oficina, matricula, email, plan }) {
   const r = await robot.generar({ oficina, matricula }); // ensureLoggedIn() adentro REUSA la sesión
@@ -131,20 +153,11 @@ async function generarConCuenta(robot, cuenta, { reference, oficina, matricula, 
     } catch (se) { console.error('[saldo] lectura/alerta falló (no crítico): ' + se.message); }
     // EXPRESS: el Estudio de Títulos se genera DESPUÉS (el CTL ya salió) y se entrega en un 2º correo aparte.
     // Best-effort: si falla, el CTL ya llegó igual y se alerta para reenvío manual.
-    if (plan === 'express') {
+    if (ESTUDIO_PLANS.has(plan)) {
       try {
-        const { generarEstudio } = await import('./estudio.mjs');
-        const { renderEstudioPdf } = await import('./estudio-pdf.mjs');
-        const fecha = new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date());
-        const data = await generarEstudio(r.pdf, { matricula, oficina });
-        // Add-ons Express (best-effort cada uno; si uno falla, el resto + el estudio igual salen).
-        try { const { chequearAlertas } = await import('./alertas.mjs'); data.alertas = await chequearAlertas(data.propietarios); }
-        catch (ae) { console.error(`[alertas] ✕ ${matricula}: ${ae.message}`); }
-        try { const { estimarAvaluo } = await import('./avaluo.mjs'); data.avaluo = estimarAvaluo({ area: data.inmueble?.area, ciudad: oficina }); }
-        catch (ve) { console.error(`[avaluo] ✕ ${matricula}: ${ve.message}`); }
-        const estudioPdf = await renderEstudioPdf(data, { matricula, oficina, fecha });
-        console.error(`[estudio] ✅ ${matricula} (${estudioPdf.length} bytes, semáforo ${data.semaforo}, alertas ${data.alertas?.coincidencias?.length ?? '-'}, avaluo ${data.avaluo?.disponible ? 'sí' : 'no'})`);
-        // Guardar el Estudio para poder reenviarlo por WhatsApp (Express manda AMBOS PDFs por el chat). Best-effort.
+        const { data, estudioPdf } = await construirEstudioPdf(r.pdf, { matricula, oficina, plan });
+        console.error(`[estudio] ✅ ${matricula} (${estudioPdf.length} bytes, semáforo ${data.semaforo}, concepto ${data.concepto?.estado ?? '-'}${plan === 'avanzado' ? `, antecedentes ${data.antecedentes?.ok ? data.antecedentes.resultados.length + ' persona(s)' : 'n/d'}` : ''})`);
+        // Guardar el Estudio para poder reenviarlo por WhatsApp (manda AMBOS PDFs por el chat). Best-effort.
         try {
           if (PANEL && SECRET) await fetch(`${PANEL}/api/admin/cert`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-webhook-secret': SECRET }, body: JSON.stringify({ reference, estudioBase64: estudioPdf.toString('base64') }) });
         } catch (pe) { console.error('[estudio] guardar PDF (WhatsApp) falló: ' + pe.message); }
@@ -154,7 +167,7 @@ async function generarConCuenta(robot, cuenta, { reference, oficina, matricula, 
         // El CTL YA se entregó. NO re-reportar como generación (duplica bitácora). Alerta para reenvío manual.
         console.error(`[estudio] ✕ ${matricula}: ${ee.message}`);
         await reportPanel({ reference, matricula, oficina, estudioFailed: true, error: String(ee.message || ee).slice(0, 200) }).catch(() => {});
-        await enviarAlerta('🟠 Estudio Express pendiente (reenviar manual)', `El CTL de ${matricula} (${oficina}) YA se entregó a ${email}, pero el Estudio de Títulos falló: ${ee.message}\nGenerar/reenviar el Estudio manual.`).catch(() => {});
+        await enviarAlerta('🟠 Estudio pendiente (reenviar manual)', `El CTL de ${matricula} (${oficina}) YA se entregó a ${email}, pero el Estudio de Títulos falló: ${ee.message}\nGenerar/reenviar el Estudio manual.`).catch(() => {});
       }
     }
 }
@@ -166,16 +179,10 @@ async function entregarSobrePdf(pdf, { reference, oficina, matricula, email, pla
     const d = await entregarCorreo({ pdf, matricula, oficina, email, reference });
     console.error(`[TEST] correo CTL: ${d.sent ? 'ENVIADO a ' + email + (d.withPreview ? ' (con preview)' : '') : 'NO (' + d.reason + ')'}`);
   } catch (de) { console.error(`[TEST] correo CTL FALLÓ: ${de.message}`); }
-  if (plan === 'express') {
+  if (ESTUDIO_PLANS.has(plan)) {
     try {
-      const { generarEstudio } = await import('./estudio.mjs');
-      const { renderEstudioPdf } = await import('./estudio-pdf.mjs');
-      const fecha = new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date());
-      const data = await generarEstudio(pdf, { matricula, oficina });
-      try { const { chequearAlertas } = await import('./alertas.mjs'); data.alertas = await chequearAlertas(data.propietarios); } catch (ae) { console.error('[TEST] alertas: ' + ae.message); }
-      try { const { estimarAvaluo } = await import('./avaluo.mjs'); data.avaluo = estimarAvaluo({ area: data.inmueble?.area, ciudad: oficina }); } catch (ve) { console.error('[TEST] avaluo: ' + ve.message); }
-      const estudioPdf = await renderEstudioPdf(data, { matricula, oficina, fecha });
-      console.error(`[TEST] estudio OK (${estudioPdf.length} bytes, semáforo ${data.semaforo})`);
+      const { data, estudioPdf } = await construirEstudioPdf(pdf, { matricula, oficina, plan });
+      console.error(`[TEST] estudio OK (${estudioPdf.length} bytes, semáforo ${data.semaforo}, concepto ${data.concepto?.estado ?? '-'}${plan === 'avanzado' ? `, antecedentes ${data.antecedentes?.ok ? data.antecedentes.resultados.length : 'n/d'}` : ''})`);
       const de2 = await entregarEstudio({ estudio: estudioPdf, matricula, oficina, email });
       console.error(`[TEST] correo Estudio: ${de2.sent ? 'ENVIADO a ' + email : 'NO (' + de2.reason + ')'}`);
     } catch (ee) { console.error(`[TEST] estudio FALLÓ: ${ee.message}`); }

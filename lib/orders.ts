@@ -9,7 +9,7 @@ export interface Order {
   amountInCents: number;
   status: OrderStatus;
   transactionId?: string;
-  plan?: 'basico' | 'express';
+  plan?: 'basico' | 'express' | 'avanzado';
   createdAt: string;
   // Comprador + consentimiento (Habeas Data). Opcionales (órdenes viejas no los tienen).
   nombres?: string | null;

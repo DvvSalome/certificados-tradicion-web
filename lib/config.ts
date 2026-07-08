@@ -3,8 +3,9 @@ export const AMOUNT_IN_CENTS = PRICE_COP * 100;
 export const CURRENCY = 'COP';
 export const SITE_NAME = 'Certificado de Tradición y Libertad';
 
-export type PlanId = 'basico' | 'express';
-export interface Plan { id: PlanId; label: string; tagline: string; priceCop: number; recommended?: boolean; features: string[]; }
+export type PlanId = 'basico' | 'express' | 'avanzado';
+// requiresConsent: el plan consulta datos de terceros (antecedentes) → el checkout exige declaración de autorización.
+export interface Plan { id: PlanId; label: string; tagline: string; priceCop: number; recommended?: boolean; requiresConsent?: boolean; features: string[]; }
 
 export const PLANS: Record<PlanId, Plan> = {
   basico: {
@@ -20,6 +21,15 @@ export const PLANS: Record<PlanId, Plan> = {
       'Estudio de títulos: propietarios, gravámenes y banderas de riesgo',
       'Alertas de lavado de activos (Lista Clinton / OFAC)',
       'Avalúo comercial digital del inmueble',
+    ],
+  },
+  avanzado: {
+    id: 'avanzado', label: 'Avanzado', tagline: 'La verificación más completa antes de comprar',
+    priceCop: Number(process.env.PRICE_AVANZADO_COP || 79900), requiresConsent: true,
+    features: [
+      'Todo lo del plan Express',
+      'Verificación de antecedentes judiciales del propietario (Policía Nacional)',
+      'Ideal para comprar con tranquilidad: sabes a quién le compras',
     ],
   },
 };
