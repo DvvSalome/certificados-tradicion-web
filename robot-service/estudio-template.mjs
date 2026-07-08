@@ -14,6 +14,24 @@ const CONCEPTO = {
 };
 const esc = (s) => String(s ?? '').replace(/[&<>]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
 
+// Iconos de sección (línea, 24x24). El helper `sec` arma el <h2> con su icono.
+const ICONS = {
+  home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/>',
+  scale: '<path d="M12 3v18"/><path d="M8 21h8"/><path d="M6 7h12"/><path d="m6 7-3 6a3 3 0 0 0 6 0Z"/><path d="m18 7-3 6a3 3 0 0 0 6 0Z"/>',
+  users: '<circle cx="9" cy="8" r="3"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 5.5a3 3 0 0 1 0 5"/><path d="M17.5 20a5.5 5.5 0 0 0-2.5-4.5"/>',
+  history: '<path d="M3 12a9 9 0 1 0 2.6-6.3L3 8"/><path d="M3 3v5h5"/><path d="M12 8v4l3 2"/>',
+  lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  gavel: '<path d="m13 12-8.5 8.5"/><path d="M3 21h7"/><path d="m11 6 7 7 2.5-2.5-7-7Z"/><path d="m8.5 8.5 7 7"/>',
+  flag: '<path d="M4 21V4"/><path d="M4 4h13l-2.5 4L17 12H4"/>',
+  shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>',
+  usercheck: '<circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 10-3.2"/><path d="m15.5 18 2 2 4-4"/>',
+  money: '<circle cx="12" cy="12" r="9"/><path d="M12 6.5v11"/><path d="M15 9a2.4 2 0 0 0-3-1.4c-1.5 0-2.4.8-2.4 1.9s.9 1.7 2.4 2 2.5.8 2.5 2-1 1.6-2.5 1.6A2.4 2 0 0 1 9 14.7"/>',
+  filelist: '<path d="M14 3v5h5"/><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M8.5 13h7"/><path d="M8.5 17h5"/>',
+  check: '<circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.6h.01"/>',
+};
+const sec = (icon, t) => `<h2><svg class="h2ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[icon] || ''}</svg><span>${esc(t)}</span></h2>`;
+
 // Sello Certitradición (documento + firma + pluma) — trazo blanco para el header morado.
 const SELLO = `<svg width="46" height="46" viewBox="0 0 96 96" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
   <path d="M34 9 H57 a7 7 0 0 1 7 7 V80 a7 7 0 0 1 -7 7 H23 a7 7 0 0 1 -7 -7 V26 Z"/>
@@ -42,10 +60,15 @@ export function estudioHtml(e, { matricula, oficina, fecha }) {
   /* ── Concepto (caja destacada, veredicto derivado en código) ── */
   const co = e.concepto && CONCEPTO[e.concepto.estado] ? e.concepto : null;
   const coPal = co ? CONCEPTO[co.estado] : null;
+  const coIcon = {
+    favorable: '<circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/>',
+    favorable_condicionado: '<path d="M12 3 2 20h20L12 3Z"/><path d="M12 9.5v4"/><path d="M12 17h.01"/>',
+    desfavorable: '<circle cx="12" cy="12" r="9"/><path d="m9 9 6 6"/><path d="m15 9-6 6"/>',
+  }[co ? co.estado : ''] || '';
   const conceptoHtml = co ? `
-    <div class="concepto" style="border-color:${coPal.pal.ring};background:${coPal.pal.bg}">
+    <div class="concepto" style="border-color:${coPal.pal.ring};border-left-color:${coPal.pal.c};background:${coPal.pal.bg}">
       <div class="co-lbl">CONCEPTO PRELIMINAR · ANÁLISIS AUTOMATIZADO</div>
-      <div class="co-estado" style="color:${coPal.pal.c}">${coPal.label}</div>
+      <div class="co-estado" style="color:${coPal.pal.c}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">${coIcon}</svg><span>${coPal.label}</span></div>
       <div class="co-sub">${coPal.sub}</div>
       ${co.condiciones?.length ? `<ol class="co-conds">${co.condiciones.map((c) => `<li>${esc(c)}</li>`).join('')}</ol>` : ''}
     </div>` : '';
@@ -62,7 +85,7 @@ export function estudioHtml(e, { matricula, oficina, fecha }) {
       ? '<span class="tag v">FALSA TRADICIÓN</span>'
       : '<span class="tag">INDETERMINADO</span>';
   const situacionHtml = !sj ? '' : `
-    <h2>Situación jurídica actual</h2>
+    ${sec('scale', 'Situación jurídica actual')}
     <table>
       <tr><td class="k">Tipo de dominio</td><td class="v">${domBadge}${sj.tipoDominio === 'falsa_tradicion' ? '<div class="mini muted">El titular no tiene propiedad plena: no puede hipotecar ni transferir dominio pleno. Se sanea mediante proceso de pertenencia.</div>' : ''}</td></tr>
       ${row('Copropiedad / cuotas', sj.cuotas)}
@@ -77,7 +100,7 @@ export function estudioHtml(e, { matricula, oficina, fecha }) {
   /* ── Estudio de la tradición (tabla que SÍ puede partirse entre páginas) ── */
   const cadena = e.cadenaTradicion || [];
   const cadenaHtml = !cadena.length ? '' : `
-    <h2>Estudio de la tradición</h2>
+    ${sec('history', 'Estudio de la tradición')}
     <p class="mini muted" style="margin:0 0 6px">Cadena de actos inscritos en el folio, en orden cronológico. Las filas atenuadas fueron canceladas por una anotación posterior.</p>
     <table class="cadena">
       <thead><tr><th style="width:38px">Anot.</th><th style="width:70px">Fecha</th><th>Acto</th><th>De → A</th><th style="width:88px">Valor</th></tr></thead>
@@ -125,15 +148,20 @@ export function estudioHtml(e, { matricula, oficina, fecha }) {
 
   /* ── Verificación de antecedentes judiciales (solo plan Avanzado) ── */
   const ant = e.antecedentes;
-  const antecedentesHtml = !ant ? '' : (!ant.ok
-    ? `<p class="muted">${esc(ant.motivo || 'Verificación de antecedentes no disponible en esta emisión.')}</p>`
-    : (ant.resultados || []).map((r) => {
-        const rojo = r.tieneAntecedentes === true, limpio = r.tieneAntecedentes === false;
-        const cls = r.error ? '' : rojo ? 'rojo' : limpio ? 'ok' : '';
-        const label = r.error ? 'No se pudo verificar' : rojo ? 'TIENE asuntos pendientes con las autoridades judiciales' : limpio ? 'Sin asuntos pendientes con las autoridades judiciales' : 'Resultado no determinado';
-        return `<div class="flag ${cls}"><b>${esc(r.nombre || 'Propietario')}${r.cedula ? ' · C.C. ' + esc(r.cedula) : ''}</b><span>${label}.${r.hora ? ' Consulta oficial: ' + esc(r.hora) + '.' : ''}${r.error ? ' (' + esc(r.error) + ')' : ''}</span></div>`;
-      }).join(''))
-    + (ant.ok ? `<p class="mini muted" style="margin-top:6px">Fuente: ${esc(ant.fuente || 'Policía Nacional de Colombia')}. Consulta realizada en el marco de la debida diligencia de una compraventa y con la autorización declarada por el solicitante. Refleja el estado al momento de la consulta; cada persona puede descargar su certificado oficial en el portal de la Policía Nacional.</p>` : '');
+  const antPersonas = !ant || !ant.ok ? '' : (ant.resultados || []).map((r) => {
+    const rojo = r.tieneAntecedentes === true, limpio = r.tieneAntecedentes === false;
+    const cls = r.error ? '' : rojo ? 'rojo' : limpio ? 'ok' : '';
+    const label = r.error ? 'No se pudo verificar' : rojo ? 'TIENE asuntos pendientes con las autoridades judiciales' : limpio ? 'Sin asuntos pendientes con las autoridades judiciales' : 'Resultado no determinado';
+    return `<div class="flag ${cls}"><b>${esc(r.nombre || 'Propietario')}${r.cedula ? ' · C.C. ' + esc(r.cedula) : ''}</b><span>${label}.${r.hora ? ' Consulta oficial: ' + esc(r.hora) + '.' : ''}${r.error ? ' (' + esc(r.error) + ')' : ''}</span></div>`;
+  }).join('');
+  // Personas jurídicas (empresas): no se consultan; los antecedentes judiciales son de personas naturales.
+  const antJuridicas = ant && ant.omitidos && ant.omitidos.length
+    ? `<div class="flag"><b>Persona(s) jurídica(s): ${ant.omitidos.map(esc).join(', ')}</b><span>No aplica verificación de antecedentes judiciales (corresponde a personas naturales). Para empresas, revise el Certificado de Existencia y Representación Legal (Cámara de Comercio / RUES).</span></div>`
+    : '';
+  const antecedentesHtml = !ant ? '' :
+    ((ant.ok ? antPersonas : (ant.omitidos && ant.omitidos.length ? '' : `<p class="muted">${esc(ant.motivo || 'Verificación de antecedentes no disponible en esta emisión.')}</p>`))
+      + antJuridicas
+      + (ant.ok ? `<p class="mini muted" style="margin-top:6px">Fuente: ${esc(ant.fuente || 'Policía Nacional de Colombia')}. Consulta realizada en el marco de la debida diligencia de una compraventa y con la autorización declarada por el solicitante. Refleja el estado al momento de la consulta; cada persona puede descargar su certificado oficial en el portal de la Policía Nacional.</p>` : ''));
 
   /* ── Avalúo ── */
   const V = e.avaluo;
@@ -154,19 +182,19 @@ export function estudioHtml(e, { matricula, oficina, fecha }) {
   /* ── Documentos a exigir ── */
   const docs = e.documentosExigir || [];
   const docsHtml = !docs.length ? '' : `
-    <h2>Documentos a exigir antes de firmar</h2>
+    ${sec('filelist', 'Documentos a exigir antes de firmar')}
     <ul class="docs">${docs.map((x) => `<li><span class="chk">☐</span> <b>${esc(x.doc)}</b><br><span class="muted mini">${esc(x.motivo)}</span></li>`).join('')}</ul>`;
 
   /* ── Recomendaciones ── */
   const recos = e.recomendaciones || [];
   const recosHtml = !recos.length ? '' : `
-    <h2>Recomendaciones</h2>
+    ${sec('check', 'Recomendaciones')}
     <ol class="recos">${recos.map((r) => `<li>${esc(r)}</li>`).join('')}</ol>`;
 
   /* ── Salvedades ── */
   const salv = e.salvedades || [];
   const salvHtml = !salv.length ? '' : `
-    <h2>Salvedades y alcance</h2>
+    ${sec('info', 'Salvedades y alcance')}
     <ul class="salv">${salv.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`;
 
   return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><style>
@@ -178,7 +206,7 @@ export function estudioHtml(e, { matricula, oficina, fecha }) {
   .sema,.resumen,.avaluo,.flag,li,table:not(.cadena),.concepto{break-inside:avoid;page-break-inside:avoid}
   table.cadena{break-inside:auto;page-break-inside:auto} .cadena tr{break-inside:avoid;page-break-inside:avoid}
   .cadena thead{display:table-header-group}
-  .header{display:flex;align-items:center;gap:14px;background:#774B78;color:#fff;padding:22px 44px}
+  .header{display:flex;align-items:center;gap:14px;background:linear-gradient(100deg,#774B78,#5B2A78);color:#fff;padding:22px 44px;border-bottom:3px solid #84cc16}
   .header .brand{font-weight:800;font-size:21px;letter-spacing:-.2px} .header .sub{font-size:10px;letter-spacing:.22em;color:rgba(255,255,255,.72);margin-top:2px}
   .header .meta{margin-left:auto;text-align:right;font-size:11px;color:rgba(255,255,255,.85);line-height:1.6}
   .page{padding:30px 44px 40px}
@@ -187,14 +215,15 @@ export function estudioHtml(e, { matricula, oficina, fecha }) {
   .mini{font-size:11px;line-height:1.5} .warn{color:#B7791F;font-weight:600;margin-top:3px} .okc{color:#0F7A52;font-weight:700} .warnc{color:#B7791F;font-weight:700}
   .sema{display:flex;align-items:center;gap:14px;background:${s.bg};border:1px solid ${s.ring};border-radius:14px;padding:14px 20px;margin:16px 0 10px}
   .dot{width:30px;height:30px;border-radius:999px;background:${s.c};flex-shrink:0;box-shadow:0 0 0 5px ${s.bg},0 0 0 6px ${s.ring}} .sema b{color:${s.c};font-size:17px}
-  .concepto{border:1.5px solid;border-radius:14px;padding:15px 20px;margin:0 0 12px}
+  .concepto{border:1.5px solid;border-left-width:6px;border-radius:14px;padding:16px 22px;margin:0 0 12px;box-shadow:0 1px 3px rgba(13,27,42,.05)}
   .co-lbl{font-size:9px;letter-spacing:.16em;font-weight:800;color:#8593A3}
-  .co-estado{font-size:20px;font-weight:800;letter-spacing:-.3px;margin-top:3px}
+  .co-estado{display:flex;align-items:center;gap:8px;font-size:21px;font-weight:800;letter-spacing:-.3px;margin-top:4px} .co-estado svg{width:22px;height:22px;flex-shrink:0}
   .co-sub{font-size:12px;color:#5B6B7E;margin-top:2px}
   .co-conds{margin:9px 0 0;padding-left:20px;font-size:12px;line-height:1.55} .co-conds li{margin:4px 0}
   .resumen{background:#F7F5F9;border-left:4px solid #774B78;border-radius:10px;padding:14px 18px;margin:12px 0;font-size:13.5px;line-height:1.6}
   .resumen p{margin:0 0 9px} .resumen p:last-child{margin-bottom:0}
-  h2{font-size:12px;color:#774B78;margin:22px 0 8px;text-transform:uppercase;letter-spacing:.08em;font-weight:800;border-bottom:1px solid #ECE6EE;padding-bottom:5px}
+  h2{display:flex;align-items:center;gap:7px;font-size:12px;color:#774B78;margin:22px 0 9px;text-transform:uppercase;letter-spacing:.08em;font-weight:800;border-bottom:1px solid #ECE6EE;padding-bottom:6px}
+  .h2ic{width:14px;height:14px;flex-shrink:0;color:#84cc16}
   table{width:100%;border-collapse:collapse;margin:2px 0} .k{color:#8593A3;width:170px;padding:6px 0;font-size:12px;vertical-align:top} .v{font-weight:600;padding:6px 0}
   .cadena{font-size:10.5px} .cadena th{text-align:left;color:#8593A3;font-size:9px;text-transform:uppercase;letter-spacing:.07em;padding:4px 6px;border-bottom:1.5px solid #ECE6EE}
   .cadena td{padding:5px 6px;border-bottom:1px solid #F1EDF3;vertical-align:top;font-weight:400}
@@ -231,17 +260,17 @@ export function estudioHtml(e, { matricula, oficina, fecha }) {
       <div class="sema"><div class="dot"></div><div><b>${s.t}</b><br><span class="muted">Semáforo de riesgo según las anotaciones vigentes del folio.</span></div></div>
       ${conceptoHtml}
       <div class="resumen">${resumenHtml}</div>
-      <h2>Identificación del inmueble</h2>
+      ${sec('home', 'Identificación del inmueble')}
       <table>${row('Matrícula', e.inmueble?.matricula)}${row('Dirección', e.inmueble?.direccion)}${row('Círculo registral', e.inmueble?.circulo)}${row('Área', e.inmueble?.area)}${row('Ficha catastral', e.inmueble?.fichaCatastral)}${row('Tipo de predio', e.inmueble?.tipoPredio)}${row('Linderos (resumen)', e.inmueble?.linderosResumen)}</table>
       ${situacionHtml}
-      <h2>Propietarios actuales</h2><ul>${props}</ul>
+      ${sec('users', 'Propietarios actuales')}<ul>${props}</ul>
       ${cadenaHtml}
-      <h2>Gravámenes y limitaciones</h2><ul>${grav}</ul>
-      <h2>Medidas cautelares</h2>${medidasHtml}
-      <h2>Banderas de riesgo</h2>${banderas}
-      <h2>Alertas · listas restrictivas (lavado de activos)</h2>${alertasHtml}
-      ${antecedentesHtml ? `<h2>Verificación de antecedentes judiciales del propietario</h2>${antecedentesHtml}` : ''}
-      <h2>Avalúo comercial · estimado digital</h2>${avaluoHtml}
+      ${sec('lock', 'Gravámenes y limitaciones')}<ul>${grav}</ul>
+      ${sec('gavel', 'Medidas cautelares')}${medidasHtml}
+      ${sec('flag', 'Banderas de riesgo')}${banderas}
+      ${sec('shield', 'Alertas · listas restrictivas (lavado de activos)')}${alertasHtml}
+      ${antecedentesHtml ? `${sec('usercheck', 'Verificación de antecedentes judiciales del propietario')}${antecedentesHtml}` : ''}
+      ${sec('money', 'Avalúo comercial · estimado digital')}${avaluoHtml}
       ${docsHtml}
       ${recosHtml}
       ${salvHtml}
