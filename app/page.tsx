@@ -237,20 +237,26 @@ export default function Home() {
             </p>
           </div>
           
-          <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl text-left">
-            {(['basico', 'express'] as PlanId[]).map((pid) => {
+          <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl text-left">
+            {(['basico', 'express', 'avanzado'] as PlanId[]).map((pid) => {
               const p = PLANS[pid];
               return (
-                <div key={pid} className={`relative flex flex-col items-start rounded-3xl border-2 p-6 sm:p-8 transition-all ${
-                  p.recommended 
-                    ? 'border-[var(--brand)] bg-[var(--brand-50)] shadow-md' 
-                    : 'border-[var(--border)] bg-white'
+                <div key={pid} className={`relative flex flex-col items-start rounded-3xl border-2 p-6 sm:p-7 transition-all ${
+                  p.recommended
+                    ? 'border-[var(--brand)] bg-[var(--brand-50)] shadow-md'
+                    : pid === 'avanzado'
+                      ? 'border-[var(--brand)]/35 bg-white shadow-sm'
+                      : 'border-[var(--border)] bg-white'
                 }`}>
-                  {p.recommended && (
+                  {p.recommended ? (
                     <span className="absolute -top-3 right-6 rounded-full bg-[var(--accent)] px-4 py-1.5 text-[11px] font-bold tracking-wider text-white shadow-sm">
                       RECOMENDADO
                     </span>
-                  )}
+                  ) : pid === 'avanzado' ? (
+                    <span className="absolute -top-3 right-6 rounded-full bg-[var(--brand)] px-4 py-1.5 text-[11px] font-bold tracking-wider text-white shadow-sm">
+                      MÁS COMPLETO
+                    </span>
+                  ) : null}
                   
                   <p className={`text-xs font-bold uppercase tracking-wide ${p.recommended ? 'text-[var(--brand)]' : 'text-[var(--muted-2)]'}`}>
                     Plan {p.label}
