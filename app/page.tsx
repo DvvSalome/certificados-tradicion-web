@@ -223,7 +223,7 @@ export default function Home() {
       </section>
 
       {/* ===== PRECIO ===== */}
-      <section id="precio" className="bg-[var(--background)] py-16 lg:py-24 border-t border-[var(--border)]">
+      <section id="precio" className="scroll-mt-24 bg-[var(--background)] py-16 lg:py-24 border-t border-[var(--border)]">
         <div className="mx-auto max-w-4xl px-6 flex flex-col gap-10 items-center text-center">
           <div className="flex flex-col gap-4 items-center">
             <span className="inline-flex items-center rounded-full border border-[var(--brand-ring)] bg-[var(--brand-50)] px-3 py-1.5 text-xs font-semibold text-[var(--brand)]">
@@ -308,7 +308,7 @@ export default function Home() {
       <Testimonials />
 
       {/* ===== PREGUNTAS FRECUENTES ===== */}
-      <section id="preguntas-frecuentes" className="bg-white py-16 lg:py-24 border-t border-[var(--border)]">
+      <section id="preguntas-frecuentes" className="scroll-mt-24 bg-white py-16 lg:py-24 border-t border-[var(--border)]">
         <div className="mx-auto max-w-3xl px-6 flex flex-col gap-10">
           <div className="text-center flex flex-col items-center gap-4">
             <span className="inline-flex items-center rounded-full border border-[var(--border-strong)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--brand)] shadow-sm">

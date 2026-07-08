@@ -53,17 +53,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly',
       priority: 0.9,
     },
-    {
-      url: `${BASE_URL}/preguntas-frecuentes`,
-      lastModified,
-      changeFrequency: 'monthly',
-      priority: 0.8,
-    },
-    {
-      url: `${BASE_URL}/precio`,
-      lastModified,
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    },
   ]
 }
