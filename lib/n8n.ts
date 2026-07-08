@@ -20,9 +20,9 @@ export interface N8nResult {
   error?: string;
 }
 
-export async function triggerGenerarCTL(payload: GenerarCTLPayload): Promise<N8nResult> {
+async function postRobot(payload: unknown, mockLabel: string): Promise<N8nResult> {
   if (!N8N_URL) {
-    console.log('[n8n mock] generar-ctl', payload.reference);
+    console.log('[n8n mock]', mockLabel);
     return { ok: true, mocked: true };
   }
   try {
@@ -40,4 +40,14 @@ export async function triggerGenerarCTL(payload: GenerarCTLPayload): Promise<N8n
   } catch (err) {
     return { ok: false, mocked: false, error: String(err) };
   }
+}
+
+export async function triggerGenerarCTL(payload: GenerarCTLPayload): Promise<N8nResult> {
+  return postRobot(payload, 'generar-ctl ' + payload.reference);
+}
+
+// Despacho por LOTE: manda TODOS los ítems en una sola llamada → el robot los mete en un carrito y paga
+// una vez (generarLote). Misma URL/puente que triggerGenerarCTL; el robot detecta el array `items`.
+export async function triggerGenerarLote(items: GenerarCTLPayload[]): Promise<N8nResult> {
+  return postRobot({ items }, `generar-lote (${items.length})`);
 }

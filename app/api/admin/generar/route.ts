@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { getSession } from '@/lib/admin';
 import { orders } from '@/lib/orders';
-import { triggerGenerarCTL } from '@/lib/n8n';
+import { triggerGenerarLote } from '@/lib/n8n';
 import { planAmountCents, type PlanId } from '@/lib/config';
 import { isOficina } from '@/lib/oficinas';
 
@@ -24,6 +24,7 @@ export async function POST(req: Request) {
   if (items.length > MAX) return NextResponse.json({ error: `Máximo ${MAX} por tanda` }, { status: 400 });
 
   const resultados: { matricula: string; email: string; plan: string; reference?: string; ok: boolean; error?: string }[] = [];
+  const disparables: { reference: string; matricula: string; oficina: string; email: string; phone: string | null; transactionId: string; plan: PlanId }[] = [];
   for (const it of items) {
     const matricula = String(it.matricula ?? '').trim();
     const oficina = String(it.oficina ?? '').trim();
@@ -47,11 +48,19 @@ export async function POST(req: Request) {
         consentAt: new Date().toISOString(), // avanzado: el admin declara la autorización del titular
         transactionId: 'ADMIN', // marcador: generado por el admin, no por Wompi (el retry Wompi-gated lo ignora)
       });
-      const r = await triggerGenerarCTL({ reference, matricula, oficina, email, phone, transactionId: 'ADMIN', plan });
-      if (!r.ok) { fail('no se pudo disparar: ' + (r.error || r.status)); continue; }
+      disparables.push({ reference, matricula, oficina, email, phone, transactionId: 'ADMIN', plan });
       resultados.push({ matricula, email, plan, reference, ok: true });
     } catch (e) {
       fail(e instanceof Error ? e.message : 'error');
+    }
+  }
+
+  // UN SOLO disparo por lote → el robot mete todos en un carrito y paga UNA vez (generarLote).
+  if (disparables.length) {
+    const r = await triggerGenerarLote(disparables);
+    if (!r.ok) {
+      const refs = new Set(disparables.map((d) => d.reference));
+      for (const res of resultados) if (res.ok && res.reference && refs.has(res.reference)) { res.ok = false; res.error = 'creado, pero no se pudo disparar el lote: ' + (r.error || r.status); }
     }
   }
   const ok = resultados.filter((r) => r.ok).length;

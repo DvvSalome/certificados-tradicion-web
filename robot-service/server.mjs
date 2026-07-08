@@ -193,6 +193,68 @@ async function entregarSobrePdf(pdf, { reference, oficina, matricula, email, pla
   }
 }
 
+// ── DESPACHO POR LOTE (panel admin): N certificados en UN carrito y UN pago (generarLote), luego entrega
+//    cada uno (CTL + estudio/antecedentes según plan). Serializado por genChain (comparte la página SNR).
+function procesarLote(items) {
+  genChain = genChain.catch(() => {}).then(() => procesarLoteOne(items));
+  return genChain;
+}
+async function procesarLoteOne(items) {
+  // Idempotencia por referencia: solo procesa las que ESTE proceso reclame (un ref se cobra 1 vez).
+  const claimados = [];
+  for (const it of Array.isArray(items) ? items : []) {
+    if (!it || !/^\d{2,10}$/.test(String(it.matricula || '')) || typeof it.oficina !== 'string' || !it.oficina) continue;
+    try { if (await claimGenerationJob(it.reference)) claimados.push(it); }
+    catch (e) { console.error('[lote] claim falló ' + it.reference + ': ' + e.message); }
+  }
+  if (!claimados.length) { console.error('[lote] nada que procesar (todo reclamado o inválido)'); return; }
+  console.error(`[lote] procesando ${claimados.length} pedido(s) en un carrito`);
+
+  let robot, cuenta, res;
+  try {
+    robot = await ensureGenRobot();
+    cuenta = genAccount?.user;
+    res = await robot.generarLote(claimados);
+  } catch (e) {
+    console.error('[lote] generarLote falló: ' + e.message);
+    for (const it of claimados) await reportPanel({ reference: it.reference, matricula: it.matricula, oficina: it.oficina, status: 'FAILED', errorCode: 'ERROR', error: 'lote: ' + String(e.message).slice(0, 150) }).catch(() => {});
+    await enviarAlerta('🔴 Lote de despacho falló', `El lote de ${claimados.length} pedido(s) falló antes/durante el pago: ${e.message}`).catch(() => {});
+    return;
+  }
+
+  // No disponibles → FAILED (no se cobraron; se saltaron del carrito).
+  for (const nd of (res.noDisponibles || [])) {
+    await reportPanel({ reference: nd.item.reference, matricula: nd.item.matricula, oficina: nd.item.oficina, status: 'FAILED', errorCode: 'NO_DISPONIBLE', error: 'no disponible: ' + nd.motivo }).catch(() => {});
+  }
+
+  const fecha = new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'long', year: 'numeric' }).format(new Date());
+  for (const { item, pdf, ok } of (res.pdfs || [])) {
+    const { reference, matricula, oficina, email, plan } = item;
+    if (!ok || !pdf) {
+      await reportPanel({ reference, matricula, oficina, status: 'FAILED', errorCode: 'ERROR', error: 'generado y cobrado, descarga del historial falló (recuperar manual, NO regenerar)' }).catch(() => {});
+      await enviarAlerta('🟠 Cert cobrado sin descargar (lote)', `El CTL de ${matricula} (${oficina}) se generó y cobró en el lote, pero la descarga falló. Recuperar manual del historial, NO regenerar.`).catch(() => {});
+      continue;
+    }
+    try {
+      await reportPanel({ reference, matricula, oficina, status: 'OK', costCents: COST_CENTS });
+      try { if (PANEL && SECRET) await fetch(`${PANEL}/api/admin/cert`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-webhook-secret': SECRET }, body: JSON.stringify({ reference, pdfBase64: pdf.toString('base64') }) }); } catch (pe) { console.error('[lote] guardar PDF: ' + pe.message); }
+      try { const d = await entregarCorreo({ pdf, matricula, oficina, email, reference }); console.error(`[lote] correo CTL ${matricula}: ${d.sent ? 'ENVIADO a ' + email : 'NO (' + d.reason + ')'}`); }
+      catch (de) { console.error(`[lote] correo CTL ${matricula} FALLÓ: ${de.message}`); await enviarAlerta('🟠 Correo CTL falló (lote)', `El CTL de ${matricula} se generó pero el correo a ${email} falló. Reenviar manual.`).catch(() => {}); }
+      if (cuenta) { try { if (!saldoConocido(cuenta)) { const cop = await robot.leerSaldo(); if (cop != null) setSaldo(cuenta, cop * 100); } else descontarCert(cuenta); } catch {} }
+      if (ESTUDIO_PLANS.has(plan)) {
+        try {
+          const { data, estudioPdf } = await construirEstudioPdf(pdf, { matricula, oficina, plan });
+          try { if (PANEL && SECRET) await fetch(`${PANEL}/api/admin/cert`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-webhook-secret': SECRET }, body: JSON.stringify({ reference, estudioBase64: estudioPdf.toString('base64') }) }); } catch {}
+          const de2 = await entregarEstudio({ estudio: estudioPdf, matricula, oficina, email });
+          console.error(`[lote] estudio ${matricula}: ${de2.sent ? 'ENVIADO' : 'NO'} · concepto ${data.concepto?.estado ?? '-'}`);
+        } catch (ee) { console.error(`[lote] estudio ${matricula} FALLÓ: ${ee.message}`); await enviarAlerta('🟠 Estudio pendiente (lote)', `El CTL de ${matricula} se entregó a ${email} pero el Estudio falló: ${ee.message}. Reenviar manual.`).catch(() => {}); }
+      }
+    } catch (e) { console.error(`[lote] entrega ${matricula} error: ${e.message}`); }
+  }
+  try { const cents = cuenta ? saldoCents(cuenta) : null; if (cents != null) pushSaldo(cents); pushSnrStatus(); } catch {}
+  console.error(`[lote] LISTO: ${res.pdfs?.filter((x) => x.ok).length ?? 0} entregados, ${res.noDisponibles?.length ?? 0} no disponibles`);
+}
+
 // ── VERIFICAR (rápido): CONSULTA PÚBLICA (sin login) con navegador persistente reusado entre consultas.
 //    Serializado con un mutex (comparten una sola página). NO loguea: validar disponibilidad es público
 //    (form `formOficinas` del homepage) → no quema logins ni se ve afectado por bloqueos de la cuenta.
@@ -304,6 +366,14 @@ const server = http.createServer((req, res) => {
     req.on('end', async () => {
       let p;
       try { p = JSON.parse(body); } catch { res.writeHead(400); return res.end('JSON inválido'); }
+      // LOTE (despacho admin): si viene un array `items`, se procesa con generarLote (UN carrito, UN pago
+      // para todos). Cada ítem lleva { reference, matricula, oficina, email, phone, plan }.
+      if (Array.isArray(p.items)) {
+        res.writeHead(202, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, accepted: true, lote: p.items.length }));
+        procesarLote(p.items).catch((e) => console.error('[robot] procesarLote throw', e));
+        return;
+      }
       // Validación de FRONTERA (defensa en profundidad): estos valores fluyen al HTML de los correos,
       // a nombres de archivo y al robot SNR. El checkout ya valida, pero /generar no debe confiar en eso.
       if (!/^\d{2,10}$/.test(String(p.matricula || ''))) { res.writeHead(400); return res.end('matricula inválida'); }

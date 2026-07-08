@@ -355,17 +355,17 @@ export class SnrRobot {
   async generarLote(items, { dryRun = false, peekTotal = false } = {}) {
     await this.ensureLoggedIn();
     const p = this.page;
-    const agregados = [];      // { oficina, matricula }
-    const noDisponibles = [];  // { oficina, matricula, motivo }
+    const agregados = [];      // el ítem completo (lleva reference/email/plan del despacho)
+    const noDisponibles = [];  // { item, motivo }
     for (const it of items) {
       try {
         const info = await this.consultar(it.oficina, it.matricula);
-        if (!info.disponible) { noDisponibles.push({ oficina: it.oficina, matricula: it.matricula, motivo: info.estado || (info.raw || '').slice(0, 80) }); this.log(`[lote] ${it.matricula} NO disponible → saltada`); continue; }
+        if (!info.disponible) { noDisponibles.push({ item: it, motivo: info.estado || (info.raw || '').slice(0, 80) }); this.log(`[lote] ${it.matricula} NO disponible → saltada`); continue; }
         await this.agregarAlCarrito();
-        agregados.push({ oficina: it.oficina, matricula: it.matricula });
+        agregados.push(it);
         this.log(`[lote] ${it.matricula} → carrito (${agregados.length} en el carrito)`);
       } catch (e) {
-        noDisponibles.push({ oficina: it.oficina, matricula: it.matricula, motivo: 'error: ' + String(e.message).split('\n')[0].slice(0, 80) });
+        noDisponibles.push({ item: it, motivo: 'error: ' + String(e.message).split('\n')[0].slice(0, 80) });
         this.log(`[lote] ${it.matricula} error al agregar: ${e.message}`);
       }
     }
@@ -419,7 +419,7 @@ export class SnrRobot {
         try { pdf = await this.descargarDesdeHistorial(it.matricula); }
         catch (e) { this.log(`[lote] descarga ${it.matricula} intento ${i}/3: ${e.message}`); if (i < 3) await p.waitForTimeout(3000); }
       }
-      pdfs.push({ oficina: it.oficina, matricula: it.matricula, pdf, ok: !!pdf });
+      pdfs.push({ item: it, pdf, ok: !!pdf });
     }
     return { pagado: true, agregados, noDisponibles, pdfs };
   }
