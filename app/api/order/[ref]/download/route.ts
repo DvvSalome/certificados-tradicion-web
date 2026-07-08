@@ -1,11 +1,19 @@
 import { NextResponse } from 'next/server';
 import { getPool } from '@/lib/db';
+import { verifyDownload } from '@/lib/download-token';
 
 export const runtime = 'nodejs';
 
-export async function GET(_req: Request, ctx: { params: Promise<{ ref: string }> }) {
+export async function GET(req: Request, ctx: { params: Promise<{ ref: string }> }) {
   const { ref } = await ctx.params;
-  
+
+  // El PDF trae PII de terceros (propietarios). Se exige el token firmado que se emitió tras el pago
+  // (viaja en la redirección a /estado). La sola referencia — que se filtra en correos/historial — NO basta.
+  const token = new URL(req.url).searchParams.get('t');
+  if (!verifyDownload(ref, token)) {
+    return NextResponse.json({ error: 'Enlace de descarga inválido o vencido. Ábrelo desde el enlace que recibiste tras el pago, o pide tu certificado por WhatsApp.' }, { status: 403 });
+  }
+
   if (!process.env.DATABASE_URL) {
     // Para el entorno local sin base de datos
     return NextResponse.json({ error: 'Descarga no disponible en modo memoria' }, { status: 404 });

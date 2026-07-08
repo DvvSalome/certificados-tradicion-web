@@ -84,6 +84,7 @@ const VARIANT_STYLES: Record<Variant, { card: string; chip: string; icon: ReactN
 export default function EstadoView() {
   const sp = useSearchParams();
   const ref = sp.get('ref');
+  const dlToken = sp.get('t'); // token de descarga firmado (viene en la redirección tras el pago)
   const [status, setStatus] = useState<string | null>(null);
   const [info, setInfo] = useState<{ matricula?: string; oficina?: string; amountCop?: number }>({});
 
@@ -237,7 +238,7 @@ export default function EstadoView() {
 
       {status === 'DELIVERED' && (
         <a
-          href={`/api/order/${ref}/download`}
+          href={`/api/order/${ref}/download${dlToken ? `?t=${encodeURIComponent(dlToken)}` : ''}`}
           download
           className="flex flex-col items-center gap-1.5 rounded-2xl border border-[var(--border)] bg-white px-5 py-4 text-center shadow-sm transition hover:bg-[var(--brand-50)] active:scale-[0.99]"
         >

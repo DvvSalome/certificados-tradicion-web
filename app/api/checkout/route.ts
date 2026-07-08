@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { orders } from '@/lib/orders';
 import { checkoutUrl } from '@/lib/wompi';
+import { signDownload } from '@/lib/download-token';
 import { planAmountCents } from '@/lib/config';
 import { isOficina } from '@/lib/oficinas';
 import { verificar, rateLimited } from '@/lib/verify';
@@ -84,6 +85,9 @@ export async function POST(req: Request) {
   const fwdHost = req.headers.get('x-forwarded-host');
   const fwdProto = req.headers.get('x-forwarded-proto') || 'https';
   const origin = process.env.APP_BASE_URL || (fwdHost ? `${fwdProto}://${fwdHost}` : new URL(req.url).origin);
-  const url = checkoutUrl({ reference, amountInCents, redirectUrl: `${origin}/estado?ref=${reference}` });
+  // Token de descarga firmado en la redirección → habilita bajar el PDF desde /estado sin exponerlo a
+  // cualquiera que tenga la sola referencia (protección de PII, Habeas Data).
+  const dl = signDownload(reference);
+  const url = checkoutUrl({ reference, amountInCents, redirectUrl: `${origin}/estado?ref=${reference}&t=${dl}` });
   return NextResponse.json({ ok: true, reference, checkoutUrl: url });
 }
