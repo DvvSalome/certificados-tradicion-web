@@ -346,4 +346,81 @@ export class SnrRobot {
     if (!pdf) throw new Error('cert generado y cobrado pero la descarga del historial falló (recuperar manual del historial, NO regenerar)');
     return { dryRun: false, info, pdf };
   }
+
+  // ── LOTE: varios certificados en UN carrito y UN pago (1 login, 1 pago = mucho menos gasto de logins). ──
+  // items: [{ oficina, matricula }]. Acumula cada disponible en el carrito, paga UNA vez el total (N×costo)
+  // y descarga cada cert del historial. dryRun=true acumula, LEE el total (sin pagar) y vacía → gratis, validable.
+  // peekTotal (solo dryRun): avanza hasta el diálogo "Valor Total" (que muestra lo que se cobraría por N),
+  // lo lee y ABANDONA sin "Realizar Pago" (el cobro solo ocurre en ese botón). Da la prueba dura de acumulación.
+  async generarLote(items, { dryRun = false, peekTotal = false } = {}) {
+    await this.ensureLoggedIn();
+    const p = this.page;
+    const agregados = [];      // { oficina, matricula }
+    const noDisponibles = [];  // { oficina, matricula, motivo }
+    for (const it of items) {
+      try {
+        const info = await this.consultar(it.oficina, it.matricula);
+        if (!info.disponible) { noDisponibles.push({ oficina: it.oficina, matricula: it.matricula, motivo: info.estado || (info.raw || '').slice(0, 80) }); this.log(`[lote] ${it.matricula} NO disponible → saltada`); continue; }
+        await this.agregarAlCarrito();
+        agregados.push({ oficina: it.oficina, matricula: it.matricula });
+        this.log(`[lote] ${it.matricula} → carrito (${agregados.length} en el carrito)`);
+      } catch (e) {
+        noDisponibles.push({ oficina: it.oficina, matricula: it.matricula, motivo: 'error: ' + String(e.message).split('\n')[0].slice(0, 80) });
+        this.log(`[lote] ${it.matricula} error al agregar: ${e.message}`);
+      }
+    }
+    if (agregados.length === 0) return { pagado: false, agregados, noDisponibles, pdfs: [] };
+
+    if (dryRun) {
+      let valorTotal = null;
+      if (peekTotal) {
+        // Avanza hasta ver el "Valor Total" del carrito completo, SIN pagar, y vuelve.
+        try {
+          await p.click(S.btnPagar);
+          await p.waitForSelector('.ui-confirmdialog-yes', { timeout: 12000 }).catch(() => {});
+          await p.locator('.ui-confirmdialog-yes').first().click({ force: true }).catch(() => {});
+          await p.waitForLoadState('networkidle', { timeout: 25000 }).catch(() => {});
+          await p.waitForTimeout(1500);
+          await p.locator('a[title*="prepago" i]').first().click({ force: true }).catch(() => {});
+          await p.waitForTimeout(2500);
+          valorTotal = await p.evaluate(() => {
+            const t = document.body.innerText || '';
+            const m = t.match(/Valor\s*Total[^\d]*([\d.,]+)/i) || t.match(/Total[^\d]*\$?\s*([\d.,]{4,})/i);
+            return m ? m[1] : null;
+          }).catch(() => null);
+          this.log(`[lote] peek Valor Total (SIN pagar): ${valorTotal}`);
+        } catch (e) { this.log(`[lote] peek total falló: ${e.message}`); }
+        // ABANDONAR: volver a la pantalla de generación (no se ejecutó "Realizar Pago" → no hay cobro).
+        await p.goto(URL_GEN, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => {});
+      } else {
+        await this.limpiarCarrito();
+      }
+      return { dryRun: true, pagado: false, agregados, noDisponibles, valorTotal, pdfs: [] };
+    }
+
+    // ── PASO QUE COBRA (UN pago por los N del carrito) ──
+    await p.click(S.btnPagar);
+    await p.waitForSelector('.ui-confirmdialog-yes', { timeout: 12000 }).catch(() => {});
+    await p.locator('.ui-confirmdialog-yes').first().click({ force: true })
+      .catch(async () => { await p.getByRole('button', { name: /^S[ií]$/ }).first().click({ force: true }).catch(() => {}); });
+    await p.waitForLoadState('networkidle', { timeout: 25000 }).catch(() => {});
+    await p.waitForTimeout(1500);
+    await p.locator('a[title*="prepago" i]').first().click({ force: true });
+    await p.waitForSelector('text=/Realizar Pago/i', { timeout: 12000 }).catch(() => {});
+    await p.getByRole('button', { name: /Realizar Pago/i }).first().click({ force: true });
+    await p.waitForLoadState('networkidle', { timeout: 90000 }).catch(() => {});
+    await p.waitForTimeout(6000);
+
+    // Descargar cada cert del historial (con reintentos, sin regenerar).
+    const pdfs = [];
+    for (const it of agregados) {
+      let pdf = null;
+      for (let i = 1; i <= 3 && !pdf; i++) {
+        try { pdf = await this.descargarDesdeHistorial(it.matricula); }
+        catch (e) { this.log(`[lote] descarga ${it.matricula} intento ${i}/3: ${e.message}`); if (i < 3) await p.waitForTimeout(3000); }
+      }
+      pdfs.push({ oficina: it.oficina, matricula: it.matricula, pdf, ok: !!pdf });
+    }
+    return { pagado: true, agregados, noDisponibles, pdfs };
+  }
 }
