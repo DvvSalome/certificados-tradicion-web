@@ -199,42 +199,39 @@ export default function CheckoutForm() {
           Selecciona tu plan
         </h3>
         
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 mb-2">
           {(['basico', 'express', 'avanzado'] as PlanId[]).map((pid) => {
             const p = PLANS[pid];
             const sel = plan === pid;
+            const badge = p.recommended ? 'RECOMENDADO' : pid === 'avanzado' ? 'MÁS COMPLETO' : null;
             return (
               <label
                 key={pid}
-                className={`relative flex flex-col items-start rounded-2xl border-2 p-4 text-left transition-all cursor-pointer ${
-                  sel 
-                    ? 'border-[#84cc16] bg-[#f7fee7] shadow-sm' 
-                    : 'border-gray-200 bg-white hover:border-[#bde875]'
+                className={`relative flex flex-col rounded-2xl border-2 p-3.5 pt-4 text-left transition-all cursor-pointer ${
+                  sel
+                    ? 'border-[#84cc16] bg-[#f7fee7] shadow-md ring-1 ring-[#84cc16]'
+                    : 'border-gray-200 bg-white hover:border-[#bde875] hover:shadow-sm'
                 }`}
               >
                 <input type="radio" name="plan" className="sr-only" checked={sel} onChange={() => setPlan(pid)} />
-                {p.recommended && (
-                  <span className="absolute -top-3 right-3 rounded-full bg-[#84cc16] px-3 py-1 text-[10px] font-bold tracking-wider text-white shadow-sm">
-                    RECOMENDADO
+                {badge && (
+                  <span className={`absolute -top-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[9px] font-bold tracking-wider text-white shadow-sm ${p.recommended ? 'bg-[#84cc16]' : 'bg-[#774B78]'}`}>
+                    {badge}
                   </span>
                 )}
-                <div className="flex w-full items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <svg className="size-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                    <span className="text-[16px] font-bold text-[var(--foreground)]">{p.label}</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-lg font-black text-[#15803d]">{formatCOP(p.priceCop)}</span>
-                    <div className={`flex size-5 items-center justify-center rounded-full border-2 ${sel ? 'border-[#15803d]' : 'border-gray-300'}`}>
-                      {sel && <div className="size-2.5 rounded-full bg-[#15803d]" />}
-                    </div>
-                  </div>
+                <div className="flex items-start justify-between gap-1">
+                  <span className="text-[15px] font-extrabold text-[var(--foreground)]">{p.label}</span>
+                  <span className={`mt-0.5 flex size-[18px] shrink-0 items-center justify-center rounded-full border-2 ${sel ? 'border-[#15803d] bg-[#15803d]' : 'border-gray-300'}`}>
+                    {sel && <svg className="size-2.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>}
+                  </span>
                 </div>
-                <ul className="mt-1 flex flex-col gap-1.5 text-xs text-gray-600 w-full">
+                <div className="mt-1 text-[22px] font-black leading-none text-[#15803d]">{formatCOP(p.priceCop)}</div>
+                <div className="mt-1.5 text-[11px] leading-snug text-gray-500">{p.tagline}</div>
+                <ul className="mt-3 flex flex-col gap-1.5 border-t border-gray-100 pt-3 text-[11.5px] leading-snug text-gray-600">
                   {p.features.map((f, i) => (
-                    <li key={i} className="flex items-center gap-1.5">
-                      <svg className="size-3.5 text-[#84cc16]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
-                      {f}
+                    <li key={i} className="flex items-start gap-1.5">
+                      <svg className="mt-0.5 size-3 shrink-0 text-[#84cc16]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                      <span>{f}</span>
                     </li>
                   ))}
                 </ul>
@@ -245,12 +242,19 @@ export default function CheckoutForm() {
 
         {/* Consentimiento obligatorio para el plan Avanzado (consulta antecedentes de un tercero) */}
         {needsConsent && (
-          <label className="mt-3 flex items-start gap-2.5 rounded-xl border-2 border-[#d9f99d] bg-[#f7fee7] p-3.5 text-left cursor-pointer">
-            <input type="checkbox" className="mt-0.5 size-4 accent-[#65a30d]" checked={consentAntecedentes} onChange={(e) => setConsentAntecedentes(e.target.checked)} />
-            <span className="text-xs leading-relaxed text-gray-700">
-              Declaro que <strong>cuento con la autorización del propietario</strong> del inmueble (o tengo una finalidad legítima conforme a la ley) para consultar sus antecedentes judiciales, y entiendo que Certitradición actúa como intermediario de esta verificación. <span className="text-gray-500">Requerido por la Ley 1581 de 2012 (Habeas Data).</span>
-            </span>
-          </label>
+          <div className={`mt-4 overflow-hidden rounded-xl border-2 transition-colors ${consentAntecedentes ? 'border-[#84cc16]' : 'border-amber-300'}`}>
+            <div className={`flex items-center gap-2 px-4 py-2 ${consentAntecedentes ? 'bg-[#ecfccb]' : 'bg-amber-50'}`}>
+              <svg className={`size-4 shrink-0 ${consentAntecedentes ? 'text-[#4d7c0f]' : 'text-amber-600'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="m9 12 2 2 4-4" /></svg>
+              <span className={`text-[11px] font-bold uppercase tracking-wide ${consentAntecedentes ? 'text-[#4d7c0f]' : 'text-amber-700'}`}>Autorización del propietario requerida</span>
+            </div>
+            <label className="flex cursor-pointer items-start gap-3 bg-white p-4">
+              <input type="checkbox" className="mt-0.5 size-[18px] shrink-0 accent-[#65a30d]" checked={consentAntecedentes} onChange={(e) => setConsentAntecedentes(e.target.checked)} />
+              <span className="text-[12.5px] leading-relaxed text-gray-700">
+                Confirmo que <strong>cuento con la autorización del propietario</strong> del inmueble para consultar sus antecedentes judiciales (o que la consulta responde a una finalidad legítima conforme a la ley). Entiendo que <strong>Certitradición actúa únicamente como intermediario</strong> de esta verificación y que soy responsable de contar con dicha autorización.
+                <span className="mt-1.5 block text-[11px] text-gray-500">Exigido por la Ley 1581 de 2012 (Habeas Data) para el tratamiento de datos de terceros.</span>
+              </span>
+            </label>
+          </div>
         )}
 
 
