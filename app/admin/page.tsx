@@ -3,6 +3,7 @@ import { getSession, getDashboard, getMetrics, getSnrStatus, SALDO_THRESHOLD_CEN
 import { formatCOP } from '@/lib/config';
 import LogoutButton from './LogoutButton';
 import BatchPanel from './BatchPanel';
+import AdminGenerar from './AdminGenerar';
 import MetricsCharts from './MetricsCharts';
 import OrderActions from './OrderActions';
 
@@ -116,6 +117,9 @@ export default async function AdminDashboard() {
 
         {/* Métricas · últimos 14 días */}
         <MetricsCharts m={metrics} />
+
+        {/* Despacho manual (superadmin): generar pedidos con plan y entrega, sin Wompi */}
+        {role === 'superadmin' && <AdminGenerar />}
 
         {/* Generación en lote */}
         <BatchPanel />
