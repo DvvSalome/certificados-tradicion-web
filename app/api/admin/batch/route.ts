@@ -13,9 +13,11 @@ export async function GET() {
 }
 
 // POST: crea un lote desde el panel y dispara el procesador en loop (n8n → robot).
+// SOLO superadmin: genera CTL reales que gastan saldo del SNR (~$23.000 c/u) SIN orden pagada asociada
+// — igual que el retry individual, que también exige superadmin por costar dinero.
 export async function POST(req: Request) {
   const role = await getSession();
-  if (!role) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  if (role !== 'superadmin') return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
 
   const body = (await req.json().catch(() => ({}))) as { items?: BatchItemInput[] };
   const items = (body.items ?? [])

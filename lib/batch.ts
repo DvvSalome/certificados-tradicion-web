@@ -55,12 +55,14 @@ export async function claimNextItem(): Promise<{ itemId: number; batchId: number
 // El robot reporta el resultado de un ítem. Registra la generación y cierra el batch si ya no quedan pendientes.
 export async function reportItem(itemId: number, result: { status: 'OK' | 'FAILED'; costCents?: number | null; error?: string | null }): Promise<void> {
   const pool = getPool();
+  // Claim atómico: solo el PRIMER reporte (item aún RUNNING) cuenta. Un reporte repetido (reintento del
+  // robot tras respuesta perdida, o replay) no retorna fila → no duplica recordGeneration ni alerta.
   const { rows } = await pool.query(
-    `UPDATE batch_items SET status = $2, cost_cents = $3, error = $4, processed_at = now() WHERE id = $1 RETURNING batch_id, matricula, oficina`,
+    `UPDATE batch_items SET status = $2, cost_cents = $3, error = $4, processed_at = now() WHERE id = $1 AND status = 'RUNNING' RETURNING batch_id, matricula, oficina`,
     [itemId, result.status, result.costCents ?? null, result.error ?? null],
   );
   const item = rows[0];
-  if (!item) return;
+  if (!item) return; // ya reportado (o id inexistente) → no-op idempotente
   await recordGeneration({ matricula: item.matricula, oficina: item.oficina, status: result.status, costCents: result.costCents ?? null, error: result.error ?? null });
   // ¿quedan pendientes/corriendo en este batch? si no, DONE.
   const { rows: left } = await pool.query(`SELECT COUNT(*) AS c FROM batch_items WHERE batch_id = $1 AND status IN ('PENDING','RUNNING')`, [item.batch_id]);

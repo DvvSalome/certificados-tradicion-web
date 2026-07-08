@@ -44,7 +44,7 @@ function toOrder(row) {
     amountInCents: Number(row.amount_in_cents),
     status: row.status,
     transactionId: row.transaction_id ?? undefined,
-    plan: (row.plan === 'express' ? 'express' : 'basico'),
+    plan: (['express', 'avanzado'].includes(row.plan) ? row.plan : 'basico'),
     createdAt: row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at),
   };
 }

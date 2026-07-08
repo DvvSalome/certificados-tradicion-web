@@ -4,9 +4,14 @@ import { orders } from '@/lib/orders';
 import { checkoutUrl } from '@/lib/wompi';
 import { planAmountCents } from '@/lib/config';
 import { isOficina } from '@/lib/oficinas';
-import { verificar } from '@/lib/verify';
+import { verificar, rateLimited } from '@/lib/verify';
 
 export const runtime = 'nodejs';
+
+function clientIp(req: Request): string {
+  const xff = req.headers.get('x-forwarded-for');
+  return (xff ? xff.split(',')[0] : '') || req.headers.get('x-real-ip') || 'anon';
+}
 
 // Normaliza al formato wa_id de WhatsApp (dígitos con indicativo de país, sin +/espacios) para que coincida
 // con el `from` que manda Meta. Así el webhook entrega el certificado SOLO al número que pagó.
@@ -21,6 +26,11 @@ function normalizeWa(raw: string | null): string | null {
 }
 
 export async function POST(req: Request) {
+  // Rate limit por IP: cada checkout ejecuta verificar() contra el portal del SNR y crea una orden.
+  // Un flood podría inflar la tabla orders y disparar el bloqueo de la cuenta SNR por logins/día.
+  if (rateLimited(clientIp(req))) {
+    return NextResponse.json({ error: 'Demasiadas solicitudes. Espera un momento e intenta de nuevo.' }, { status: 429 });
+  }
   const body = (await req.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body) return NextResponse.json({ error: 'JSON inválido' }, { status: 400 });
 
