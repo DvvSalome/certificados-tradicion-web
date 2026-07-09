@@ -2,8 +2,8 @@ import { createHmac, timingSafeEqual } from 'crypto';
 import { cookies } from 'next/headers';
 import { getPool } from './db';
 
-// ── Auth: cookie firmada con HMAC, 2 roles. Sin DB de usuarios (YAGNI): contraseña por rol vía env. ──
-export type Role = 'cliente' | 'superadmin';
+// ── Auth: cookie firmada con HMAC. Un solo rol (superadmin). Sin DB de usuarios (YAGNI): contraseña vía env. ──
+export type Role = 'superadmin';
 export const COOKIE = 'ctl_admin';
 const DEFAULT_SECRET = 'dev-insecure-change-me';
 const SECRET = process.env.ADMIN_SESSION_SECRET || DEFAULT_SECRET;
@@ -20,7 +20,6 @@ function secretInseguro(): boolean {
 }
 
 const PASSWORDS: Record<Role, string | undefined> = {
-  cliente: process.env.ADMIN_PASS_CLIENTE,
   superadmin: process.env.ADMIN_PASS_SUPERADMIN,
 };
 
@@ -38,7 +37,7 @@ export function verify(token: string | undefined): Role | null {
   if (secretInseguro()) return null;
   if (!token) return null;
   const [role, expStr, mac] = token.split('.');
-  if ((role !== 'cliente' && role !== 'superadmin') || !expStr || !mac) return null;
+  if (role !== 'superadmin' || !expStr || !mac) return null;
   const exp = Number(expStr);
   if (!Number.isFinite(exp) || Date.now() > exp) return null; // sesión caducada
   const expected = createHmac('sha256', SECRET).update(`${role}.${expStr}`).digest('hex');

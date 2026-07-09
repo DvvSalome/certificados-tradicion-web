@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { login, COOKIE, type Role } from '@/lib/admin';
+import { login, COOKIE } from '@/lib/admin';
 
 export const runtime = 'nodejs';
 
@@ -25,13 +25,11 @@ export async function POST(req: Request) {
   if (loginRateLimited(clientIp(req))) {
     return NextResponse.json({ error: 'Demasiados intentos. Espera unos minutos.' }, { status: 429 });
   }
-  const { role, password } = (await req.json().catch(() => ({}))) as { role?: Role; password?: string };
-  if (role !== 'cliente' && role !== 'superadmin') return NextResponse.json({ error: 'Rol inválido' }, { status: 400 });
-
-  const token = login(role, password ?? '');
+  const { password } = (await req.json().catch(() => ({}))) as { password?: string };
+  const token = login('superadmin', password ?? '');
   if (!token) return NextResponse.json({ error: 'Contraseña incorrecta' }, { status: 401 });
 
-  const res = NextResponse.json({ ok: true, role });
+  const res = NextResponse.json({ ok: true, role: 'superadmin' });
   res.cookies.set(COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',

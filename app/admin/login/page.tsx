@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 
 export default function AdminLogin() {
   const router = useRouter();
-  const [role, setRole] = useState<'cliente' | 'superadmin'>('cliente');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,7 +17,7 @@ export default function AdminLogin() {
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ role, password }),
+        body: JSON.stringify({ password }),
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
@@ -51,21 +50,6 @@ export default function AdminLogin() {
         </div>
 
         <form onSubmit={submit} className="flex flex-col gap-4 rounded-[var(--radius)] border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[0_12px_40px_-12px_rgba(13,27,42,0.18)]">
-          <div className="grid grid-cols-2 gap-2 rounded-xl bg-[var(--background)] p-1">
-            {(['cliente', 'superadmin'] as const).map((r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => setRole(r)}
-                className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
-                  role === r ? 'bg-white text-[var(--brand)] shadow-sm' : 'text-[var(--muted)]'
-                }`}
-              >
-                {r === 'cliente' ? 'Cliente' : 'Superadmin'}
-              </button>
-            ))}
-          </div>
-
           <label className="flex flex-col gap-1.5">
             <span className="text-[13px] font-medium text-[var(--muted)]">Contraseña</span>
             <input

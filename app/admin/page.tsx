@@ -50,7 +50,7 @@ export default async function AdminDashboard() {
           </div>
           <div className="flex items-center gap-3">
             <span className="rounded-full bg-[var(--brand-50)] px-3 py-1 text-xs font-semibold text-[var(--brand)]">
-              {role === 'superadmin' ? 'Superadmin' : 'Cliente · Alexis'}
+              Superadmin
             </span>
             <LogoutButton />
           </div>
@@ -96,6 +96,8 @@ export default async function AdminDashboard() {
             <div className="grid gap-3 p-3 sm:grid-cols-2">
               {snr.cuentas.map((c) => {
                 const activa = c.user === snr.activa;
+                // La cuenta activa: si aún no hay saldo por-cuenta, cae al snapshot global (que ES el saldo de la activa).
+                const saldo = c.saldoCents ?? (activa ? d.saldoCents : null);
                 return (
                   <div key={c.user} className="rounded-xl border border-[var(--border)] bg-white p-4">
                     <div className="flex items-center justify-between">
@@ -105,8 +107,8 @@ export default async function AdminDashboard() {
                       </span>
                     </div>
                     <p className="mt-2 text-[13px] text-[var(--foreground)]">
-                      Saldo: <span className="font-semibold">{c.saldoCents === null || c.saldoCents === undefined ? '—' : fmt(c.saldoCents)}</span>
-                      {c.saldoCents != null && <span className="text-[var(--muted-2)]"> · ~{Math.floor(c.saldoCents / 2_300_000)} certificados</span>}
+                      Saldo: <span className="font-semibold">{saldo == null ? '—' : fmt(saldo)}</span>
+                      {saldo != null && <span className="text-[var(--muted-2)]"> · ~{Math.floor(saldo / 2_300_000)} certificados</span>}
                     </p>
                     {!c.disponible && c.reason && <p className="mt-0.5 text-[11px] text-[#b42318]">{c.reason}</p>}
                   </div>

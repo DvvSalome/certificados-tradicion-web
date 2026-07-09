@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { Seal } from './Brand';
 
 // Widget flotante de WhatsApp (estilo "Adiós Vellos"): botón redondo abajo-derecha con nuestra
@@ -15,6 +16,7 @@ const WA_URL = `https://wa.me/573212258245?text=${encodeURIComponent(
 
 export default function WhatsAppWidget() {
   const [showBubble, setShowBubble] = useState(false);
+  const pathname = usePathname();
 
   // PERSISTENTE: el globo reaparece SIEMPRE (tras un pequeño retraso), en cada visita. Antes se guardaba
   // "cerrado" en localStorage y no volvía a salir nunca ("a veces no sale"). La X ahora solo lo oculta en
@@ -25,6 +27,9 @@ export default function WhatsAppWidget() {
   }, []);
 
   const dismiss = () => setShowBubble(false);
+
+  // El panel interno no lleva el widget de soporte (es para visitantes/clientes, no para el operador).
+  if (pathname?.startsWith('/admin')) return null;
 
   return (
     <div className="fixed bottom-44 right-4 z-[60] flex flex-col items-end gap-3 sm:bottom-6 sm:right-5 print:hidden">
