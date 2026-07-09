@@ -15,20 +15,21 @@ export const PLANS: Record<PlanId, Plan> = {
   },
   express: {
     id: 'express', label: 'Express', tagline: 'Descubre problemas ocultos del inmueble', recommended: true,
-    priceCop: Number(process.env.PRICE_EXPRESS_COP || 44900),
+    priceCop: Number(process.env.PRICE_EXPRESS_COP || 49900), requiresConsent: true,
     features: [
       'Incluye el Certificado de Tradición y Libertad',
       'Estudio de títulos: propietarios, gravámenes y banderas de riesgo',
+      'Antecedentes judiciales de los 2 últimos propietarios (actual y anterior)',
       'Alertas de lavado de activos (Lista Clinton / OFAC)',
       'Avalúo comercial digital del inmueble',
     ],
   },
   avanzado: {
     id: 'avanzado', label: 'Avanzado', tagline: 'La verificación más completa antes de comprar',
-    priceCop: Number(process.env.PRICE_AVANZADO_COP || 79900), requiresConsent: true,
+    priceCop: Number(process.env.PRICE_AVANZADO_COP || 99900), requiresConsent: true,
     features: [
       'Todo lo del plan Express',
-      'Verificación de antecedentes judiciales del propietario',
+      'Antecedentes judiciales de TODA la cadena de propietarios',
       'Ideal para comprar con tranquilidad: sabes a quién le compras',
     ],
   },

@@ -129,7 +129,7 @@ export default function CheckoutForm() {
       else if (!email.trim() || email !== emailConfirm) setError('Revisa que los correos coincidan.');
       else if (phone.trim().length < 8) setError('Ingresa un teléfono válido.');
       else if (!termsAccepted || !privacyAccepted) setError('Debes aceptar los términos y políticas para continuar.');
-      else if (needsConsent && !consentAntecedentes) setError('Para el plan Avanzado debes confirmar que cuentas con la autorización del propietario para verificar sus antecedentes.');
+      else if (needsConsent && !consentAntecedentes) setError(`Para el plan ${PLANS[plan].label} debes confirmar que cuentas con la autorización del propietario para verificar sus antecedentes.`);
       return;
     }
     
@@ -240,7 +240,7 @@ export default function CheckoutForm() {
           })}
         </div>
 
-        {/* Consentimiento obligatorio para el plan Avanzado (consulta antecedentes de un tercero) */}
+        {/* Consentimiento obligatorio para planes que consultan antecedentes de terceros (Express y Avanzado) */}
         {needsConsent && (
           <div className={`mt-4 overflow-hidden rounded-xl border-2 transition-colors ${consentAntecedentes ? 'border-[#84cc16]' : 'border-amber-300'}`}>
             <div className={`flex items-center gap-2 px-4 py-2 ${consentAntecedentes ? 'bg-[#ecfccb]' : 'bg-amber-50'}`}>

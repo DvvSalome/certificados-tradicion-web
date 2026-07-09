@@ -100,11 +100,12 @@ async function generarOne(job) {
   }
 }
 
-// Planes que llevan Estudio de Títulos. 'avanzado' agrega la verificación de antecedentes.
+// Planes que llevan Estudio de Títulos. Ambos verifican antecedentes: express = los 2 últimos
+// propietarios (actual + vendedor anterior); avanzado = todos los propietarios de la cadena.
 const ESTUDIO_PLANS = new Set(['express', 'avanzado']);
 
 // Construye el PDF del Estudio de Títulos (express y avanzado). Cada add-on es best-effort: si uno
-// falla, el estudio igual sale. 'avanzado' agrega la verificación de antecedentes de los propietarios.
+// falla, el estudio igual sale. Antecedentes: el alcance de propietarios depende del plan.
 async function construirEstudioPdf(pdf, { matricula, oficina, plan }) {
   const { generarEstudio } = await import('./estudio.mjs');
   const { renderEstudioPdf } = await import('./estudio-pdf.mjs');
@@ -114,10 +115,10 @@ async function construirEstudioPdf(pdf, { matricula, oficina, plan }) {
   catch (ae) { console.error(`[alertas] ✕ ${matricula}: ${ae.message}`); }
   try { const { estimarAvaluo } = await import('./avaluo.mjs'); data.avaluo = estimarAvaluo({ area: data.inmueble?.area, ciudad: oficina }); }
   catch (ve) { console.error(`[avaluo] ✕ ${matricula}: ${ve.message}`); }
-  if (plan === 'avanzado') {
-    try { const { verificarAntecedentes } = await import('./antecedentes.mjs'); data.antecedentes = await verificarAntecedentes(data.propietarios); }
-    catch (ne) { console.error(`[antecedentes] ✕ ${matricula}: ${ne.message}`); data.antecedentes = { ok: false, motivo: ne.message }; }
-  }
+  try {
+    const { verificarAntecedentes, objetivosPorPlan } = await import('./antecedentes.mjs');
+    data.antecedentes = await verificarAntecedentes(objetivosPorPlan(data, plan));
+  } catch (ne) { console.error(`[antecedentes] ✕ ${matricula}: ${ne.message}`); data.antecedentes = { ok: false, motivo: ne.message }; }
   const estudioPdf = await renderEstudioPdf(data, { matricula, oficina, fecha });
   return { data, estudioPdf };
 }
@@ -160,7 +161,7 @@ async function generarConCuenta(robot, cuenta, { reference, oficina, matricula, 
     if (ESTUDIO_PLANS.has(plan)) {
       try {
         const { data, estudioPdf } = await construirEstudioPdf(r.pdf, { matricula, oficina, plan });
-        console.error(`[estudio] ✅ ${matricula} (${estudioPdf.length} bytes, semáforo ${data.semaforo}, concepto ${data.concepto?.estado ?? '-'}${plan === 'avanzado' ? `, antecedentes ${data.antecedentes?.ok ? data.antecedentes.resultados.length + ' persona(s)' : 'n/d'}` : ''})`);
+        console.error(`[estudio] ✅ ${matricula} (${estudioPdf.length} bytes, semáforo ${data.semaforo}, concepto ${data.concepto?.estado ?? '-'}, antecedentes ${data.antecedentes?.ok ? data.antecedentes.resultados.length + ' persona(s)' : 'n/d'})`);
         // Guardar el Estudio para poder reenviarlo por WhatsApp (manda AMBOS PDFs por el chat). Best-effort.
         try {
           if (PANEL && SECRET) await fetch(`${PANEL}/api/admin/cert`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-webhook-secret': SECRET }, body: JSON.stringify({ reference, estudioBase64: estudioPdf.toString('base64') }) });
@@ -186,7 +187,7 @@ async function entregarSobrePdf(pdf, { reference, oficina, matricula, email, pla
   if (ESTUDIO_PLANS.has(plan)) {
     try {
       const { data, estudioPdf } = await construirEstudioPdf(pdf, { matricula, oficina, plan });
-      console.error(`[TEST] estudio OK (${estudioPdf.length} bytes, semáforo ${data.semaforo}, concepto ${data.concepto?.estado ?? '-'}${plan === 'avanzado' ? `, antecedentes ${data.antecedentes?.ok ? data.antecedentes.resultados.length : 'n/d'}` : ''})`);
+      console.error(`[TEST] estudio OK (${estudioPdf.length} bytes, semáforo ${data.semaforo}, concepto ${data.concepto?.estado ?? '-'}, antecedentes ${data.antecedentes?.ok ? data.antecedentes.resultados.length : 'n/d'})`);
       const de2 = await entregarEstudio({ estudio: estudioPdf, matricula, oficina, email });
       console.error(`[TEST] correo Estudio: ${de2.sent ? 'ENVIADO a ' + email : 'NO (' + de2.reason + ')'}`);
     } catch (ee) { console.error(`[TEST] estudio FALLÓ: ${ee.message}`); }

@@ -29,7 +29,8 @@ export function sanearEstudio(data, { matricula, oficina }) {
   }));
   d.cadenaTradicion = cap(d.cadenaTradicion, 80).map((f) => ({
     anotacion: s(f.anotacion, 20) || '—', fecha: s(f.fecha, 40), acto: s(f.acto, 160) || '—',
-    codigo: s(f.codigo, 12), de: s(f.de, 120), a: s(f.a, 120), valor: s(f.valor, 40),
+    codigo: s(f.codigo, 12), de: s(f.de, 120), a: s(f.a, 120),
+    deCedula: s(f.deCedula, 20), aCedula: s(f.aCedula, 20), valor: s(f.valor, 40),
     esTransferenciaDominio: b(f.esTransferenciaDominio), esFalsaTradicion: b(f.esFalsaTradicion),
     cancelada: s(f.cancelada, 20),
   }));

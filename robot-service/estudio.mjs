@@ -15,7 +15,9 @@ PROCESO OBLIGATORIO, EN ESTE ORDEN:
 
 PASO 1 — INVENTARIO: recorre TODAS las anotaciones numeradas (de la 1 a la última) y vuélcalas en
 "cadenaTradicion" en orden cronológico, en estilo TELEGRÁFICO: acto corto ("COMPRAVENTA", "HIPOTECA",
-"CANCELACION HIPOTECA"), nombres cortos (apellidos y nombre, SIN cédulas), sin repetir descripciones largas.
+"CANCELACION HIPOTECA"), nombres cortos (apellidos y nombre), sin repetir descripciones largas. SOLO en las
+filas de transferencia de dominio (esTransferenciaDominio:true) llena "deCedula" y "aCedula" con la cédula
+(SOLO dígitos, sin puntos) de quien transfiere y de quien adquiere, si la anotación las muestra; null si no.
 
 PASO 2 — CANCELACIONES (CRÍTICO): las anotaciones van NUMERADAS en orden cronológico. Cuando una anotación
 dice «Se cancela anotación No: X», o su especificación es una CANCELACION (p. ej. "CANCELACION DE HIPOTECA",
@@ -71,8 +73,8 @@ Devuelve EXCLUSIVAMENTE un JSON con esta forma exacta:
   "propietarios": [ { "nombre": string, "identificacion": string|null, "modo": string,
     "anotacion": string|null, "cuota": string|null } ],
   "cadenaTradicion": [ { "anotacion": string, "fecha": string|null, "acto": string, "codigo": string|null,
-    "de": string|null, "a": string|null, "valor": string|null, "esTransferenciaDominio": boolean,
-    "esFalsaTradicion": boolean, "cancelada": string|null } ],
+    "de": string|null, "a": string|null, "deCedula": string|null, "aCedula": string|null,
+    "valor": string|null, "esTransferenciaDominio": boolean, "esFalsaTradicion": boolean, "cancelada": string|null } ],
   "situacionJuridica": { "tipoDominio": "pleno"|"falsa_tradicion"|"indeterminado", "cuotas": string|null,
     "anioAdquisicionTitular": string|null, "adquisicionFueCompraventa": boolean,
     "tractoSucesivo": "continuo"|"con_observaciones"|"indeterminado", "tractoObservaciones": string|null,

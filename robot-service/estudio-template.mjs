@@ -149,7 +149,7 @@ export function estudioHtml(e, { matricula, oficina, fecha }) {
       ? A.coincidencias.map((c) => `<div class="flag rojo"><b>Posible coincidencia: ${esc(c.propietario)}</b><span>${esc(c.lista)} · ${esc(c.entrada)}${c.programa ? ' (' + esc(c.programa) + ')' : ''}. Coincidencia POSIBLE por nombre — requiere verificación manual, no es una determinación.</span></div>`).join('')
       : '<div class="flag ok"><b>Sin coincidencias en listas restrictivas</b><span>Los propietarios no aparecen en la Lista OFAC/SDN (Clinton) de lavado de activos.</span></div>';
 
-  /* ── Verificación de antecedentes judiciales (solo plan Avanzado) ── */
+  /* ── Verificación de antecedentes judiciales (Express: 2 últimos propietarios · Avanzado: toda la cadena) ── */
   const ant = e.antecedentes;
   const antPersonas = !ant || !ant.ok ? '' : (ant.resultados || []).map((r) => {
     const rojo = r.tieneAntecedentes === true, limpio = r.tieneAntecedentes === false;
@@ -275,7 +275,7 @@ export function estudioHtml(e, { matricula, oficina, fecha }) {
       ${block(`${sec('gavel', 'Medidas cautelares')}${medidasHtml}`)}
       ${block(`${sec('flag', 'Banderas de riesgo')}${banderas}`)}
       ${block(`${sec('shield', 'Alertas · listas restrictivas (lavado de activos)')}${alertasHtml}`)}
-      ${antecedentesHtml ? block(`${sec('usercheck', 'Verificación de antecedentes judiciales del propietario')}${antecedentesHtml}`) : ''}
+      ${antecedentesHtml ? block(`${sec('usercheck', 'Verificación de antecedentes judiciales de los propietarios')}${antecedentesHtml}`) : ''}
       ${block(`${sec('money', 'Avalúo comercial · estimado digital')}${avaluoHtml}`)}
       ${block(docsHtml)}
       ${block(recosHtml)}

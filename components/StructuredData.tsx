@@ -17,7 +17,7 @@ import { PLANS } from '@/lib/config';
 const SITE_URL = 'https://certitradicion.com';
 // Precios reales (fuente única en lib/config) → el schema NUNCA queda desincronizado con la web.
 const PRICE_BASICO = String(PLANS.basico.priceCop);
-const PRICE_EXPRESS = String(PLANS.express.priceCop);
+const PRICE_AVANZADO = String(PLANS.avanzado.priceCop);
 const ORG_ID = `${SITE_URL}/#organization`;
 const WEBSITE_ID = `${SITE_URL}/#website`;
 const SERVICE_ID = `${SITE_URL}/#service`;
@@ -104,8 +104,8 @@ const data = {
         '@type': 'AggregateOffer',
         priceCurrency: 'COP',
         lowPrice: PRICE_BASICO,
-        highPrice: PRICE_EXPRESS,
-        offerCount: '2',
+        highPrice: PRICE_AVANZADO,
+        offerCount: '3',
         availability: 'https://schema.org/InStock',
         url: SITE_URL,
         category: 'Trámite documental',

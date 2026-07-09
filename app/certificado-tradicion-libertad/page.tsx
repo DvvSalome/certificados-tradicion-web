@@ -28,7 +28,7 @@ const FAQS = [
   },
   {
     q: '¿Cuánto cuesta y cuánto tarda?',
-    a: 'Con Certitradición el plan Básico cuesta $38.900 e incluye la gestión, la tarifa del certificado electrónico ante la SNR y la entrega en minutos por correo y WhatsApp. El plan Express ($44.900) agrega un Estudio de Títulos con el análisis del inmueble. La entrega suele ser en cuestión de minutos tras confirmarse el pago.',
+    a: 'Con Certitradición el plan Básico cuesta $38.900 e incluye la gestión, la tarifa del certificado electrónico ante la SNR y la entrega en minutos por correo y WhatsApp. El plan Express ($49.900) agrega un Estudio de Títulos con el análisis del inmueble. La entrega suele ser en cuestión de minutos tras confirmarse el pago.',
   },
   {
     q: '¿Cuál es la vigencia del certificado?',

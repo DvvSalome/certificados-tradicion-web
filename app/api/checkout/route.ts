@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import { orders } from '@/lib/orders';
 import { checkoutUrl } from '@/lib/wompi';
 import { signDownload } from '@/lib/download-token';
-import { planAmountCents } from '@/lib/config';
+import { planAmountCents, getPlan } from '@/lib/config';
 import { isOficina } from '@/lib/oficinas';
 import { verificar, rateLimited } from '@/lib/verify';
 
@@ -71,9 +71,9 @@ export async function POST(req: Request) {
   }
 
   const plan = body.plan === 'express' || body.plan === 'avanzado' ? body.plan : 'basico';
-  // El plan Avanzado consulta antecedentes de un tercero → exige declaración de autorización (Ley 1581).
-  if (plan === 'avanzado' && body.consentAntecedentes !== true) {
-    return NextResponse.json({ error: 'El plan Avanzado requiere confirmar la autorización del propietario para consultar sus antecedentes.' }, { status: 422 });
+  // Los planes que consultan antecedentes de terceros exigen declaración de autorización (Ley 1581).
+  if (getPlan(plan).requiresConsent && body.consentAntecedentes !== true) {
+    return NextResponse.json({ error: 'Este plan requiere confirmar la autorización del propietario para consultar sus antecedentes.' }, { status: 422 });
   }
   const amountInCents = planAmountCents(plan);
 
