@@ -19,7 +19,7 @@ export const PLANS: Record<PlanId, Plan> = {
     features: [
       'Incluye el Certificado de Tradición y Libertad',
       'Estudio de títulos: propietarios, gravámenes y banderas de riesgo',
-      'Antecedentes judiciales de los 2 últimos propietarios (actual y anterior)',
+      'Antecedentes judiciales de los propietarios actuales',
       'Alertas de lavado de activos (Lista Clinton / OFAC)',
       'Avalúo comercial digital del inmueble',
     ],
@@ -29,7 +29,7 @@ export const PLANS: Record<PlanId, Plan> = {
     priceCop: Number(process.env.PRICE_AVANZADO_COP || 99900), requiresConsent: true,
     features: [
       'Todo lo del plan Express',
-      'Antecedentes judiciales de TODA la cadena de propietarios',
+      'Antecedentes completos: todos los propietarios (actuales e históricos)',
       'Ideal para comprar con tranquilidad: sabes a quién le compras',
     ],
   },

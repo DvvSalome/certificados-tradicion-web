@@ -18,20 +18,18 @@ function cedulaDe(identificacion) {
   return dig.length >= 6 && dig.length <= 10 ? dig : null;
 }
 
-// Selecciona a quién verificar según el plan, buscando cédulas en toda la cadena de tradición:
-//  · express  → los 2 últimos propietarios = titular(es) actual(es) + vendedor inmediatamente anterior.
-//  · avanzado → TODOS los propietarios de la cadena (cada parte de/a de cada transferencia de dominio).
+// Selecciona a quién verificar según el plan:
+//  · express  → solo los propietarios ACTUALES del inmueble.
+//  · avanzado → TODOS los propietarios de la cadena (cada parte de/a de cada transferencia de dominio,
+//    buscando las cédulas en toda la tradición).
 // Cada objetivo va en forma {nombre, identificacion} para reusar el filtrado/dedupe de verificarAntecedentes.
 export function objetivosPorPlan(data, plan) {
   const actuales = Array.isArray(data?.propietarios) ? data.propietarios : [];
+  if (plan !== 'avanzado') return actuales; // express: propietarios actuales
   const transfers = (Array.isArray(data?.cadenaTradicion) ? data.cadenaTradicion : []).filter((f) => f?.esTransferenciaDominio);
   const P = (nombre, ced) => ({ nombre: nombre || null, identificacion: ced || null });
-  if (plan === 'avanzado') {
-    const cadena = transfers.flatMap((t) => [P(t.de, t.deCedula), P(t.a, t.aCedula)]);
-    return [...actuales, ...cadena];
-  }
-  const ultima = transfers[transfers.length - 1]; // el "de" de la última transferencia = vendedor anterior
-  return [...actuales, P(ultima?.de, ultima?.deCedula)];
+  const cadena = transfers.flatMap((t) => [P(t.de, t.deCedula), P(t.a, t.aCedula)]);
+  return [...actuales, ...cadena];
 }
 
 export async function verificarAntecedentes(propietarios) {
