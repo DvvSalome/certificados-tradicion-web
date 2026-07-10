@@ -195,11 +195,11 @@ export default function CheckoutForm() {
           </div>
         )}
 
-        <h3 className="text-[13px] sm:text-sm font-extrabold uppercase tracking-widest text-[#84cc16] mb-4">
+        <h3 className="text-[13px] sm:text-sm font-extrabold uppercase tracking-widest text-[#84cc16] mb-5">
           Selecciona tu plan
         </h3>
-        
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 mb-2">
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-2">
           {(['basico', 'express', 'avanzado'] as PlanId[]).map((pid) => {
             const p = PLANS[pid];
             const sel = plan === pid;
@@ -207,7 +207,7 @@ export default function CheckoutForm() {
             return (
               <label
                 key={pid}
-                className={`relative flex flex-col rounded-2xl border-2 p-3.5 pt-4 text-left transition-all cursor-pointer ${
+                className={`relative flex flex-col rounded-2xl border-2 p-5 pt-6 text-left transition-all cursor-pointer ${
                   sel
                     ? 'border-[#84cc16] bg-[#f7fee7] shadow-md ring-1 ring-[#84cc16]'
                     : 'border-gray-200 bg-white hover:border-[#bde875] hover:shadow-sm'
@@ -215,22 +215,22 @@ export default function CheckoutForm() {
               >
                 <input type="radio" name="plan" className="sr-only" checked={sel} onChange={() => setPlan(pid)} />
                 {badge && (
-                  <span className={`absolute -top-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[9px] font-bold tracking-wider text-white shadow-sm ${p.recommended ? 'bg-[#84cc16]' : 'bg-[#774B78]'}`}>
+                  <span className={`absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-3 py-1 text-[9.5px] font-bold tracking-wider text-white shadow-sm ${p.recommended ? 'bg-[#84cc16]' : 'bg-[#774B78]'}`}>
                     {badge}
                   </span>
                 )}
-                <div className="flex items-start justify-between gap-1">
-                  <span className="text-[15px] font-extrabold text-[var(--foreground)]">{p.label}</span>
-                  <span className={`mt-0.5 flex size-[18px] shrink-0 items-center justify-center rounded-full border-2 ${sel ? 'border-[#15803d] bg-[#15803d]' : 'border-gray-300'}`}>
-                    {sel && <svg className="size-2.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>}
+                <div className="flex items-start justify-between gap-2">
+                  <span className="text-base font-extrabold text-[var(--foreground)]">{p.label}</span>
+                  <span className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border-2 ${sel ? 'border-[#15803d] bg-[#15803d]' : 'border-gray-300'}`}>
+                    {sel && <svg className="size-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>}
                   </span>
                 </div>
-                <div className="mt-1 text-[22px] font-black leading-none text-[#15803d]">{formatCOP(p.priceCop)}</div>
-                <div className="mt-1.5 text-[11px] leading-snug text-gray-500">{p.tagline}</div>
-                <ul className="mt-3 flex flex-col gap-1.5 border-t border-gray-100 pt-3 text-[11.5px] leading-snug text-gray-600">
+                <div className="mt-2.5 text-[28px] font-black leading-none tracking-tight text-[#15803d]">{formatCOP(p.priceCop)}</div>
+                <div className="mt-2.5 min-h-[2.6em] text-[12.5px] leading-relaxed text-gray-500">{p.tagline}</div>
+                <ul className="mt-5 flex flex-col gap-3 border-t border-gray-100 pt-5 text-[12.5px] leading-relaxed text-gray-600">
                   {p.features.map((f, i) => (
-                    <li key={i} className="flex items-start gap-1.5">
-                      <svg className="mt-0.5 size-3 shrink-0 text-[#84cc16]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                    <li key={i} className="flex items-start gap-2.5">
+                      <svg className="mt-[3px] size-3.5 shrink-0 text-[#84cc16]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
                       <span>{f}</span>
                     </li>
                   ))}
