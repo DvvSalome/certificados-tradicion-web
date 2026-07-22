@@ -90,7 +90,7 @@ export default function CrmChat() {
           type="button"
           onClick={toggle}
           aria-label={open ? 'Cerrar el chat' : 'Abrir el chat'}
-          className={`group relative grid place-items-center rounded-full bg-[var(--brand)] text-white shadow-[0_10px_30px_-6px_rgba(16,58,115,0.7)] transition hover:scale-105 hover:bg-[var(--brand-600)] ${
+          className={`group relative grid place-items-center rounded-full bg-[var(--brand)] text-white shadow-[0_10px_30px_-6px_rgba(119,75,120,0.75)] transition hover:scale-105 hover:bg-[var(--brand-600)] ${
             open ? 'size-10 sm:size-14' : 'size-14'
           }`}
         >
