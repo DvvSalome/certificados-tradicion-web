@@ -11,11 +11,44 @@ Servicio de gestión privado; no somos canal oficial de la SNR (Superintendencia
 ## Precio
 
 - Plan Básico: $38.900 COP — Certificado de Tradición y Libertad oficial (PDF), entrega en minutos por correo electrónico o WhatsApp, validez 30 días.
-- Plan Express: $44.900 COP — incluye el certificado más un Estudio de Títulos con análisis del inmueble: propietarios, gravámenes y limitaciones vigentes, banderas de riesgo, tamizaje de listas restrictivas (lavado de activos) y un avalúo comercial estimado.
+- Plan Express: $49.900 COP — incluye el certificado más un Estudio de Títulos con análisis del inmueble: propietarios, gravámenes y limitaciones vigentes, banderas de riesgo, tamizaje de listas restrictivas (lavado de activos), antecedentes de los propietarios actuales y un avalúo comercial estimado.
+- Plan Avanzado: $99.900 COP — todo lo del Express más antecedentes de todos los propietarios del inmueble, actuales e históricos.
 - El precio incluye la tarifa del certificado electrónico ante la SNR más el servicio de gestión, la entrega inmediata por correo/WhatsApp y el soporte.
 - Pago seguro a través de Wompi (tarjetas, PSE, Nequi, Bancolombia).
 
 Certitradición es un intermediario/gestor privado; no somos el canal oficial de la SNR (Superintendencia de Notariado y Registro).
+
+## Páginas principales
+
+- [Solicitar el certificado](https://certitradicion.com/): página principal con el formulario de solicitud (oficina de registro + matrícula inmobiliaria) y los planes.
+- [Estado de tu pedido](https://certitradicion.com/estado): seguimiento en línea del pedido con la referencia CTL.
+- [Verificar una matrícula inmobiliaria](https://certitradicion.com/verificar): comprueba que la matrícula existe en la oficina de registro antes de pagar.
+- [Cómo leer un Certificado de Tradición y Libertad](https://certitradicion.com/como-leer-certificado): guía sección por sección con ejemplo anotado.
+- [Quiénes somos](https://certitradicion.com/nosotros): qué es Certitradición y cómo trabajamos.
+
+## Guías
+
+- [Todas las guías](https://certitradicion.com/guias): centro de guías sobre anotaciones y trámites del CTL.
+- [Embargo de un inmueble](https://certitradicion.com/guias/embargo): qué significa y cómo detectarlo en el certificado.
+- [Hipoteca](https://certitradicion.com/guias/hipoteca): cómo aparece en el CTL y qué implica al comprar.
+- [Falsa tradición](https://certitradicion.com/guias/falsa-tradicion): qué es y por qué frena una compraventa.
+- [Patrimonio de familia](https://certitradicion.com/guias/patrimonio-de-familia): la protección y sus efectos en la venta.
+- [Afectación a vivienda familiar](https://certitradicion.com/guias/afectacion-vivienda-familiar): cuándo aplica y cómo se levanta.
+- [Medidas cautelares](https://certitradicion.com/guias/medidas-cautelares): tipos y cómo leerlas en el certificado.
+- [¿Propiedad hipotecada o embargada?](https://certitradicion.com/guias/como-saber-si-una-propiedad-esta-hipotecada-o-embargada): cómo verificarlo con el CTL.
+- [Servidumbre](https://certitradicion.com/guias/servidumbre): qué es y cómo afecta el uso del predio.
+- [Estudio de títulos](https://certitradicion.com/guias/estudio-de-titulos): qué revisa y por qué pedirlo antes de comprar.
+- [Cancelación de hipoteca](https://certitradicion.com/guias/cancelacion-de-hipoteca): el paso a paso para que desaparezca del certificado.
+
+## Por ciudad
+
+Cobertura en todo Colombia (53 ciudades con página propia). Ejemplos:
+
+- [Certificado de tradición y libertad en Bogotá](https://certitradicion.com/certificado-tradicion-libertad/bogota)
+- [Certificado de tradición y libertad en Bucaramanga](https://certitradicion.com/certificado-tradicion-libertad/bucaramanga)
+- [Certificado de tradición y libertad en Cali](https://certitradicion.com/certificado-tradicion-libertad/cali)
+- [Certificado de tradición y libertad en Barranquilla](https://certitradicion.com/certificado-tradicion-libertad/barranquilla)
+- [Certificado de tradición y libertad en Cartagena](https://certitradicion.com/certificado-tradicion-libertad/cartagena)
 
 ## Preguntas frecuentes
 
@@ -34,12 +67,12 @@ Una vez confirmado el pago, Certitradición tramita el documento y lo envía en 
 **¿Cómo se valida la autenticidad del certificado?**
 Cada CTL incluye un código de verificación y datos de la anotación que permiten contrastar su autenticidad ante el registro oficial. El documento entregado es el certificado vigente correspondiente a la matrícula consultada. Certitradición es un servicio de gestión privado y no sustituye al canal oficial de la SNR.
 
-## Enlaces
+## Legal
 
-- Inicio: https://certitradicion.com
-- Preguntas frecuentes: https://certitradicion.com/preguntas-frecuentes
-- Precio: https://certitradicion.com/precio
-- Cómo leer el certificado: https://certitradicion.com/como-leer-certificado
+- [Términos y condiciones](https://certitradicion.com/terminos)
+- [Política de privacidad](https://certitradicion.com/privacidad)
+- [Política de reembolsos](https://certitradicion.com/reembolsos)
+- [Contacto](https://certitradicion.com/contacto)
 
 ---
 

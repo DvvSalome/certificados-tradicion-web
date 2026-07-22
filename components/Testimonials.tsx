@@ -20,8 +20,10 @@ const REVIEWS: Review[] = [
 const AVG = (REVIEWS.reduce((s, r) => s + r.stars, 0) / REVIEWS.length).toFixed(1);
 
 function Stars({ n }: { n: number }) {
+  // role="img": un div genérico no puede llevar aria-label (ARIA prohibida en role generic);
+  // como imagen, el lector anuncia "5 de 5 estrellas" y el árbol de accesibilidad queda válido.
   return (
-    <div className="flex gap-0.5" aria-label={`${n} de 5 estrellas`}>
+    <div className="flex gap-0.5" role="img" aria-label={`${n} de 5 estrellas`}>
       {Array.from({ length: 5 }).map((_, i) => (
         <svg key={i} viewBox="0 0 24 24" className={`size-4 ${i < n ? 'text-[#f59e0b]' : 'text-gray-200'}`} fill="currentColor" aria-hidden="true">
           <path d="M12 2l2.9 6.1 6.6.9-4.8 4.6 1.2 6.5L12 17.8 6.1 20.6l1.2-6.5L2.5 9l6.6-.9L12 2z" />
