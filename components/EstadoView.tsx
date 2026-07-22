@@ -110,22 +110,36 @@ export default function EstadoView() {
     };
   }, [ref]);
 
-  // Conversión de Google Ads: se reporta UNA sola vez por pedido cuando el pago queda confirmado.
-  // Inerte hasta que definas NEXT_PUBLIC_GADS_ID y NEXT_PUBLIC_GADS_CONVERSION_LABEL en Vercel.
+  // Conversión: se reporta UNA sola vez por pedido cuando el pago queda confirmado.
+  // Fuente única = evento `purchase` en el dataLayer. Google Tag Manager lo escucha y desde ahí
+  // se disparan GA4, la conversión de Google Ads y el pixel de Meta, sin tocar más código.
   useEffect(() => {
     if (!ref || (status !== 'PAID' && status !== 'DELIVERED')) return;
-    const gadsId = process.env.NEXT_PUBLIC_GADS_ID;
-    const label = process.env.NEXT_PUBLIC_GADS_CONVERSION_LABEL;
-    if (!gadsId || !label) return;
     const key = `crt_conv_${ref}`;
     if (localStorage.getItem(key)) return; // ya reportada
     localStorage.setItem(key, '1');
-    (window as unknown as { gtag?: (...a: unknown[]) => void }).gtag?.('event', 'conversion', {
-      send_to: `${gadsId}/${label}`,
+
+    const w = window as unknown as { dataLayer?: unknown[]; gtag?: (...a: unknown[]) => void };
+    w.dataLayer = w.dataLayer || [];
+    w.dataLayer.push({
+      event: 'purchase',
+      transaction_id: ref,
       value: info.amountCop || undefined,
       currency: 'COP',
-      transaction_id: ref,
     });
+
+    // Ruta directa por gtag (sin GTM). OJO: si además configuras la conversión dentro de GTM,
+    // Google Ads la cuenta DOBLE. Usa una de las dos, no ambas.
+    const gadsId = process.env.NEXT_PUBLIC_GADS_ID;
+    const label = process.env.NEXT_PUBLIC_GADS_CONVERSION_LABEL;
+    if (gadsId && label) {
+      w.gtag?.('event', 'conversion', {
+        send_to: `${gadsId}/${label}`,
+        value: info.amountCop || undefined,
+        currency: 'COP',
+        transaction_id: ref,
+      });
+    }
   }, [status, ref, info.amountCop]);
 
   if (!ref) {
