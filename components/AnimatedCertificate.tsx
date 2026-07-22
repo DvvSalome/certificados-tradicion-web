@@ -16,7 +16,7 @@ export default function AnimatedCertificate() {
           border: '1px solid var(--border)'
         }}
       >
-        <img src="/cert-sample.png" alt="Muestra" width={1660} height={1164} loading="lazy" style={{ width: '100%', height: 'auto', display: 'block', opacity: 0.95 }} />
+        <img src="/cert-sample.webp" alt="Muestra" width={1000} height={701} loading="lazy" style={{ width: '100%', height: 'auto', display: 'block', opacity: 0.95 }} />
         
         {/* scan beam */}
         <div

@@ -146,10 +146,10 @@ export default function Home() {
               Puedes ubicarla en un <b className="text-[var(--foreground)]">certificado de tradición y libertad anterior</b> o en tu <b className="text-[var(--foreground)]">factura de impuesto predial</b>. Busca el código de la oficina de registro y el número de matrícula, así:
             </p>
             <img
-              src="/como-encuentro-matricula.jpg"
+              src="/como-encuentro-matricula.webp"
               alt="Cómo ubicar la oficina de registro y la matrícula inmobiliaria en un certificado de tradición o en una factura de impuesto predial"
-              width={1500}
-              height={833}
+              width={1200}
+              height={666}
               loading="lazy"
               className="mt-2 h-auto w-full rounded-2xl border border-[var(--border)] shadow-md"
             />
