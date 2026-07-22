@@ -28,6 +28,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const institucionales: MetadataRoute.Sitemap = [
     { url: `${BASE_URL}/nosotros`, lastModified, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${BASE_URL}/precio`, lastModified, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${BASE_URL}/preguntas-frecuentes`, lastModified, changeFrequency: 'monthly', priority: 0.7 },
   ]
 
   return [

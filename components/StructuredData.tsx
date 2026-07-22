@@ -226,6 +226,21 @@ const data = {
         },
       ],
     },
+
+    /* ── Video demo del hero (sin esto Google no lo indexa: autoPlay+muted lo lee como decorativo) ── */
+    {
+      '@type': 'VideoObject',
+      '@id': `${SITE_URL}/#video-demo`,
+      name: 'Cómo pedir tu Certificado de Tradición y Libertad en línea',
+      description:
+        'Demostración de cómo solicitar el Certificado de Tradición y Libertad en certitradicion.com: ingresas la matrícula inmobiliaria, pagas con Wompi y recibes el PDF oficial en tu correo y WhatsApp en minutos.',
+      inLanguage: 'es-CO',
+      contentUrl: `${SITE_URL}/certificado-demo-web.mp4`,
+      thumbnailUrl: `${SITE_URL}/certificado-demo-poster.jpg`,
+      uploadDate: '2026-07-01',
+      duration: 'PT1M',
+      publisher: { '@id': `${SITE_URL}/#organization` },
+    },
   ],
 };
 

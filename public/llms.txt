@@ -23,6 +23,8 @@ Certitradición es un intermediario/gestor privado; no somos el canal oficial de
 - [Solicitar el certificado](https://certitradicion.com/): página principal con el formulario de solicitud (oficina de registro + matrícula inmobiliaria) y los planes.
 - [Estado de tu pedido](https://certitradicion.com/estado): seguimiento en línea del pedido con la referencia CTL.
 - [Verificar una matrícula inmobiliaria](https://certitradicion.com/verificar): comprueba que la matrícula existe en la oficina de registro antes de pagar.
+- [Precio del certificado 2026](https://certitradicion.com/precio): cuánto cuesta cada plan y qué incluye.
+- [Preguntas frecuentes](https://certitradicion.com/preguntas-frecuentes): vigencia, quién puede pedirlo, entrega y validez.
 - [Cómo leer un Certificado de Tradición y Libertad](https://certitradicion.com/como-leer-certificado): guía sección por sección con ejemplo anotado.
 - [Quiénes somos](https://certitradicion.com/nosotros): qué es Certitradición y cómo trabajamos.
 
