@@ -175,6 +175,70 @@ export async function getSnrStatus(): Promise<SnrStatus | null> {
   }
 }
 
+// ── Salud del robot ─────────────────────────────────────────────────────────
+// PUNTO CIEGO QUE ESTO RESUELVE: el robot se vigila a sí mismo (él llama al reaper y él empuja su
+// estado). Si el contenedor muere, deja de hacer ambas cosas y NADIE se entera. Aquí derivamos la
+// salud desde la ANTIGÜEDAD del último latido: el robot empuja snr-status cada 10 min, así que un
+// `updated_at` viejo significa robot caído, aunque no haya pedidos que fallen.
+const HEARTBEAT_EVERY_MIN = 10;
+
+export interface RobotHealth {
+  state: 'online' | 'degraded' | 'offline' | 'unknown';
+  heartbeatAt: string | null;
+  ageMin: number | null;
+  activa: string | null;
+  cuentas: SnrStatus['cuentas'];
+  saldoCents: number | null;   // último snapshot global conocido
+  stuckOrders: number;         // pagados que llevan >15 min sin completarse
+  failedToday: number;
+  lastError: string | null;
+}
+
+export async function getRobotHealth(): Promise<RobotHealth> {
+  const empty: RobotHealth = {
+    state: 'unknown', heartbeatAt: null, ageMin: null, activa: null, cuentas: [],
+    saldoCents: null, stuckOrders: 0, failedToday: 0, lastError: null,
+  };
+  if (!process.env.DATABASE_URL) return empty;
+
+  try {
+    const pool = getPool();
+    const [snr, saldo, stuck, gen] = await Promise.all([
+      pool.query('SELECT data, updated_at FROM snr_status WHERE id = 1'),
+      pool.query('SELECT saldo_cents FROM saldo_snapshots ORDER BY created_at DESC LIMIT 1'),
+      pool.query(`SELECT COUNT(*) AS c FROM orders
+                  WHERE status IN ('PAID','GENERATING') AND updated_at < now() - interval '15 minutes'`),
+      pool.query(`SELECT
+        (SELECT COUNT(*) FROM generations WHERE status='FAILED' AND created_at::date = now()::date) AS fails,
+        (SELECT error FROM generations WHERE status='FAILED' ORDER BY created_at DESC LIMIT 1) AS last_error`),
+    ]);
+
+    const hb = snr.rows[0]?.updated_at ? new Date(snr.rows[0].updated_at) : null;
+    const ageMin = hb ? Math.round((Date.now() - hb.getTime()) / 60000) : null;
+    // 2 latidos perdidos = degradado; 6 = caído. Tolera un reinicio corto sin gritar.
+    const state: RobotHealth['state'] =
+      ageMin === null ? 'unknown'
+      : ageMin <= HEARTBEAT_EVERY_MIN * 2 ? 'online'
+      : ageMin <= HEARTBEAT_EVERY_MIN * 6 ? 'degraded'
+      : 'offline';
+
+    const d = (snr.rows[0]?.data ?? {}) as { activa?: string; cuentas?: SnrStatus['cuentas'] };
+    return {
+      state,
+      heartbeatAt: iso(snr.rows[0]?.updated_at),
+      ageMin,
+      activa: d.activa ?? null,
+      cuentas: d.cuentas ?? [],
+      saldoCents: saldo.rows[0] ? n(saldo.rows[0].saldo_cents) : null,
+      stuckOrders: n(stuck.rows[0]?.c),
+      failedToday: n(gen.rows[0]?.fails),
+      lastError: gen.rows[0]?.last_error ?? null,
+    };
+  } catch {
+    return empty;
+  }
+}
+
 // ── Métricas para gráficas: serie diaria de los últimos 14 días + tasa de éxito del robot. ──
 export interface Metrics {
   daily: { date: string; revenueCents: number; certs: number; fails: number }[];

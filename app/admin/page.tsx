@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getSession, getDashboard, getMetrics, getSnrStatus, SALDO_THRESHOLD_CENTS } from '@/lib/admin';
+import { getSession, getDashboard, getMetrics, getSnrStatus, getRobotHealth, SALDO_THRESHOLD_CENTS } from '@/lib/admin';
 import { formatCOP } from '@/lib/config';
 import LogoutButton from './LogoutButton';
 import BatchPanel from './BatchPanel';
@@ -27,7 +27,7 @@ const STATUS_LABEL: Record<string, string> = {
 export default async function AdminDashboard() {
   const role = await getSession();
   if (!role) redirect('/admin/login');
-  const [d, metrics, snr] = await Promise.all([getDashboard(), getMetrics(), getSnrStatus()]);
+  const [d, metrics, snr, health] = await Promise.all([getDashboard(), getMetrics(), getSnrStatus(), getRobotHealth()]);
 
   // Estado del robot: sano si hubo OK reciente y no falló después.
   const robotOk = d.robot.lastOkAt && (!d.robot.lastError || (d.robot.lastOkAt >= (d.robot.lastRunAt ?? '')));
@@ -63,6 +63,10 @@ export default async function AdminDashboard() {
             Sin base de datos conectada (modo local). Conecta <code>DATABASE_URL</code> en producción para ver datos reales.
           </div>
         )}
+
+        {/* SALUD DEL SISTEMA — lo primero que se ve. El estado sale del LATIDO del robot (empuja cada
+            10 min), no de si hubo generaciones: así un robot caído se nota aunque no entren pedidos. */}
+        <HealthBanner health={health} />
 
         {/* KPIs */}
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -167,6 +171,58 @@ export default async function AdminDashboard() {
         <p className="text-center text-xs text-[var(--muted-2)]">Panel interno · acceso restringido · no compartir el enlace</p>
       </main>
     </div>
+  );
+}
+
+// Banner de salud: verde si el robot late y no hay pedidos atascados; rojo si está caído o hay
+// clientes pagados sin atender. Cada problema dice qué hacer, no solo que algo pasó.
+function HealthBanner({ health }: { health: Awaited<ReturnType<typeof getRobotHealth>> }) {
+  const problems: { txt: string; fix: string }[] = [];
+  if (health.state === 'offline') problems.push({ txt: `Robot CAÍDO · sin reportar hace ${health.ageMin} min`, fix: 'Revisa el contenedor del robot en EasyPanel (VPS). Los pedidos nuevos no se generarán.' });
+  else if (health.state === 'degraded') problems.push({ txt: `Robot sin reportar hace ${health.ageMin} min`, fix: 'Puede ser un reinicio. Si sigue así en 20 min, revisa el VPS.' });
+  else if (health.state === 'unknown') problems.push({ txt: 'Sin datos del robot', fix: 'El robot aún no ha reportado su estado.' });
+  if (health.stuckOrders > 0) problems.push({ txt: `${health.stuckOrders} pedido(s) pagado(s) sin completar`, fix: 'El cliente ya pagó. Revísalos abajo y usa "Reintentar".' });
+  if (health.saldoCents !== null && health.saldoCents < SALDO_THRESHOLD_CENTS) problems.push({ txt: `Saldo SNR bajo (${fmt(health.saldoCents)})`, fix: 'Recarga el saldo prepago en el portal del SNR.' });
+
+  const ok = problems.length === 0;
+  const critical = health.state === 'offline' || health.stuckOrders > 0;
+  const bg = ok ? 'border-[#bbf7d0] bg-[#f0fdf4]' : critical ? 'border-[#f3c2bd] bg-[#fdecec]' : 'border-[#f0d8a8] bg-[#fdf6e8]';
+  const dotColor = ok ? '#15803d' : critical ? '#b42318' : '#b45309';
+
+  return (
+    <section className={`rounded-2xl border px-5 py-4 ${bg}`}>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span className="relative flex size-2.5">
+          {ok && <span className="absolute inline-flex size-full animate-ping rounded-full opacity-60" style={{ background: dotColor }} />}
+          <span className="relative inline-flex size-2.5 rounded-full" style={{ background: dotColor }} />
+        </span>
+        <span className="text-sm font-bold" style={{ color: dotColor }}>
+          {ok ? 'Sistema operativo' : critical ? 'Requiere atención' : 'Con advertencias'}
+        </span>
+        <span className="text-[12px] text-[var(--muted)]">
+          {health.heartbeatAt ? `robot reportó ${ago(health.heartbeatAt)}` : 'sin latido'}
+          {health.activa && ` · cuenta ${health.activa}`}
+          {health.failedToday > 0 && ` · ${health.failedToday} fallo(s) hoy`}
+        </span>
+      </div>
+
+      {problems.length > 0 && (
+        <ul className="mt-3 flex flex-col gap-2">
+          {problems.map((p, i) => (
+            <li key={i} className="text-[13px]">
+              <span className="font-semibold text-[var(--foreground)]">{p.txt}</span>
+              <span className="block text-[12px] text-[var(--muted)]">{p.fix}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {health.lastError && (
+        <p className="mt-3 border-t border-black/5 pt-2 text-[11.5px] text-[var(--muted)]">
+          <span className="font-semibold">Último error:</span> {health.lastError.slice(0, 160)}
+        </p>
+      )}
+    </section>
   );
 }
 
