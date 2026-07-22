@@ -6,7 +6,11 @@ import { useState, useEffect } from 'react';
 // Se PAUSA cuando hay un modal abierto (escucha el evento 'cz-modal') para no distraer al llenar datos.
 export function RotatingTail({ phrases }: { phrases: string[] }) {
   const [i, setI] = useState(0); // índice de la frase actual
-  const [sub, setSub] = useState(''); // subcadena tipeada
+  // La primera frase nace COMPLETA (SSR): este span vive dentro del <h1> (el LCP de móvil)
+  // y arrancar vacío + tipear tras hidratar empujaba el LCP a ~7s en 4G (cada letra agranda
+  // el bloque = nuevo candidato LCP). Completa desde el HTML, pinta con el FCP; el ciclo
+  // sigue igual: la mantiene 1.9s, la borra y continúa.
+  const [sub, setSub] = useState(phrases[0] ?? ''); // subcadena tipeada
   const [del, setDel] = useState(false); // ¿borrando?
   const [paused, setPaused] = useState(false);
 
