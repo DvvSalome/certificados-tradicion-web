@@ -3,6 +3,7 @@ import { verifyEvent, getTransaction } from '@/lib/wompi';
 import { orders } from '@/lib/orders';
 import { triggerGenerarCTL } from '@/lib/n8n';
 import { sendAlert } from '@/lib/alerts';
+import { capiPurchase } from '@/lib/meta-capi';
 
 export const runtime = 'nodejs';
 
@@ -41,6 +42,15 @@ export async function POST(req: Request) {
       await orders.update(reference, { status: 'PENDING_PAYMENT' }); // revertir claim (permite reintento de Wompi)
       return NextResponse.json({ error: 'Verificación de transacción falló' }, { status: 400 });
     }
+
+    // Meta CAPI: Purchase server-side con el pago YA verificado contra Wompi. Mismo
+    // event_id que el pixel del navegador (la referencia) → Meta deduplica. Best-effort.
+    await capiPurchase({
+      reference,
+      email: claimed.email,
+      phone: claimed.phone,
+      amountInCents: claimed.amountInCents,
+    });
 
     const trig = await triggerGenerarCTL({
       reference,
