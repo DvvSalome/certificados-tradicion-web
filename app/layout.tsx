@@ -3,15 +3,20 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import StructuredData from "@/components/StructuredData";
-import WhatsAppWidget from "@/components/WhatsAppWidget";
+import CrmChat from "@/components/CrmChat";
 
 // Microsoft Clarity (heatmaps + grabaciones de sesión). Project ID público; solo en producción.
 const CLARITY_ID = "xeefxjms0y";
 
-// Google Tag Manager: contenedor ÚNICO desde el que se administran GA4, la conversión de
-// Google Ads y el pixel de Meta, sin volver a tocar el código ni redesplegar. La compra se
-// comunica con el evento `purchase` que EstadoView empuja al dataLayer al confirmarse el pago.
+// Google Tag Manager: contenedor desde el que se administran GA4 y la conversión de Google Ads
+// sin volver a tocar el código ni redesplegar. La compra se comunica con el evento `purchase`
+// que EstadoView empuja al dataLayer al confirmarse el pago.
 const GTM_ID = "GTM-M6PHSS5Z";
+
+// Meta Pixel: instalado DIRECTO en código (no vía GTM) porque el Purchase lleva eventID
+// (la referencia CTL) para deduplicar contra la CAPI server-side cuando se encienda.
+// OJO: NO agregar el pixel también dentro de GTM o Meta cuenta los eventos DOBLE.
+const META_PIXEL_ID = "1747057343316637";
 
 // Google Ads: se activa cuando definas NEXT_PUBLIC_GADS_ID (AW-XXXXXXXXX) en Vercel. Sin la env, no
 // carga nada. La conversión se dispara en /estado al confirmarse el pago (ver EstadoView).
@@ -72,9 +77,23 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             style={{ display: "none", visibility: "hidden" }}
           />
         </noscript>
+        {/* Meta Pixel (noscript): respaldo sin JavaScript. */}
+        <noscript>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            height="1"
+            width="1"
+            style={{ display: "none" }}
+            alt=""
+            src={`https://www.facebook.com/tr?id=${META_PIXEL_ID}&ev=PageView&noscript=1`}
+          />
+        </noscript>
         <StructuredData />
         {children}
-        <WhatsAppWidget />
+        <CrmChat />
+        <Script id="meta-pixel" strategy="afterInteractive">
+          {`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${META_PIXEL_ID}');fbq('track','PageView');`}
+        </Script>
         <Script id="gtm-base" strategy="afterInteractive">
           {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${GTM_ID}');`}
         </Script>

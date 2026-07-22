@@ -111,15 +111,15 @@ export default function EstadoView() {
   }, [ref]);
 
   // Conversión: se reporta UNA sola vez por pedido cuando el pago queda confirmado.
-  // Fuente única = evento `purchase` en el dataLayer. Google Tag Manager lo escucha y desde ahí
-  // se disparan GA4, la conversión de Google Ads y el pixel de Meta, sin tocar más código.
+  // GA4 y Google Ads la escuchan vía el evento `purchase` del dataLayer (GTM). Meta va
+  // directo por fbq (el pixel se instala en layout.tsx, no en GTM).
   useEffect(() => {
     if (!ref || (status !== 'PAID' && status !== 'DELIVERED')) return;
     const key = `crt_conv_${ref}`;
     if (localStorage.getItem(key)) return; // ya reportada
     localStorage.setItem(key, '1');
 
-    const w = window as unknown as { dataLayer?: unknown[]; gtag?: (...a: unknown[]) => void };
+    const w = window as unknown as { dataLayer?: unknown[]; gtag?: (...a: unknown[]) => void; fbq?: (...a: unknown[]) => void };
     w.dataLayer = w.dataLayer || [];
     w.dataLayer.push({
       event: 'purchase',
@@ -127,6 +127,10 @@ export default function EstadoView() {
       value: info.amountCop || undefined,
       currency: 'COP',
     });
+
+    // Meta: Purchase con eventID = referencia del pedido, para que la CAPI server-side
+    // (cuando se encienda) deduplique contra este mismo evento del navegador.
+    w.fbq?.('track', 'Purchase', { value: info.amountCop || 0, currency: 'COP' }, { eventID: ref });
 
     // Ruta directa por gtag (sin GTM). OJO: si además configuras la conversión dentro de GTM,
     // Google Ads la cuenta DOBLE. Usa una de las dos, no ambas.

@@ -136,7 +136,13 @@ export default function CheckoutForm() {
     setError(null);
     setLoading(true);
     setStep('paying');
-    
+
+    // Meta: inicio de checkout (el Purchase se marca en /estado al confirmarse el pago).
+    (window as unknown as { fbq?: (...a: unknown[]) => void }).fbq?.('track', 'InitiateCheckout', {
+      value: PLANS[plan].priceCop,
+      currency: 'COP',
+    });
+
     try {
       localStorage.setItem('crt_email', email.trim());
       localStorage.setItem('crt_phone', phone.trim());
