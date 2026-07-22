@@ -1,10 +1,32 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export default function VideoPlayer() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isMuted, setIsMuted] = useState(true);
+  // El demo pesa 6.6 MB: con autoPlay directo se descargaba entero en CADA carga de la
+  // página compitiendo con el LCP (PageSpeed lo midió en 7.3s). Ahora el src solo se
+  // monta cuando el video entra al viewport; el poster (liviano) sostiene el layout.
+  const [enVista, setEnVista] = useState(false);
+
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') { setEnVista(true); return; }
+    const io = new IntersectionObserver(
+      (entries) => { if (entries.some((e) => e.isIntersecting)) { setEnVista(true); io.disconnect(); } },
+      { rootMargin: '200px' },
+    );
+    io.observe(el);
+    // Red de seguridad: si el observer no dispara (navegador raro), el video igual carga a
+    // los 6s — para entonces el LCP ya pasó y no compite con la carga inicial.
+    const t = setTimeout(() => setEnVista(true), 6000);
+    return () => { io.disconnect(); clearTimeout(t); };
+  }, []);
+
+  useEffect(() => {
+    if (enVista) videoRef.current?.play().catch(() => {});
+  }, [enVista]);
 
   const toggleMute = () => {
     if (videoRef.current) {
@@ -24,10 +46,10 @@ export default function VideoPlayer() {
     <div className="relative aspect-[9/16] w-full overflow-hidden rounded-3xl bg-[var(--brand-700)] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] border-[6px] border-white ring-1 ring-[var(--border)] group cursor-pointer" onClick={toggleMute}>
       <video
         ref={videoRef}
-        src="/certificado-demo-web.mp4"
+        src={enVista ? '/certificado-demo-web.mp4' : undefined}
         poster="/certificado-demo-poster.jpg"
         className="absolute inset-0 h-full w-full object-cover"
-        autoPlay
+        preload="none"
         loop
         muted
         playsInline
