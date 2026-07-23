@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/admin';
 
 export const runtime = 'nodejs';
+export const maxDuration = 60; // la lectura abre el portal del SNR; sin esto Vercel corta a los 10s
 
 // Consulta AHORA el saldo prepago en el portal del SNR (botón "Actualizar" del panel).
 // El robot es quien tiene la sesión del SNR; aquí solo se le pide la lectura y él mismo
@@ -21,7 +22,7 @@ export async function POST() {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-webhook-secret': secret },
       // Abrir el portal y leer tarda; el robot serializa contra las generaciones en curso.
-      signal: AbortSignal.timeout(120_000),
+      signal: AbortSignal.timeout(50_000),
     });
     const data = (await r.json().catch(() => ({}))) as { ok?: boolean; saldoCents?: number; cuenta?: string; error?: string };
     if (!r.ok || !data.ok) {
@@ -29,8 +30,10 @@ export async function POST() {
     }
     return NextResponse.json({ ok: true, saldoCents: data.saldoCents, cuenta: data.cuenta });
   } catch (e) {
+    // Ojo: aunque aquí se corte, el robot sigue leyendo y publica el saldo por su cuenta
+    // (pushSaldo), así que recargar el panel en un minuto suele mostrarlo ya actualizado.
     const msg = e instanceof Error && e.name === 'TimeoutError'
-      ? 'La lectura tardó demasiado (el robot puede estar generando un certificado). Intenta en un minuto.'
+      ? 'Está tardando (el robot abrió el portal del SNR). Recarga el panel en un minuto: el saldo se actualiza solo al terminar.'
       : e instanceof Error ? e.message : 'error';
     return NextResponse.json({ error: msg }, { status: 502 });
   }
