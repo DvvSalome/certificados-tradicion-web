@@ -7,7 +7,6 @@ import AdminGenerar from './AdminGenerar';
 import MetricsCharts from './MetricsCharts';
 import OrderActions from './OrderActions';
 import SaldoRefresh from './SaldoRefresh';
-import { Seal } from '@/components/Brand';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,14 +39,11 @@ export default async function AdminDashboard() {
       <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-white/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
           <div className="flex items-center gap-2.5">
-            {/* Logo REAL de la marca (el mismo sello del sitio), no el escudo genérico. */}
-            <span aria-hidden className="grid size-9 place-items-center rounded-xl bg-[var(--brand)] shadow-sm">
-              <Seal size={22} tone="onDark" />
-            </span>
-            <div className="leading-tight">
-              <p className="text-[15px] font-semibold tracking-tight">Certitradición</p>
-              <p className="text-[11px] font-medium text-[var(--muted-2)]">Panel de control</p>
-            </div>
+            {/* Logo REAL de la marca (public/brand/logo-horizontal-oscuro.png: sello + nombre,
+                versión para fondos claros), no el escudo genérico de antes. */}
+            <img src="/brand/logo-horizontal-oscuro.png" alt="Certitradición" className="h-8 w-auto" />
+            <span className="h-6 w-px bg-[var(--border)]" aria-hidden />
+            <p className="text-[13px] font-semibold tracking-tight text-[var(--muted)]">Panel de control</p>
           </div>
           <div className="flex items-center gap-3">
             <span className="rounded-full bg-[var(--brand-50)] px-3 py-1 text-xs font-semibold text-[var(--brand)]">
