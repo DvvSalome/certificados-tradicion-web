@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import OficinaSelect from './OficinaSelect';
 import { oficinaCode } from '@/lib/oficinas';
 import { PLANS, formatCOP, type PlanId } from '@/lib/config';
-import PlanTagline from '@/components/PlanTagline';
+import PlanTagline, { PlanFeature } from '@/components/PlanTagline';
 import PlanIcon from '@/components/PlanIcon';
 
 type VResult = { disponible: boolean | null; estado: string | null; direccion: string | null; circulo: string | null; mocked?: boolean; error?: string };
@@ -481,7 +481,7 @@ export default function CheckoutForm() {
                   {p.features.map((f, i) => (
                     <li key={i} className="flex items-start gap-2">
                       <svg className="mt-0.5 size-3.5 shrink-0 text-[#84cc16]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
-                      <span>{f}</span>
+                      <span><PlanFeature text={f} /></span>
                     </li>
                   ))}
                 </ul>

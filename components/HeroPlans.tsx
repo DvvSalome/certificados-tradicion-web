@@ -37,7 +37,7 @@ export default function HeroPlans() {
               <span className="flex items-center gap-2.5">
                 <PlanIcon plan={pid} size={30} />
                 <span className={`text-[11px] font-bold uppercase tracking-wide ${p.recommended ? 'text-[var(--brand)]' : 'text-[var(--muted-2)]'}`}>
-                  Certi {p.label}
+                  {p.label}
                 </span>
               </span>
               <p className="mt-1.5 text-2xl font-extrabold tracking-tight text-[var(--foreground)]">

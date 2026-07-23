@@ -34,7 +34,7 @@ export default function Precio() {
       provider: { '@id': `${BASE}/#organization` },
       offers: (['basico', 'express', 'avanzado'] as const).map((pid) => ({
         '@type': 'Offer',
-        name: `Certi ${PLANS[pid].label}`,
+        name: PLANS[pid].label,
         price: PLANS[pid].priceCop,
         priceCurrency: 'COP',
         url: `${BASE}/precio`,

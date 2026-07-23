@@ -1,5 +1,6 @@
 import { PLANS, formatCOP, type PlanId } from '@/lib/config';
 import { COMPARISON } from '@/lib/site-content';
+import { PlanFeature } from '@/components/PlanTagline';
 
 // Sección de planes + comparativa vs portal oficial. Compartida por la home (ancla #precio)
 // y la página /precio (sitelink real). Un solo lugar para tocar precios/beneficios.
@@ -41,7 +42,7 @@ export default function PricingSection() {
                 ) : null}
 
                 <p className={`text-xs font-bold uppercase tracking-wide ${p.recommended ? 'text-[var(--brand)]' : 'text-[var(--muted-2)]'}`}>
-                  Plan {p.label}
+                  {p.label}
                 </p>
                 <p className="mt-2 text-[15px] font-medium text-[var(--muted)] min-h-[44px]">
                   {p.tagline}
@@ -54,7 +55,7 @@ export default function PricingSection() {
                   {p.features.map((f, i) => (
                     <div key={i} className="flex items-start gap-2.5">
                       <svg className={`mt-0.5 size-4 shrink-0 ${p.recommended ? 'text-[var(--brand)]' : 'text-[var(--muted-2)]'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
-                      <span className="text-[14px] leading-snug text-[var(--muted)]">{f}</span>
+                      <span className="text-[14px] leading-snug text-[var(--muted)]"><PlanFeature text={f} /></span>
                     </div>
                   ))}
                 </div>
