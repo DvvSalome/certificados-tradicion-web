@@ -192,12 +192,13 @@ export interface RobotHealth {
   stuckOrders: number;         // pagados que llevan >15 min sin completarse
   failedToday: number;
   lastError: string | null;
+  lastErrorAt: string | null; // sin esto el panel mostraba un error de hace semanas como si fuera de ahora
 }
 
 export async function getRobotHealth(): Promise<RobotHealth> {
   const empty: RobotHealth = {
     state: 'unknown', heartbeatAt: null, ageMin: null, activa: null, cuentas: [],
-    saldoCents: null, stuckOrders: 0, failedToday: 0, lastError: null,
+    saldoCents: null, stuckOrders: 0, failedToday: 0, lastError: null, lastErrorAt: null,
   };
   if (!process.env.DATABASE_URL) return empty;
 
@@ -210,7 +211,8 @@ export async function getRobotHealth(): Promise<RobotHealth> {
                   WHERE status IN ('PAID','GENERATING') AND updated_at < now() - interval '15 minutes'`),
       pool.query(`SELECT
         (SELECT COUNT(*) FROM generations WHERE status='FAILED' AND created_at::date = now()::date) AS fails,
-        (SELECT error FROM generations WHERE status='FAILED' ORDER BY created_at DESC LIMIT 1) AS last_error`),
+        (SELECT error FROM generations WHERE status='FAILED' ORDER BY created_at DESC LIMIT 1) AS last_error,
+        (SELECT created_at FROM generations WHERE status='FAILED' ORDER BY created_at DESC LIMIT 1) AS last_error_at`),
     ]);
 
     const hb = snr.rows[0]?.updated_at ? new Date(snr.rows[0].updated_at) : null;
@@ -233,6 +235,7 @@ export async function getRobotHealth(): Promise<RobotHealth> {
       stuckOrders: n(stuck.rows[0]?.c),
       failedToday: n(gen.rows[0]?.fails),
       lastError: gen.rows[0]?.last_error ?? null,
+      lastErrorAt: iso(gen.rows[0]?.last_error_at),
     };
   } catch {
     return empty;

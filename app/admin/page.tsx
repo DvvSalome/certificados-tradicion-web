@@ -11,6 +11,8 @@ import SaldoRefresh from './SaldoRefresh';
 export const dynamic = 'force-dynamic';
 
 const fmt = (c: number) => formatCOP(c / 100);
+// Lo que el SNR cobra por certificado ($23.000). Estaba repetido a mano en dos sitios.
+const SNR_COST_CENTS = 2_300_000;
 const ago = (iso: string | null) => {
   if (!iso) return '—';
   const mins = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
@@ -70,12 +72,25 @@ export default async function AdminDashboard() {
           <Kpi
             label="Saldo prepago SNR"
             value={d.saldoCents === null ? '—' : fmt(d.saldoCents)}
-            hint={d.saldoAt ? `actualizado ${ago(d.saldoAt)}` : 'sin reportes'}
+            // Cuántos certificados más alcanzan: es lo que de verdad se quiere saber del saldo.
+            hint={
+              d.saldoCents === null
+                ? 'sin reportes'
+                : `≈ ${Math.floor(d.saldoCents / SNR_COST_CENTS)} certificados · actualizado ${ago(d.saldoAt)}`
+            }
             tone={d.saldoLow ? 'danger' : 'brand'}
             alert={d.saldoLow ? `Bajo el umbral (${fmt(SALDO_THRESHOLD_CENTS)})` : undefined}
             action={<SaldoRefresh />}
           />
-          <Kpi label="Ganancias (neto)" value={fmt(d.profitCents)} hint={`Ingresos ${fmt(d.revenueCents)} − costo ${fmt(d.costCents)}`} tone="accent" />
+          {/* En rojo cuando es negativo: es la señal de negocio más importante del panel
+              (hasta ahora salía en el mismo color que una ganancia sana). */}
+          <Kpi
+            label="Ganancias (neto)"
+            value={fmt(d.profitCents)}
+            hint={`Ingresos ${fmt(d.revenueCents)} − costo ${fmt(d.costCents)}`}
+            tone={d.profitCents < 0 ? 'danger' : 'accent'}
+            alert={d.profitCents < 0 ? 'Aún en pérdida: el costo del SNR supera lo vendido' : undefined}
+          />
           <Kpi label="Certificados generados" value={String(d.certCount)} hint={`${d.robot.okToday} hoy`} />
           <Kpi
             label="Estado del robot"
@@ -110,7 +125,7 @@ export default async function AdminDashboard() {
                     </div>
                     <p className="mt-2 text-[13px] text-[var(--foreground)]">
                       Saldo: <span className="font-semibold">{saldo == null ? '—' : fmt(saldo)}</span>
-                      {saldo != null && <span className="text-[var(--muted-2)]"> · ~{Math.floor(saldo / 2_300_000)} certificados</span>}
+                      {saldo != null && <span className="text-[var(--muted-2)]"> · ~{Math.floor(saldo / SNR_COST_CENTS)} certificados</span>}
                     </p>
                     {!c.disponible && c.reason && <p className="mt-0.5 text-[11px] text-[#b42318]">{c.reason}</p>}
                   </div>
@@ -215,9 +230,11 @@ function HealthBanner({ health }: { health: Awaited<ReturnType<typeof getRobotHe
         </ul>
       )}
 
-      {health.lastError && (
+      {/* El último error SOLO si es reciente (7 días) y siempre con su fecha: antes se
+          arrastraba un fallo de hace semanas junto a "Sistema operativo" y parecía actual. */}
+      {health.lastError && health.lastErrorAt && Date.now() - new Date(health.lastErrorAt).getTime() < 7 * 864e5 && (
         <p className="mt-3 border-t border-black/5 pt-2 text-[11.5px] text-[var(--muted)]">
-          <span className="font-semibold">Último error:</span> {health.lastError.slice(0, 160)}
+          <span className="font-semibold">Último error ({ago(health.lastErrorAt)}):</span> {health.lastError.slice(0, 160)}
         </p>
       )}
     </section>
@@ -234,7 +251,8 @@ function Kpi({ label, value, hint, tone = 'default', alert, dot, action }: { lab
         <p className="text-[12px] font-semibold uppercase tracking-wide text-[var(--muted-2)]">{label}</p>
       </div>
       <p className="mt-2 text-[26px] font-bold tracking-tight" style={{ color: valColor }}>{value}</p>
-      {alert ? <p className="mt-1 text-[12px] font-semibold text-[#b42318]">{alert}</p> : hint ? <p className="mt-1 text-[12px] text-[var(--muted)]">{hint}</p> : null}
+      {hint && <p className="mt-1 text-[12px] text-[var(--muted)]">{hint}</p>}
+      {alert && <p className="mt-1 text-[12px] font-semibold text-[#b42318]">{alert}</p>}
       {action && <div className="mt-2.5">{action}</div>}
       <span className="sr-only">{color}</span>
     </div>
