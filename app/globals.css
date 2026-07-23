@@ -42,6 +42,12 @@
   border-color: var(--border);
 }
 
+/* Tailwind v4 dejó los <button> con cursor:default — la manito volvió a ser opt-in.
+   La restauramos global: todo botón habilitado invita al clic (planes del hero, comprar, chips…). */
+button:not(:disabled) {
+  cursor: pointer;
+}
+
 html {
   -webkit-text-size-adjust: 100%;
 }

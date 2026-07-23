@@ -14,7 +14,7 @@ export const PLANS: Record<PlanId, Plan> = {
     features: ['Certificado de Tradición y Libertad (PDF oficial)', 'Entrega por correo en minutos', 'Validez 30 días'],
   },
   express: {
-    id: 'express', label: 'Express', tagline: 'Descubre problemas ocultos del inmueble', recommended: true,
+    id: 'express', label: 'Express', tagline: 'Análisis de gravámenes con IA y semáforo de riesgo', recommended: true,
     priceCop: Number(process.env.PRICE_EXPRESS_COP || 49900), requiresConsent: true,
     features: [
       'Incluye el Certificado de Tradición y Libertad',
@@ -25,7 +25,7 @@ export const PLANS: Record<PlanId, Plan> = {
     ],
   },
   avanzado: {
-    id: 'avanzado', label: 'Avanzado', tagline: 'La verificación más completa antes de comprar',
+    id: 'avanzado', label: 'Avanzado', tagline: 'Gravámenes + antecedentes de todos los propietarios',
     priceCop: Number(process.env.PRICE_AVANZADO_COP || 99900), requiresConsent: true,
     features: [
       'Todo lo del plan Express',
