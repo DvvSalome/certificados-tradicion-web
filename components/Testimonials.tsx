@@ -54,7 +54,7 @@ export default function Testimonials() {
 
         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {REVIEWS.map((r) => (
-            <figure key={r.name} className="flex flex-col gap-4 rounded-2xl border border-[var(--border)] bg-white p-6 shadow-sm">
+            <figure key={r.name} className="cz-reveal flex flex-col gap-4 rounded-2xl border border-[var(--border)] bg-white p-6 shadow-sm">
               <Stars n={r.stars} />
               <blockquote className="text-[15px] leading-relaxed text-[var(--foreground)]">“{r.text}”</blockquote>
               <figcaption className="mt-auto flex items-center gap-3 pt-2">

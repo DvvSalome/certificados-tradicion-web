@@ -24,7 +24,7 @@ export default function PricingSection() {
           {(['basico', 'express', 'avanzado'] as PlanId[]).map((pid) => {
             const p = PLANS[pid];
             return (
-              <div key={pid} className={`relative flex flex-col items-start rounded-3xl border-2 p-6 sm:p-7 transition-all ${
+              <div key={pid} className={`cz-reveal relative flex flex-col items-start rounded-3xl border-2 p-6 sm:p-7 transition-all ${
                 p.recommended
                   ? 'border-[var(--brand)] bg-[var(--brand-50)] shadow-md'
                   : pid === 'avanzado'

@@ -195,7 +195,7 @@ export default function Home() {
                 { n: '2', t: 'Verificamos y pagas seguro', d: 'Confirmamos tu inmueble antes de cobrarte. Pago rápido con Wompi.' },
                 { n: '3', t: 'Recíbelo al instante', d: 'PDF oficial directo a tu correo y WhatsApp.', last: true },
               ].map((s) => (
-                <div key={s.n} className="flex gap-4">
+                <div key={s.n} className="cz-reveal flex gap-4">
                   <div className="flex flex-col items-center">
                     <span className={`grid place-items-center w-9 h-9 rounded-full text-white font-bold text-sm ${s.last ? 'bg-[var(--accent)]' : 'bg-[var(--brand)]'}`}>
                       {s.last ? (

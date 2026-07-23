@@ -63,7 +63,7 @@ export default function WhyUs() {
           {BENEFITS.map((b) => (
             <div
               key={b.t}
-              className="flex flex-col gap-4 rounded-2xl border border-[var(--border)] bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
+              className="cz-reveal flex flex-col gap-4 rounded-2xl border border-[var(--border)] bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
             >
               <span className="grid size-11 place-items-center rounded-xl bg-[var(--brand)] text-white">
                 {b.icon}

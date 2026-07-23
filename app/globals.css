@@ -116,6 +116,15 @@ select {
   .ctl-drop-in { animation: none; }
 }
 
+/* — Entrada al hacer scroll: los módulos suben y aparecen al entrar en vista —
+   El estado oculto lo pone el JS (ScrollReveal) SOLO a lo que está fuera de pantalla,
+   así nunca hay parpadeo ni riesgo de dejar contenido invisible si algo falla.
+   (La vía CSS nativa `animation-timeline: view()` no sobrevive al compilador de
+   Tailwind v4: descarta la regla y sus keyframes.) */
+.cz-reveal { transition: opacity .55s cubic-bezier(.22, 1, .36, 1), transform .55s cubic-bezier(.22, 1, .36, 1); }
+.cz-reveal.cz-hidden { opacity: 0; transform: translateY(26px); }
+.cz-reveal.cz-in { opacity: 1; transform: none; }
+
 /* — Animaciones del diseño Home (Claude Design "Certitradicion Home.dc.html") — */
 @keyframes cz-spin { to { transform: rotate(360deg); } }
 @keyframes cz-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
