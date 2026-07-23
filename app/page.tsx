@@ -131,7 +131,8 @@ export default function Home() {
 
       {/* ===== SOLICITAR: ¿cómo encuentro mi matrícula? + formulario + video ===== */}
       <section id="comprar" className="scroll-mt-24 border-t border-[var(--border)] bg-white py-14 lg:py-20">
-        <div className="mx-auto flex max-w-6xl flex-col gap-12 px-4 sm:px-6">
+        {/* max-w-7xl + formulario a 8/12: la sección se sentía comprimida con espacio muerto a los lados. */}
+        <div className="mx-auto flex max-w-7xl flex-col gap-12 px-4 sm:px-6">
           <div className="mx-auto flex max-w-3xl flex-col items-center gap-4 text-center">
             <p className="text-lg font-extrabold uppercase tracking-widest text-[var(--brand)] sm:text-xl">Antes de empezar</p>
             <h2 className="text-3xl font-extrabold tracking-tight text-[var(--foreground)] sm:text-4xl">¿Cómo encuentro mi matrícula inmobiliaria?</h2>
@@ -155,10 +156,10 @@ export default function Home() {
               <p className="mt-1 text-[15px] text-[var(--muted)]">Completa el formulario y recíbelo en minutos.</p>
             </div>
             <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:gap-10">
-              <div className="w-full lg:w-7/12">
+              <div className="w-full lg:w-8/12">
                 <CheckoutForm />
               </div>
-              <div className="w-full lg:w-5/12 lg:sticky lg:top-24">
+              <div className="w-full lg:w-4/12 lg:sticky lg:top-24">
                 <div className="mx-auto w-full max-w-[340px]">
                   <VideoPlayer />
                   <p className="mt-3 text-center text-sm text-[var(--muted-2)]">Toca el video para escuchar</p>
