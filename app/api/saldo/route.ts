@@ -16,9 +16,11 @@ export async function POST(req: NextRequest) {
     const target = process.env.NODE_ENV === 'development'
       ? 'http://localhost:3000/saldo'
       : 'http://certificados_robot:3000/saldo';
+    const body = await req.text(); // puede traer {cuenta:"CCxxxx"} para leer una en concreto
     const res = await fetch(target, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-webhook-secret': secret },
+      body: body || '{}',
       signal: AbortSignal.timeout(55_000),
     });
     const text = await res.text();

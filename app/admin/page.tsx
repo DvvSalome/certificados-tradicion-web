@@ -7,6 +7,7 @@ import AdminGenerar from './AdminGenerar';
 import MetricsCharts from './MetricsCharts';
 import OrderActions from './OrderActions';
 import SaldoRefresh from './SaldoRefresh';
+import SnrAccounts from './SnrAccounts';
 
 export const dynamic = 'force-dynamic';
 
@@ -108,30 +109,19 @@ export default async function AdminDashboard() {
         )}
 
         {/* Estado del pool de cuentas SNR */}
-        {snr && snr.cuentas.length > 0 && (
+        {snr && (
           <Card title="Cuentas SNR" hint={snr.updatedAt ? `actualizado ${ago(snr.updatedAt)}` : undefined}>
-            <div className="grid gap-3 p-3 sm:grid-cols-2">
-              {snr.cuentas.map((c) => {
-                const activa = c.user === snr.activa;
-                // La cuenta activa: si aún no hay saldo por-cuenta, cae al snapshot global (que ES el saldo de la activa).
-                const saldo = c.saldoCents ?? (activa ? d.saldoCents : null);
-                return (
-                  <div key={c.user} className="rounded-xl border border-[var(--border)] bg-white p-4">
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-[13px] font-bold text-[var(--foreground)]">{c.user}</span>
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${c.disponible ? 'bg-[var(--accent-50)] text-[var(--accent)]' : 'bg-[#fdecec] text-[#b42318]'}`}>
-                        {c.disponible ? (activa ? 'ACTIVA' : 'disponible') : 'bloqueada'}
-                      </span>
-                    </div>
-                    <p className="mt-2 text-[13px] text-[var(--foreground)]">
-                      Saldo: <span className="font-semibold">{saldo == null ? '—' : fmt(saldo)}</span>
-                      {saldo != null && <span className="text-[var(--muted-2)]"> · ~{Math.floor(saldo / SNR_COST_CENTS)} certificados</span>}
-                    </p>
-                    {!c.disponible && c.reason && <p className="mt-0.5 text-[11px] text-[#b42318]">{c.reason}</p>}
-                  </div>
-                );
-              })}
-            </div>
+            <SnrAccounts
+              // La activa cae al snapshot global cuando aún no hay saldo por-cuenta (ese ES su saldo).
+              cuentas={snr.cuentas.map((c) => ({
+                user: c.user,
+                disponible: c.disponible,
+                reason: c.reason ?? null,
+                saldoCents: c.saldoCents ?? (c.user === snr.activa ? d.saldoCents : null),
+              }))}
+              activa={snr.activa}
+              costCents={SNR_COST_CENTS}
+            />
           </Card>
         )}
 

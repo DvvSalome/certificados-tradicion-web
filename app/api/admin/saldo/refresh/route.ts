@@ -8,9 +8,11 @@ export const maxDuration = 60; // la lectura abre el portal del SNR; sin esto Ve
 // El robot es quien tiene la sesión del SNR; aquí solo se le pide la lectura y él mismo
 // publica el resultado en /api/admin/saldo. Ojo: si la sesión del robot murió, esta
 // lectura gasta un login del SNR (recurso escaso), por eso va detrás de la sesión de admin.
-export async function POST() {
+export async function POST(req: Request) {
   const role = await getSession();
   if (role !== 'superadmin') return NextResponse.json({ error: 'Solo superadmin' }, { status: 403 });
+  // Opcional: leer el saldo de UNA cuenta concreta (la que nunca se usa no tiene saldo conocido).
+  const { cuenta } = (await req.json().catch(() => ({}))) as { cuenta?: string };
 
   // Misma base que /generar (env del robot): http://certificados_robot:3000/generar → /saldo
   const base = (process.env.N8N_GENERAR_CTL_URL ?? '').replace(/\/generar\/?$/, '');
@@ -21,6 +23,7 @@ export async function POST() {
     const r = await fetch(`${base}/saldo`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-webhook-secret': secret },
+      body: JSON.stringify(cuenta ? { cuenta } : {}),
       // Abrir el portal y leer tarda; el robot serializa contra las generaciones en curso.
       signal: AbortSignal.timeout(50_000),
     });

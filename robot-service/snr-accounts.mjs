@@ -37,6 +37,41 @@ function nextMidnightColombiaMs(now = Date.now()) {
 const accounts = parseAccounts();
 const state = new Map(accounts.map((a) => [a.user, { cooldownUntil: 0, saldoCents: null, reason: null, alerted: false }]));
 
+// Cuentas agregadas DESDE EL PANEL (tabla snr_accounts). Antes la única vía era editar la env
+// SNR_ACCOUNTS en EasyPanel + redeploy; ahora el superadmin las registra desde la web y el robot
+// las recoge solo. Las del env mandan (van primero); las de la DB se anexan si no están ya.
+export async function cargarCuentasDb(pool) {
+  if (!pool) return 0;
+  await pool.query(`CREATE TABLE IF NOT EXISTS snr_accounts (
+    usuario TEXT PRIMARY KEY,
+    clave TEXT NOT NULL,
+    enabled BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  )`);
+  const { rows } = await pool.query('SELECT usuario, clave FROM snr_accounts WHERE enabled ORDER BY created_at');
+  let nuevas = 0;
+  for (const r of rows) {
+    const user = String(r.usuario || '').trim();
+    if (!user || !r.clave) continue;
+    const yaEsta = accounts.find((a) => a.user === user);
+    if (yaEsta) { yaEsta.pass = r.clave; continue; } // permite corregir la clave sin redeploy
+    accounts.push({ user, pass: r.clave });
+    state.set(user, { cooldownUntil: 0, saldoCents: null, reason: null, alerted: false });
+    nuevas++;
+  }
+  // Quitar del pool las que se borraron/desactivaron en el panel (salvo las del env, que mandan).
+  const delEnv = new Set(parseAccounts().map((a) => a.user));
+  const vivas = new Set(rows.map((r) => String(r.usuario || '').trim()));
+  for (let i = accounts.length - 1; i >= 0; i--) {
+    const u = accounts[i].user;
+    if (!delEnv.has(u) && !vivas.has(u)) { accounts.splice(i, 1); state.delete(u); }
+  }
+  return nuevas;
+}
+
+// Busca una cuenta por usuario (para leer el saldo de UNA en concreto desde el panel).
+export function buscarCuenta(user) { return accounts.find((a) => a.user === user) || null; }
+
 export function hayCuentas() { return accounts.length > 0; }
 export function totalCuentas() { return accounts.length; }
 export function costoCertCents() { return COST_CENTS; }

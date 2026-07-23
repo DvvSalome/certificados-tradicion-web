@@ -6,7 +6,7 @@ import http from 'http';
 import { SnrRobot } from './snr-robot.mjs';
 import { entregarCorreo, entregarEstudio, enviarAlerta } from './deliver.mjs';
 import { consultaHttp } from './snr-consulta-http.mjs';
-import { pickAccount, marcarBloqueada, totalCuentas, estado as estadoCuentas, setSaldo, descontarCert, saldoConocido, saldoCents, debeAlertar, certsRestantes } from './snr-accounts.mjs';
+import { pickAccount, marcarBloqueada, totalCuentas, estado as estadoCuentas, setSaldo, descontarCert, saldoConocido, saldoCents, debeAlertar, certsRestantes, cargarCuentasDb, buscarCuenta } from './snr-accounts.mjs';
 
 const PORT = Number(process.env.PORT || 3000);
 const SECRET = process.env.N8N_WEBHOOK_SECRET || '';
@@ -320,7 +320,7 @@ async function doVerify(oficina, matricula) {
   return browserVerify(oficina, matricula);
 }
 
-import { handleDbProxy, claimGenerationJob } from './db-proxy.mjs';
+import { handleDbProxy, claimGenerationJob, getPool } from './db-proxy.mjs';
 
 // async: la rama /saldo espera la lectura en el portal antes de responder (las demás son síncronas).
 const server = http.createServer(async (req, res) => {
@@ -368,7 +368,30 @@ const server = http.createServer(async (req, res) => {
   // (0 logins); solo gasta un login si la sesión estaba muerta.
   if (req.method === 'POST' && req.url === '/saldo') {
     if (!SECRET || req.headers['x-webhook-secret'] !== SECRET) { res.writeHead(401); return res.end('no autorizado'); }
+    let cuerpo = '';
+    for await (const c of req) { cuerpo += c; if (cuerpo.length > 1e5) break; }
+    let pedida = null;
+    try { pedida = JSON.parse(cuerpo || '{}')?.cuenta || null; } catch { /* sin cuerpo = cuenta activa */ }
+
     const job = genChain.catch(() => {}).then(async () => {
+      // Sin `cuenta` = la activa (reusa la sesión, 0 logins). Con `cuenta` = ESA en concreto:
+      // el saldo de una cuenta que nunca se usa solo se puede saber entrando con ella (1 login).
+      if (pedida) {
+        const acc = buscarCuenta(pedida);
+        if (!acc) throw new Error(`la cuenta ${pedida} no está en el pool`);
+        const r = new SnrRobot({ user: acc.user, pass: acc.pass, browserlessWs: BROWSERLESS_WS || null, headless: true, stateFile: null, log: (m) => console.error(m) });
+        try {
+          await r.start();
+          await r.ensureLoggedIn();
+          const cop = await r.leerSaldo();
+          if (cop == null) throw new Error('no se pudo leer el saldo en el portal del SNR');
+          const cents = cop * 100;
+          setSaldo(acc.user, cents);
+          pushSnrStatus();                                   // refresca la tarjeta de esa cuenta
+          if (acc.user === genAccount?.user) pushSaldo(cents); // el KPI global es el de la activa
+          return { cuenta: acc.user, saldoCents: cents };
+        } finally { try { await r.stop(); } catch {} }
+      }
       const robot = await ensureGenRobot();
       const cuenta = genAccount?.user || null;
       await robot.ensureLoggedIn();
@@ -377,6 +400,7 @@ const server = http.createServer(async (req, res) => {
       const cents = cop * 100;
       if (cuenta) setSaldo(cuenta, cents);
       pushSaldo(cents);
+      pushSnrStatus();
       return { cuenta, saldoCents: cents };
     });
     genChain = job.catch(() => {}); // la cadena sigue viva aunque esta lectura falle
@@ -443,6 +467,14 @@ server.listen(PORT, () => {
       .then((r) => { if (!r.ok) console.error('[reaper] HTTP ' + r.status); })
       .catch((e) => console.error('[reaper] ' + e.message));
   }, 10 * 60 * 1000);
+  // Cuentas SNR registradas desde el panel: se recogen al arrancar y cada 3 min, así una cuenta
+  // nueva entra al pool sin redeploy. Best-effort: si la DB falla, siguen las del env.
+  const recargarCuentas = () =>
+    cargarCuentasDb(getPool())
+      .then((n) => { if (n) { console.error(`[cuentas] +${n} desde el panel (total ${totalCuentas()})`); pushSnrStatus(); } })
+      .catch((e) => console.error('[cuentas] carga desde DB falló: ' + e.message));
+  recargarCuentas();
+  setInterval(recargarCuentas, 3 * 60 * 1000);
   // Estado del pool de cuentas SNR → panel (Vercel no alcanza al robot; se lo empujamos). Al arranque y c/10 min.
   if (PANEL && SECRET) {
     pushSnrStatus();
