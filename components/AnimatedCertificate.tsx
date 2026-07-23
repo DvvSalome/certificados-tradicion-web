@@ -27,28 +27,11 @@ export default function AnimatedCertificate() {
             top: 72,
             height: 40,
             background: 'linear-gradient(180deg, rgba(52,211,153,0) 0%, rgba(52,211,153,.32) 50%, rgba(52,211,153,0) 100%)',
-            animation: 'cz-scan 7s cubic-bezier(.4,0,.2,1) infinite',
+            animation: 'cz-scan 9s cubic-bezier(.4,0,.2,1) infinite',
             pointerEvents: 'none',
           }}
         />
         
-        {/* Proceso del estudio: los chequeos se acumulan al ritmo del escáner (cz-p1..4). */}
-        <div style={{ position: 'absolute', left: 14, top: 58, display: 'flex', flexDirection: 'column', gap: 7, zIndex: 5, pointerEvents: 'none' }}>
-          {[
-            ['Folio localizado', 'cz-p1'],
-            ['Propietarios verificados', 'cz-p2'],
-            ['Hipotecas: ninguna', 'cz-p3'],
-            ['Embargos: ninguno', 'cz-p4'],
-          ].map(([texto, anim]) => (
-            <div key={anim} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 9px', borderRadius: 999, background: 'rgba(255,255,255,.94)', boxShadow: '0 4px 14px -4px rgba(13,27,42,.25)', width: 'fit-content', animation: `${anim} 7s ease-in-out infinite` }}>
-              <span style={{ display: 'grid', placeItems: 'center', width: 14, height: 14, borderRadius: 999, background: '#0F7A52', color: '#fff', flexShrink: 0 }}>
-                <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
-              </span>
-              <span style={{ fontWeight: 700, fontSize: 9.5, color: '#0D1B2A', letterSpacing: '-0.01em' }}>{texto}</span>
-            </div>
-          ))}
-        </div>
-
         {/* fade inferior: el documento se funde para resaltar el estado del análisis */}
         <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 152, background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.5) 36%, rgba(255,255,255,.97) 78%)', pointerEvents: 'none' }} />
 
@@ -58,11 +41,11 @@ export default function AnimatedCertificate() {
         </div>
         {/* estado del análisis — corre SOBRE el documento */}
         <div style={{ position: 'absolute', left: 16, right: 16, bottom: 52, height: 42 }}>
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', gap: 9, padding: '0 13px', borderRadius: 11, background: '#fff', boxShadow: '0 8px 22px -6px rgba(13,27,42,.28)', animation: 'cz-gray 7s ease-in-out infinite' }}>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', gap: 9, padding: '0 13px', borderRadius: 11, background: '#fff', boxShadow: '0 8px 22px -6px rgba(13,27,42,.28)', animation: 'cz-gray 9s ease-in-out infinite' }}>
             <span style={{ width: 15, height: 15, flexShrink: 0, borderRadius: 999, border: '2px solid #CFD9E6', borderTopColor: '#103A73', animation: 'cz-spin .7s linear infinite' }} />
             <span style={{ fontWeight: 600, fontSize: 11.5, color: '#5B6B7E' }}>Analizando gravámenes…</span>
           </div>
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', gap: 9, padding: '0 13px', borderRadius: 11, background: '#E8F5EF', boxShadow: '0 8px 22px -6px rgba(15,122,82,.3)', animation: 'cz-green 7s ease-in-out infinite' }}>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', gap: 9, padding: '0 13px', borderRadius: 11, background: '#E8F5EF', boxShadow: '0 8px 22px -6px rgba(15,122,82,.3)', animation: 'cz-green 9s ease-in-out infinite' }}>
             <span style={{ display: 'grid', placeItems: 'center', width: 20, height: 20, flexShrink: 0, borderRadius: 999, background: '#0F7A52', color: '#fff' }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
             </span>
@@ -71,7 +54,7 @@ export default function AnimatedCertificate() {
         </div>
 
         {/* validation stamp */}
-        <div style={{ position: 'absolute', right: 18, bottom: 12, animation: 'cz-stamp 7s ease-in-out infinite', transformOrigin: 'center', pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', right: 18, bottom: 12, animation: 'cz-stamp 9s ease-in-out infinite', transformOrigin: 'center', pointerEvents: 'none' }}>
           <div style={{ position: 'relative', width: 54, height: 54, borderRadius: 999, border: '2px solid #0F7A52', display: 'grid', placeItems: 'center', background: 'rgba(255,255,255,.82)' }}>
             <div style={{ position: 'absolute', inset: 4, borderRadius: 999, border: '1px dashed rgba(15,122,82,.55)' }} />
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
@@ -81,6 +64,26 @@ export default function AnimatedCertificate() {
           </div>
         </div>
       </div>
+
+      {/* Anotaciones del estudio: flotan FUERA del documento (el card tiene overflow
+          hidden), cada una a la altura donde el escáner va leyendo, con su punto
+          conector pulsando hacia el doc. Pop tipo sello sincronizado con cz-scan. */}
+      {[
+        ['Folio localizado', 'cz-p1', 62],
+        ['Propietarios verificados', 'cz-p2', 118],
+        ['Hipotecas: ninguna', 'cz-p3', 174],
+        ['Embargos: ninguno', 'cz-p4', 230],
+      ].map(([texto, anim, top]) => (
+        <div key={anim as string} style={{ position: 'absolute', left: -14, top: top as number, display: 'flex', alignItems: 'center', gap: 7, zIndex: 12, pointerEvents: 'none', animation: `${anim} 9s ease-in-out infinite`, transformOrigin: 'left center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 999, background: '#fff', border: '1px solid rgba(15,122,82,.22)', boxShadow: '0 8px 22px -8px rgba(13,27,42,.35)' }}>
+            <span style={{ display: 'grid', placeItems: 'center', width: 15, height: 15, borderRadius: 999, background: '#0F7A52', color: '#fff', flexShrink: 0 }}>
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+            </span>
+            <span style={{ fontWeight: 700, fontSize: 10.5, color: '#0D1B2A', letterSpacing: '-0.01em', whiteSpace: 'nowrap' }}>{texto}</span>
+          </div>
+          <span style={{ width: 7, height: 7, borderRadius: 999, background: '#0F7A52', animation: 'cz-dot 2.2s ease-out infinite', flexShrink: 0 }} />
+        </div>
+      ))}
     </div>
   );
 }
