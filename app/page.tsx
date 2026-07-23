@@ -3,6 +3,7 @@ import SiteFooter from '@/components/SiteFooter';
 import { Seal, WompiLogo } from '@/components/Brand';
 import VideoPlayer from '@/components/VideoPlayer';
 import AnimatedCertificate from '@/components/AnimatedCertificate';
+import HeroPlans from '@/components/HeroPlans';
 import StructuredData from '@/components/StructuredData';
 import { RotatingTail } from '@/components/RotatingTail';
 import StatsCounter from '@/components/StatsCounter';
@@ -114,29 +115,19 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Tarjeta del plan Básico con botón Pagar → baja a la sección de solicitud */}
+        {/* El certificado animado ES el gancho del hero: cuenta el proceso del estudio
+            (escáner + chequeos acumulándose + semáforo verde) mientras el visitante lee. */}
         <div className="w-full lg:w-5/12">
-          <div className="rounded-3xl border-2 border-[var(--brand)] bg-white p-7 shadow-xl sm:p-8">
-            <p className="text-xs font-bold uppercase tracking-wide text-[var(--brand)]">Plan Básico</p>
-            <p className="mt-1 text-sm text-[var(--muted)]">{PLANS.basico.tagline}</p>
-            <p className="mt-4 text-5xl font-extrabold tracking-tight text-[var(--foreground)]">{formatCOP(PLANS.basico.priceCop)}</p>
-            <p className="mt-1 text-xs text-[var(--muted-2)]">IVA incluido · pago único</p>
-            <ul className="mt-5 flex flex-col gap-2.5 border-t border-black/5 pt-5">
-              {PLANS.basico.features.map((f, i) => (
-                <li key={i} className="flex items-start gap-2.5 text-[14px] text-[var(--muted)]">
-                  <svg className="mt-0.5 size-4 shrink-0 text-[var(--brand)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
-                  {f}
-                </li>
-              ))}
-            </ul>
-            <a href="#comprar" className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-[var(--brand)] py-4 text-lg font-bold text-white shadow-lg transition hover:bg-[var(--brand-600)]">
-              Pagar
-              <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-            </a>
-            <p className="mt-3 text-center text-xs text-[var(--muted-2)]">Pago seguro con Wompi · tarjeta o PSE</p>
+          <div className="scale-90 sm:scale-100 origin-center w-full max-w-[340px] mx-auto">
+            <AnimatedCertificate />
           </div>
         </div>
       </main>
+
+      {/* Los 3 planes DE UNA, arriba del fold: elegir uno preselecciona el formulario. */}
+      <div className="pb-10 lg:pb-14">
+        <HeroPlans />
+      </div>
 
       {/* ===== SOLICITAR: ¿cómo encuentro mi matrícula? + formulario + video ===== */}
       <section id="comprar" className="scroll-mt-24 border-t border-[var(--border)] bg-white py-14 lg:py-20">
@@ -216,11 +207,8 @@ export default function Home() {
               ))}
             </div>
           </div>
-          <div className="flex-1 w-full flex justify-center items-center">
-            <div className="scale-90 sm:scale-100 origin-center w-full max-w-[340px]">
-              <AnimatedCertificate />
-            </div>
-          </div>
+          {/* El certificado animado se mudó al hero; el video demo del hero de al lado
+              del formulario cubre lo visual de esta sección. */}
         </div>
       </section>
 

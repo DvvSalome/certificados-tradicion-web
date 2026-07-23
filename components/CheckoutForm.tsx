@@ -16,6 +16,17 @@ const ID_TYPES = [
 
 export default function CheckoutForm() {
   const [plan, setPlan] = useState<PlanId>('basico');
+
+  // Los planes del hero (HeroPlans) preseleccionan aquí vía evento: el visitante toca
+  // "Certi Express" arriba y el formulario ya viene con ese plan elegido.
+  useEffect(() => {
+    const onPlan = (e: Event) => {
+      const p = (e as CustomEvent).detail;
+      if (p === 'basico' || p === 'express' || p === 'avanzado') setPlan(p);
+    };
+    window.addEventListener('cz-plan', onPlan as EventListener);
+    return () => window.removeEventListener('cz-plan', onPlan as EventListener);
+  }, []);
   
   // Propiedad
   const [oficina, setOficina] = useState('');

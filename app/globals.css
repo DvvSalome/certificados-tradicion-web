@@ -122,6 +122,13 @@ select {
 @keyframes cz-gray { 0%,40%{opacity:1} 47%{opacity:0} 100%{opacity:0} }
 @keyframes cz-green { 0%,43%{opacity:0; transform:translateY(5px)} 50%{opacity:1; transform:none} 88%{opacity:1; transform:none} 95%,100%{opacity:0; transform:translateY(5px)} }
 @keyframes cz-stamp { 0%,38%{opacity:0; transform:scale(.4) rotate(-26deg)} 47%{opacity:1; transform:scale(1.14) rotate(-8deg)} 52%{transform:scale(1) rotate(-8deg)} 88%{opacity:1; transform:scale(1) rotate(-8deg)} 95%,100%{opacity:0; transform:scale(.55) rotate(-26deg)} }
+/* Chips del proceso de estudio: aparecen escalonados mientras el escáner recorre el
+   documento (sincronizados con cz-scan, que barre del 0% al 30% del ciclo de 7s) y se
+   acumulan hasta el cierre del ciclo, contando la historia del análisis paso a paso. */
+@keyframes cz-p1 { 0%,6%{opacity:0; transform:translateX(-10px)} 10%{opacity:1; transform:none} 88%{opacity:1} 95%,100%{opacity:0; transform:translateX(-10px)} }
+@keyframes cz-p2 { 0%,14%{opacity:0; transform:translateX(-10px)} 18%{opacity:1; transform:none} 88%{opacity:1} 95%,100%{opacity:0; transform:translateX(-10px)} }
+@keyframes cz-p3 { 0%,22%{opacity:0; transform:translateX(-10px)} 26%{opacity:1; transform:none} 88%{opacity:1} 95%,100%{opacity:0; transform:translateX(-10px)} }
+@keyframes cz-p4 { 0%,30%{opacity:0; transform:translateX(-10px)} 34%{opacity:1; transform:none} 88%{opacity:1} 95%,100%{opacity:0; transform:translateX(-10px)} }
 @keyframes cz-modalin { from { opacity:0; transform: scale(.93) translateY(16px); } to { opacity:1; transform: scale(1) translateY(0); } }
 
 /* Cursor del titular tipo máquina de escribir */
