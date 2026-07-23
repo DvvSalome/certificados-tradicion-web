@@ -2,6 +2,7 @@
 
 import { PLANS, formatCOP, type PlanId } from '@/lib/config';
 import PlanTagline from '@/components/PlanTagline';
+import PlanIcon from '@/components/PlanIcon';
 
 // Los 3 planes visibles DE UNA en el hero (antes solo se veía el Básico y los otros dos
 // aparecían al final del checkout). Elegir uno preselecciona el plan en el formulario
@@ -33,9 +34,12 @@ export default function HeroPlans() {
                   RECOMENDADO
                 </span>
               )}
-              <p className={`text-[11px] font-bold uppercase tracking-wide ${p.recommended ? 'text-[var(--brand)]' : 'text-[var(--muted-2)]'}`}>
-                Certi {p.label}
-              </p>
+              <span className="flex items-center gap-2.5">
+                <PlanIcon plan={pid} size={30} />
+                <span className={`text-[11px] font-bold uppercase tracking-wide ${p.recommended ? 'text-[var(--brand)]' : 'text-[var(--muted-2)]'}`}>
+                  Certi {p.label}
+                </span>
+              </span>
               <p className="mt-1.5 text-2xl font-extrabold tracking-tight text-[var(--foreground)]">
                 {formatCOP(p.priceCop)}
               </p>

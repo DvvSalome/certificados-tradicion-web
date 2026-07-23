@@ -5,6 +5,7 @@ import OficinaSelect from './OficinaSelect';
 import { oficinaCode } from '@/lib/oficinas';
 import { PLANS, formatCOP, type PlanId } from '@/lib/config';
 import PlanTagline from '@/components/PlanTagline';
+import PlanIcon from '@/components/PlanIcon';
 
 type VResult = { disponible: boolean | null; estado: string | null; direccion: string | null; circulo: string | null; mocked?: boolean; error?: string };
 
@@ -458,9 +459,12 @@ export default function CheckoutForm() {
 
                 {/* Cabecera: nombre + para quién es · precio y selector a la derecha */}
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-[15px] font-extrabold text-[var(--foreground)] sm:text-base">{p.label}</div>
-                    <div className="mt-0.5 text-[12px] leading-snug text-gray-500"><PlanTagline text={p.tagline} /></div>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <PlanIcon plan={pid} />
+                    <div className="min-w-0">
+                      <div className="text-[15px] font-extrabold text-[var(--foreground)] sm:text-base">{p.label}</div>
+                      <div className="mt-0.5 text-[12px] leading-snug text-gray-500"><PlanTagline text={p.tagline} /></div>
+                    </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
                     <div className="text-right">
@@ -481,6 +485,16 @@ export default function CheckoutForm() {
                     </li>
                   ))}
                 </ul>
+                {/* Sello de confianza del Express: por qué es el recomendado. */}
+                {pid === 'express' && (
+                  <div className="mt-3 flex items-start gap-2.5 rounded-xl bg-[#e8f5ef] px-4 py-3">
+                    <svg className="mt-0.5 size-4 shrink-0 text-[#0f7a52]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="m9 12 2 2 4-4" /></svg>
+                    <div>
+                      <p className="text-[12.5px] font-bold text-[#0f7a52]">Recomendado para comprar o vender con más seguridad</p>
+                      <p className="mt-0.5 text-[12px] leading-snug text-gray-600">Incluye los análisis más útiles para la mayoría de compradores.</p>
+                    </div>
+                  </div>
+                )}
               </label>
             );
           })}
