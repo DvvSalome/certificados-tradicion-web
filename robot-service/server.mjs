@@ -322,7 +322,8 @@ async function doVerify(oficina, matricula) {
 
 import { handleDbProxy, claimGenerationJob } from './db-proxy.mjs';
 
-const server = http.createServer((req, res) => {
+// async: la rama /saldo espera la lectura en el portal antes de responder (las demás son síncronas).
+const server = http.createServer(async (req, res) => {
   if (req.method === 'POST' && req.url === '/api/orders') {
     if (!SECRET || req.headers['x-webhook-secret'] !== SECRET) { res.writeHead(401); return res.end('no autorizado'); }
     let body = '';
@@ -359,6 +360,35 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET' && req.url === '/cuentas') {
     res.writeHead(200, { 'content-type': 'application/json' });
     return res.end(JSON.stringify({ total: totalCuentas(), activa: genAccount?.user || null, cuentas: estadoCuentas() }));
+  }
+  // Lectura MANUAL del saldo prepago (botón del panel). Antes el saldo solo se refrescaba
+  // DESPUÉS de una venta, así que sin ventas el panel mostraba un número de semanas atrás.
+  // Va por genChain porque comparte la MISMA página del robot con las generaciones: nunca
+  // debe correr en paralelo con una (le movería el carrito). Reusa la sesión si está viva
+  // (0 logins); solo gasta un login si la sesión estaba muerta.
+  if (req.method === 'POST' && req.url === '/saldo') {
+    if (!SECRET || req.headers['x-webhook-secret'] !== SECRET) { res.writeHead(401); return res.end('no autorizado'); }
+    const job = genChain.catch(() => {}).then(async () => {
+      const robot = await ensureGenRobot();
+      const cuenta = genAccount?.user || null;
+      await robot.ensureLoggedIn();
+      const cop = await robot.leerSaldo();
+      if (cop == null) throw new Error('no se pudo leer el saldo en el portal del SNR');
+      const cents = cop * 100;
+      if (cuenta) setSaldo(cuenta, cents);
+      pushSaldo(cents);
+      return { cuenta, saldoCents: cents };
+    });
+    genChain = job.catch(() => {}); // la cadena sigue viva aunque esta lectura falle
+    try {
+      const out = await job;
+      res.writeHead(200, { 'content-type': 'application/json' });
+      return res.end(JSON.stringify({ ok: true, ...out }));
+    } catch (e) {
+      console.error('[saldo] lectura manual falló: ' + e.message);
+      res.writeHead(502, { 'content-type': 'application/json' });
+      return res.end(JSON.stringify({ ok: false, error: e.message }));
+    }
   }
   if (req.method === 'POST' && req.url === '/generar') {
     if (!SECRET || req.headers['x-webhook-secret'] !== SECRET) { res.writeHead(401); return res.end('no autorizado'); }

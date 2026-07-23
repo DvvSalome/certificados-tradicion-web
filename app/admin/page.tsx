@@ -6,6 +6,8 @@ import BatchPanel from './BatchPanel';
 import AdminGenerar from './AdminGenerar';
 import MetricsCharts from './MetricsCharts';
 import OrderActions from './OrderActions';
+import SaldoRefresh from './SaldoRefresh';
+import { Seal } from '@/components/Brand';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,14 +40,13 @@ export default async function AdminDashboard() {
       <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-white/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3.5">
           <div className="flex items-center gap-2.5">
-            <span aria-hidden className="grid size-9 place-items-center rounded-xl bg-[var(--brand)] text-white shadow-sm">
-              <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="m9 12 2 2 4-4" />
-              </svg>
+            {/* Logo REAL de la marca (el mismo sello del sitio), no el escudo genérico. */}
+            <span aria-hidden className="grid size-9 place-items-center rounded-xl bg-[var(--brand)] shadow-sm">
+              <Seal size={22} tone="onDark" />
             </span>
             <div className="leading-tight">
-              <p className="text-[15px] font-semibold tracking-tight">Panel de control</p>
-              <p className="text-[11px] font-medium text-[var(--muted-2)]">Certificado de Tradición</p>
+              <p className="text-[15px] font-semibold tracking-tight">Certitradición</p>
+              <p className="text-[11px] font-medium text-[var(--muted-2)]">Panel de control</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -76,6 +77,7 @@ export default async function AdminDashboard() {
             hint={d.saldoAt ? `actualizado ${ago(d.saldoAt)}` : 'sin reportes'}
             tone={d.saldoLow ? 'danger' : 'brand'}
             alert={d.saldoLow ? `Bajo el umbral (${fmt(SALDO_THRESHOLD_CENTS)})` : undefined}
+            action={<SaldoRefresh />}
           />
           <Kpi label="Ganancias (neto)" value={fmt(d.profitCents)} hint={`Ingresos ${fmt(d.revenueCents)} − costo ${fmt(d.costCents)}`} tone="accent" />
           <Kpi label="Certificados generados" value={String(d.certCount)} hint={`${d.robot.okToday} hoy`} />
@@ -226,7 +228,7 @@ function HealthBanner({ health }: { health: Awaited<ReturnType<typeof getRobotHe
   );
 }
 
-function Kpi({ label, value, hint, tone = 'default', alert, dot }: { label: string; value: string; hint?: string; tone?: 'default' | 'brand' | 'accent' | 'danger' | 'muted'; alert?: string; dot?: boolean }) {
+function Kpi({ label, value, hint, tone = 'default', alert, dot, action }: { label: string; value: string; hint?: string; tone?: 'default' | 'brand' | 'accent' | 'danger' | 'muted'; alert?: string; dot?: boolean; action?: React.ReactNode }) {
   const color = tone === 'danger' ? 'var(--accent)' : tone === 'accent' ? 'var(--accent)' : 'var(--brand)';
   const valColor = tone === 'danger' ? '#b42318' : 'var(--foreground)';
   return (
@@ -237,6 +239,7 @@ function Kpi({ label, value, hint, tone = 'default', alert, dot }: { label: stri
       </div>
       <p className="mt-2 text-[26px] font-bold tracking-tight" style={{ color: valColor }}>{value}</p>
       {alert ? <p className="mt-1 text-[12px] font-semibold text-[#b42318]">{alert}</p> : hint ? <p className="mt-1 text-[12px] text-[var(--muted)]">{hint}</p> : null}
+      {action && <div className="mt-2.5">{action}</div>}
       <span className="sr-only">{color}</span>
     </div>
   );
