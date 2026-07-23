@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import OficinaSelect from './OficinaSelect';
 import { oficinaCode } from '@/lib/oficinas';
 import { PLANS, formatCOP, type PlanId } from '@/lib/config';
+import PlanTagline from '@/components/PlanTagline';
 
 type VResult = { disponible: boolean | null; estado: string | null; direccion: string | null; circulo: string | null; mocked?: boolean; error?: string };
 
@@ -459,7 +460,7 @@ export default function CheckoutForm() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="text-[15px] font-extrabold text-[var(--foreground)] sm:text-base">{p.label}</div>
-                    <div className="mt-0.5 text-[12px] leading-snug text-gray-500">{p.tagline}</div>
+                    <div className="mt-0.5 text-[12px] leading-snug text-gray-500"><PlanTagline text={p.tagline} /></div>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
                     <div className="text-right">

@@ -1,6 +1,7 @@
 'use client';
 
 import { PLANS, formatCOP, type PlanId } from '@/lib/config';
+import PlanTagline from '@/components/PlanTagline';
 
 // Los 3 planes visibles DE UNA en el hero (antes solo se veía el Básico y los otros dos
 // aparecían al final del checkout). Elegir uno preselecciona el plan en el formulario
@@ -38,7 +39,7 @@ export default function HeroPlans() {
               <p className="mt-1.5 text-2xl font-extrabold tracking-tight text-[var(--foreground)]">
                 {formatCOP(p.priceCop)}
               </p>
-              <p className="mt-1 min-h-[36px] text-[12.5px] leading-snug text-[var(--muted)]">{p.tagline}</p>
+              <p className="mt-1 min-h-[36px] text-[12.5px] leading-snug text-[var(--muted)]"><PlanTagline text={p.tagline} /></p>
               <span className={`mt-3 inline-flex items-center gap-1.5 text-[13px] font-bold ${p.recommended ? 'text-[var(--brand)]' : 'text-[var(--muted)]'} group-hover:text-[var(--brand)]`}>
                 Elegir este plan
                 <svg className="size-4 transition-transform group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
