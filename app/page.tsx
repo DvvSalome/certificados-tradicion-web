@@ -3,6 +3,7 @@ import SiteFooter from '@/components/SiteFooter';
 import { Seal, WompiLogo } from '@/components/Brand';
 import VideoPlayer from '@/components/VideoPlayer';
 import AnimatedCertificate from '@/components/AnimatedCertificate';
+import CertScanCard from '@/components/CertScanCard';
 import HeroPlans from '@/components/HeroPlans';
 import StructuredData from '@/components/StructuredData';
 import { RotatingTail } from '@/components/RotatingTail';
@@ -86,7 +87,7 @@ export default function Home() {
 
       {/* ===== HERO ===== */}
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 lg:flex-row lg:items-center lg:gap-12 lg:px-6 lg:py-14">
-        <div className="flex w-full flex-col gap-5 lg:w-7/12 lg:pr-8">
+        <div className="flex w-full flex-col gap-5 lg:w-6/12">
           <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[var(--brand-ring)] bg-[var(--brand-50)] px-3 py-1.5 text-xs font-semibold text-[var(--brand)]">
             <span className="size-2 rounded-full bg-[var(--accent)]" />
             Documento oficial · validez 30 días
@@ -115,10 +116,11 @@ export default function Home() {
           </div>
         </div>
 
-        {/* El certificado animado ES el gancho del hero: cuenta el proceso del estudio
-            (escáner + chequeos acumulándose + semáforo verde) mientras el visitante lee. */}
-        <div className="w-full lg:w-5/12">
-          <div className="scale-90 sm:scale-100 origin-center w-full max-w-[340px] mx-auto">
+        {/* La animación del estudio ES el gancho del hero: certificado → análisis IA con
+            lupa → chips de resultado → semáforo de riesgo → sello VÁLIDO. Es 16:9, por
+            eso el hero se reparte 6/6 (antes 7/5 con la tarjeta vertical). */}
+        <div className="w-full lg:w-6/12">
+          <div className="w-full max-w-[640px] mx-auto">
             <AnimatedCertificate />
           </div>
         </div>
@@ -134,7 +136,8 @@ export default function Home() {
         {/* max-w-7xl + formulario a 8/12: la sección se sentía comprimida con espacio muerto a los lados. */}
         <div className="mx-auto flex max-w-7xl flex-col gap-12 px-4 sm:px-6">
           <div className="mx-auto flex max-w-3xl flex-col items-center gap-4 text-center">
-            <p className="text-lg font-extrabold uppercase tracking-widest text-[var(--brand)] sm:text-xl">Antes de empezar</p>
+            {/* Mismo tamaño que el h2, en morado: el kicker es el que debe resaltar. */}
+            <p className="text-3xl font-extrabold uppercase tracking-wide text-[var(--brand)] sm:text-4xl">Antes de empezar</p>
             <h2 className="text-3xl font-extrabold tracking-tight text-[var(--foreground)] sm:text-4xl">¿Cómo encuentro mi matrícula inmobiliaria?</h2>
             <p className="max-w-2xl text-[17px] leading-relaxed text-[var(--muted)]">
               Puedes ubicarla en un <b className="text-[var(--foreground)]">certificado de tradición y libertad anterior</b> o en tu <b className="text-[var(--foreground)]">factura de impuesto predial</b>. Busca el código de la oficina de registro y el número de matrícula, así:
@@ -208,8 +211,11 @@ export default function Home() {
               ))}
             </div>
           </div>
-          {/* El certificado animado se mudó al hero; el video demo del hero de al lado
-              del formulario cubre lo visual de esta sección. */}
+          {/* La tarjeta del escáner (la animación original del hero) vive aquí desde que
+              el hero pasó a la animación grande del estudio. */}
+          <div className="w-full lg:w-5/12">
+            <CertScanCard />
+          </div>
         </div>
       </section>
 

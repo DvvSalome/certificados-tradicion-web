@@ -54,6 +54,7 @@ export default function CrmChat() {
         <iframe
           src={src}
           title="Chat Certitradición"
+          allow="microphone" // sin esto el navegador bloquea el micrófono dentro del iframe (nota de voz del chat)
           className={`fixed z-[59] rounded-2xl border-none bg-white shadow-[0_16px_60px_-12px_rgba(13,27,42,0.55)] transition-opacity print:hidden ${
             open ? 'opacity-100' : 'pointer-events-none opacity-0'
           } left-2 top-14 h-[calc(100dvh-64px)] w-[calc(100vw-16px)] sm:left-auto sm:top-auto sm:right-5 sm:bottom-24 sm:h-[min(600px,calc(100vh-120px))] sm:w-[380px]`}
