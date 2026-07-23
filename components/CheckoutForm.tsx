@@ -52,6 +52,8 @@ export default function CheckoutForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<'form'|'paying'>('form');
+  // Resalta las casillas obligatorias cuando el usuario intenta pagar sin marcarlas.
+  const [flagChecks, setFlagChecks] = useState(false);
   
   // Validation State
   const [validating, setValidating] = useState(false);
@@ -139,8 +141,15 @@ export default function CheckoutForm() {
       else if (!cedula.trim()) setError('Ingresa tu número de identificación.');
       else if (!email.trim() || email !== emailConfirm) setError('Revisa que los correos coincidan.');
       else if (phone.trim().length < 8) setError('Ingresa un teléfono válido.');
-      else if (!termsAccepted || !privacyAccepted) setError('Debes aceptar los términos y políticas para continuar.');
-      else if (needsConsent && !consentAntecedentes) setError(`Para el plan ${PLANS[plan].label} debes confirmar que cuentas con la autorización del propietario para verificar sus antecedentes.`);
+      else if (!termsAccepted || !privacyAccepted) {
+        setError('Te falta marcar las casillas de términos y privacidad (son obligatorias).');
+        setFlagChecks(true);
+        document.getElementById('aceptaciones')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      else if (needsConsent && !consentAntecedentes) {
+        setError(`Para el plan ${PLANS[plan].label} debes confirmar que cuentas con la autorización del propietario para verificar sus antecedentes.`);
+        document.getElementById('consent-antecedentes')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
     
@@ -389,28 +398,32 @@ export default function CheckoutForm() {
           </label>
         </div>
 
-        {/* SECTION 3: CHECKBOXES AND PLAN */}
-        <div className="flex flex-col gap-4 mb-10 pt-4 border-t border-gray-100">
+        {/* SECTION 3: CHECKBOXES AND PLAN. flagChecks: si intentó pagar sin marcarlas,
+            la sección se enmarca en rojo y recibe el scroll (antes el botón muerto no decía nada). */}
+        <div id="aceptaciones" className={`flex flex-col gap-4 mb-10 pt-4 border-t border-gray-100 transition-all ${flagChecks ? 'rounded-xl ring-2 ring-red-400 bg-red-50 p-4' : ''}`}>
+          {flagChecks && (
+            <p className="text-[12.5px] font-bold text-red-600">Marca estas dos casillas para poder pagar:</p>
+          )}
           <label className="flex items-start gap-3 cursor-pointer">
-            <input 
-              type="checkbox" 
-              checked={termsAccepted} 
-              onChange={(e) => setTermsAccepted(e.target.checked)} 
-              className="mt-0.5 size-5 rounded border-gray-300 text-[#0066ff] focus:ring-[#0066ff]" 
+            <input
+              type="checkbox"
+              checked={termsAccepted}
+              onChange={(e) => { setTermsAccepted(e.target.checked); setFlagChecks(false); setError(null); }}
+              className="mt-0.5 size-5 rounded border-gray-300 text-[#0066ff] focus:ring-[#0066ff]"
             />
             <span className="text-[14.5px] text-[var(--foreground)]">
-              Acepto los <button type="button" onClick={(e) => { e.preventDefault(); setShowTerms(true); }} className="underline font-semibold hover:text-[#0066ff]">términos y condiciones</button>
+              Acepto los <button type="button" onClick={(e) => { e.preventDefault(); setShowTerms(true); }} className="underline font-semibold hover:text-[#0066ff]">términos y condiciones</button> <span className="text-red-500">*</span>
             </span>
           </label>
           <label className="flex items-start gap-3 cursor-pointer">
-            <input 
-              type="checkbox" 
-              checked={privacyAccepted} 
-              onChange={(e) => setPrivacyAccepted(e.target.checked)} 
-              className="mt-0.5 size-5 rounded border-gray-300 text-[#0066ff] focus:ring-[#0066ff]" 
+            <input
+              type="checkbox"
+              checked={privacyAccepted}
+              onChange={(e) => { setPrivacyAccepted(e.target.checked); setFlagChecks(false); setError(null); }}
+              className="mt-0.5 size-5 rounded border-gray-300 text-[#0066ff] focus:ring-[#0066ff]"
             />
             <span className="text-[14.5px] text-[var(--foreground)]">
-              Acepto la <button type="button" onClick={(e) => { e.preventDefault(); setShowPrivacy(true); }} className="underline font-semibold hover:text-[#0066ff]">política de privacidad de datos</button> y autorizo recibir comunicaciones por WhatsApp.
+              Acepto la <button type="button" onClick={(e) => { e.preventDefault(); setShowPrivacy(true); }} className="underline font-semibold hover:text-[#0066ff]">política de privacidad de datos</button> y autorizo recibir comunicaciones por WhatsApp. <span className="text-red-500">*</span>
             </span>
           </label>
         </div>
@@ -474,7 +487,7 @@ export default function CheckoutForm() {
 
         {/* Consentimiento obligatorio para planes que consultan antecedentes de terceros (Express y Avanzado) */}
         {needsConsent && (
-          <div className={`mt-4 overflow-hidden rounded-xl border-2 transition-colors ${consentAntecedentes ? 'border-[#84cc16]' : 'border-amber-300'}`}>
+          <div id="consent-antecedentes" className={`mt-4 overflow-hidden rounded-xl border-2 transition-colors ${consentAntecedentes ? 'border-[#84cc16]' : 'border-amber-300'}`}>
             <div className={`flex items-center gap-2 px-4 py-2 ${consentAntecedentes ? 'bg-[#ecfccb]' : 'bg-amber-50'}`}>
               <svg className={`size-4 shrink-0 ${consentAntecedentes ? 'text-[#4d7c0f]' : 'text-amber-600'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /><path d="m9 12 2 2 4-4" /></svg>
               <span className={`text-[11px] font-bold uppercase tracking-wide ${consentAntecedentes ? 'text-[#4d7c0f]' : 'text-amber-700'}`}>Autorización del propietario requerida</span>
@@ -520,10 +533,13 @@ export default function CheckoutForm() {
             </div>
 
             <div className="flex flex-col w-full">
+              {/* SIEMPRE clickeable (salvo pagando/validando): un botón disabled se traga el clic
+                  y el visitante nunca se entera de QUÉ le falta. Al clic incompleto, confirmAndPay
+                  pinta el error aquí abajo y hace scroll a lo que falte. */}
               <button
                 type="button"
                 onClick={confirmAndPay}
-                disabled={!isFormComplete || loading || validating}
+                disabled={loading || validating}
                 className="w-full rounded-xl bg-[#e0f8b8] px-6 py-4 text-center font-bold text-[#3f6212] transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed hover:bg-[#d4f39e]"
               >
                 {loading || step === 'paying' ? (
@@ -538,10 +554,16 @@ export default function CheckoutForm() {
                   </>
                 )}
               </button>
-              <div className="mt-2 flex items-center justify-center gap-1.5 text-[11px] text-gray-500">
-                 <svg className="size-3 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
-                 Compra 100% segura y en pocos minutos
-              </div>
+              {/* El error también se muestra AQUÍ (la barra sigue el scroll): el banner de arriba
+                  del formulario queda fuera de pantalla justo cuando el usuario está en el botón. */}
+              {error ? (
+                <p className="mt-2 text-center text-[12px] font-bold text-red-600">{error}</p>
+              ) : (
+                <div className="mt-2 flex items-center justify-center gap-1.5 text-[11px] text-gray-500">
+                   <svg className="size-3 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                   Compra 100% segura y en pocos minutos
+                </div>
+              )}
             </div>
             
           </div>
