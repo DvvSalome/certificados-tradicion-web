@@ -39,10 +39,19 @@ export function RotatingTail({ phrases }: { phrases: string[] }) {
     return () => clearTimeout(t);
   }, [sub, del, i, phrases, paused]);
 
+  // Grid con TODAS las frases apiladas en la misma celda (col/row-start-1): la celda
+  // toma el ALTO de la más alta, así el <h1> reserva ese espacio fijo y NUNCA salta al
+  // cambiar de frase (una envuelve a 3 líneas, otra a 1). Los sizers van invisibles;
+  // la frase animada vive encima, en la misma celda. Se autoajusta a cualquier viewport.
   return (
-    <span>
-      {sub}
-      <span className="cz-cursor" aria-hidden="true">|</span>
+    <span className="grid items-start">
+      {phrases.map((p, k) => (
+        <span key={k} aria-hidden="true" className="invisible col-start-1 row-start-1">{p}</span>
+      ))}
+      <span className="col-start-1 row-start-1">
+        {sub}
+        <span className="cz-cursor" aria-hidden="true">|</span>
+      </span>
     </span>
   );
 }
