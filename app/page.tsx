@@ -86,8 +86,8 @@ export default function Home() {
       </header>
 
       {/* ===== HERO ===== */}
-      <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 lg:flex-row lg:items-center lg:gap-12 lg:px-6 lg:py-14">
-        <div className="flex w-full flex-col gap-5 lg:w-6/12">
+      <main className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-8 lg:flex-row lg:items-center lg:gap-10 lg:px-6 lg:py-14">
+        <div className="flex w-full flex-col gap-5 lg:w-5/12">
           <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[var(--brand-ring)] bg-[var(--brand-50)] px-3 py-1.5 text-xs font-semibold text-[var(--brand)]">
             <span className="size-2 rounded-full bg-[var(--accent)]" />
             Documento oficial · validez 30 días
@@ -119,8 +119,8 @@ export default function Home() {
         {/* La animación del estudio ES el gancho del hero: certificado → análisis IA con
             lupa → chips de resultado → semáforo de riesgo → sello VÁLIDO. Es 16:9, por
             eso el hero se reparte 6/6 (antes 7/5 con la tarjeta vertical). */}
-        <div className="w-full lg:w-6/12">
-          <div className="w-full max-w-[640px] mx-auto">
+        <div className="w-full lg:w-7/12">
+          <div className="w-full max-w-[820px] mx-auto">
             <AnimatedCertificate />
           </div>
         </div>

@@ -195,9 +195,12 @@ function Comp({ shift = 0, glow = Z4, dots = Z4, chips = Z4, banner = 0, stamp =
 
 // Escenas: cada una recibe su progreso p [0..1] y su tiempo local en segundos.
 function Scene({ idx, p, lt }: { idx: number; p: number; lt: number }) {
+  // Zoom base 1.10 en las escenas del documento: se come el aire muerto de los lados
+  // (el doc cabe justo en alto a 1.10). En semáforo/cierre vuelve a 1 porque ahí sí
+  // se usa el frame completo (doc corrido + semáforo + logo).
   if (idx === 0) {
     const a = MOTION.enter(p / 0.35);
-    const s = 1 + 0.045 * Math.sin(Math.PI * clamp01((p - 0.35) / 0.65));
+    const s = 1.1 + 0.03 * Math.sin(Math.PI * clamp01((p - 0.35) / 0.65));
     return <Comp docA={a} docY={(1 - a) * 46} cam={{ s }} />;
   }
   if (idx === 1) {
@@ -210,7 +213,7 @@ function Scene({ idx, p, lt }: { idx: number; p: number; lt: number }) {
     const glow = SECS.map((_, i) => Math.max(0, 1 - Math.abs(lseg - i) * 1.6) * lupaA);
     const dots = SECS.map((_, i) => MOTION.pop(Math.min(1, Math.max(0, seg - i - 0.15) / 0.35)));
     const camK = MOTION.draw((p - 0.06) / 0.16) * (1 - MOTION.draw((p - 0.8) / 0.16));
-    const cam = { s: 1 + 0.4 * camK, fx: 640 + (lx - 640) * camK, fy: 360 + (ly - 360) * camK };
+    const cam = { s: 1.1 + 0.36 * camK, fx: 640 + (lx - 640) * camK, fy: 360 + (ly - 360) * camK };
     const pillA = MOTION.enter((p - 0.06) / 0.08) * (1 - clamp01((p - 0.85) / 0.08));
     return <>
       <Comp glow={glow} dots={dots} lupa={{ x: lx, y: ly, a: lupaA }} cam={cam} />
@@ -219,15 +222,16 @@ function Scene({ idx, p, lt }: { idx: number; p: number; lt: number }) {
   }
   if (idx === 2) {
     const chips = [0, 1, 2, 3].map((i) => MOTION.pop((p - 0.08 - i * 0.19) / 0.2));
-    const s = 1 + 0.012 * Math.sin(Math.PI * p);
+    const s = 1.1 + 0.012 * Math.sin(Math.PI * p);
     return <Comp dots={U4} chips={chips} cam={{ s }} />;
   }
   if (idx === 3) {
     const shift = -150 * MOTION.draw(p / 0.22);
     const semK = MOTION.draw((p - 0.05) / 0.22);
+    const s = 1.1 - 0.1 * MOTION.draw(p / 0.22); // vuelve a 1 mientras el doc se corre
     const lp = clamp01((p - 0.32) / 0.62);
     const active = lp <= 0 ? -1 : lp < 0.22 ? 0 : lp < 0.44 ? 1 : lp < 0.66 ? 2 : R.luz;
-    return <Comp shift={shift} dots={U4} chips={U4} semTx={(1 - semK) * 440} semA={semK} active={active} semLabel={clamp01((lp - 0.72) / 0.18)} />;
+    return <Comp shift={shift} dots={U4} chips={U4} semTx={(1 - semK) * 440} semA={semK} active={active} semLabel={clamp01((lp - 0.72) / 0.18)} cam={{ s }} />;
   }
   return <Comp shift={-150} dots={U4} chips={U4} semTx={0} semA={1} active={R.luz} semLabel={1}
     banner={MOTION.pop((p - 0.05) / 0.18)} stamp={MOTION.pop((p - 0.3) / 0.2)} logo={MOTION.pop((p - 0.55) / 0.18)} />;
