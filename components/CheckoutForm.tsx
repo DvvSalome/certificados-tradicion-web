@@ -56,6 +56,8 @@ export default function CheckoutForm() {
   const [step, setStep] = useState<'form'|'paying'>('form');
   // Resalta las casillas obligatorias cuando el usuario intenta pagar sin marcarlas.
   const [flagChecks, setFlagChecks] = useState(false);
+  // id del bloque que le falta al visitante (se enmarca en rojo y recibe el scroll).
+  const [campoFaltante, setCampoFaltante] = useState<string | null>(null);
   
   // Validation State
   const [validating, setValidating] = useState(false);
@@ -136,21 +138,40 @@ export default function CheckoutForm() {
     privacyAccepted &&
     (!needsConsent || consentAntecedentes);
 
+  // Lleva al visitante AL campo que le falta y lo enfoca. En móvil el botón de pagar vive en
+  // una barra fija abajo: sin esto el error salía lejos del campo culpable y la gente no sabía
+  // qué llenar. El foco además abre el teclado justo en ese campo.
+  // Marco rojo del bloque que falta (se apaga en cuanto el visitante escribe ahí).
+  const resalte = (id: string) =>
+    campoFaltante === id ? 'rounded-xl ring-2 ring-red-400 ring-offset-4 ring-offset-white' : '';
+
+  function irACampo(id: string) {
+    setCampoFaltante(id);
+    const el = document.getElementById(id);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // tras el scroll suave: enfocar (si se hace antes, el navegador cancela la animación)
+    setTimeout(() => el?.querySelector<HTMLElement>('input:not([type=checkbox]), select')?.focus(), 450);
+  }
+
   async function confirmAndPay() {
     if (!isFormComplete || loading || validating) {
-      if (!canProceed) setError(isRejected ? 'No encontramos esa matrícula en esa oficina. Verifica los datos.' : isUnverified ? 'El portal oficial del SNR no está disponible en este momento. Intenta más tarde.' : 'Ingresa la oficina y la matrícula inmobiliaria primero.');
-      else if (!nombres.trim() || !apellidos.trim()) setError('Debes ingresar nombres y apellidos.');
-      else if (!cedula.trim()) setError('Ingresa tu número de identificación.');
-      else if (!email.trim() || email !== emailConfirm) setError('Revisa que los correos coincidan.');
-      else if (phone.trim().length < 8) setError('Ingresa un teléfono válido.');
+      if (!canProceed) {
+        setError(isRejected ? 'No encontramos esa matrícula en esa oficina. Verifica los datos.' : isUnverified ? 'El portal oficial del SNR no está disponible en este momento. Intenta más tarde.' : 'Te falta la oficina de registro y la matrícula.');
+        irACampo('campo-inmueble');
+      }
+      else if (!nombres.trim() || !apellidos.trim()) { setError('Te faltan tus nombres y apellidos.'); irACampo('campo-nombre'); }
+      else if (!cedula.trim()) { setError('Te falta tu número de documento.'); irACampo('campo-cedula'); }
+      else if (!email.trim()) { setError('Te falta tu correo (ahí llega el certificado).'); irACampo('campo-correo'); }
+      else if (email !== emailConfirm) { setError('Los dos correos no coinciden.'); irACampo('campo-correo'); }
+      else if (phone.trim().length < 8) { setError('Te falta tu WhatsApp.'); irACampo('campo-telefono'); }
       else if (!termsAccepted || !privacyAccepted) {
         setError('Te falta marcar las casillas de términos y privacidad (son obligatorias).');
         setFlagChecks(true);
-        document.getElementById('aceptaciones')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        irACampo('aceptaciones');
       }
       else if (needsConsent && !consentAntecedentes) {
-        setError(`Para el plan ${PLANS[plan].label} debes confirmar que cuentas con la autorización del propietario para verificar sus antecedentes.`);
-        document.getElementById('consent-antecedentes')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setError(`Para el plan ${PLANS[plan].label} debes confirmar que cuentas con la autorización del propietario.`);
+        irACampo('consent-antecedentes');
       }
       return;
     }
@@ -229,16 +250,16 @@ export default function CheckoutForm() {
           Información de la propiedad
         </h3>
         
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <div id="campo-inmueble" className={`grid grid-cols-1 gap-5 sm:grid-cols-2 ${resalte('campo-inmueble')}`}>
           <label>
             <span className={labelCls}>Oficina de registro <span className="text-red-500">*</span></span>
-            <OficinaSelect value={oficina} onChange={(v) => { setOficina(v); setVResult(null); setError(null); }} />
+            <OficinaSelect value={oficina} onChange={(v) => { setOficina(v); setVResult(null); setError(null); setCampoFaltante(null); }} />
           </label>
           <label>
             <span className={labelCls}>Matrícula inmobiliaria <span className="text-red-500">*</span></span>
             <input
               value={matricula}
-              onChange={(e) => { setMatricula(e.target.value.replace(/\D/g, '')); setVResult(null); setError(null); }}
+              onChange={(e) => { setMatricula(e.target.value.replace(/\D/g, '')); setVResult(null); setError(null); setCampoFaltante(null); }}
               onBlur={() => validarMatricula(true)}
               inputMode="numeric"
               placeholder="Ej: 12345 (sin la oficina)"
@@ -323,14 +344,14 @@ export default function CheckoutForm() {
         {/* SECTION 2: COMPRADOR */}
         <h3 className={sectionTitleCls}>Información del comprador</h3>
         
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 mb-5">
+        <div id="campo-nombre" className={`grid grid-cols-1 gap-5 sm:grid-cols-2 mb-5 ${resalte('campo-nombre')}`}>
           <label>
             <span className={labelCls}>Nombres <span className="text-red-500">*</span></span>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                 <svg className="size-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>
               </div>
-              <input value={nombres} onChange={(e) => { setNombres(e.target.value); setError(null); }} placeholder="Nombres" className={`${inputCls} pl-10`} />
+              <input value={nombres} onChange={(e) => { setNombres(e.target.value); setError(null); setCampoFaltante(null); }} placeholder="Nombres" className={`${inputCls} pl-10`} />
             </div>
           </label>
           <label>
@@ -339,12 +360,12 @@ export default function CheckoutForm() {
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                 <svg className="size-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" /></svg>
               </div>
-              <input value={apellidos} onChange={(e) => { setApellidos(e.target.value); setError(null); }} placeholder="Apellidos" className={`${inputCls} pl-10`} />
+              <input value={apellidos} onChange={(e) => { setApellidos(e.target.value); setError(null); setCampoFaltante(null); }} placeholder="Apellidos" className={`${inputCls} pl-10`} />
             </div>
           </label>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 mb-5">
+        <div id="campo-cedula" className={`grid grid-cols-1 gap-5 sm:grid-cols-2 mb-5 ${resalte('campo-cedula')}`}>
           <label>
             <span className={labelCls}>Tipo de identificación <span className="text-red-500">*</span></span>
             <div className="relative">
@@ -362,19 +383,19 @@ export default function CheckoutForm() {
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                  <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" strokeWidth="2"/><line x1="16" y1="2" x2="16" y2="6" strokeWidth="2"/><line x1="8" y1="2" x2="8" y2="6" strokeWidth="2"/><line x1="3" y1="10" x2="21" y2="10" strokeWidth="2"/></svg>
               </div>
-              <input value={cedula} onChange={(e) => { setCedula(e.target.value.replace(/\D/g, '')); setError(null); }} inputMode="numeric" placeholder="Número del documento" className={`${inputCls} pl-10`} />
+              <input value={cedula} onChange={(e) => { setCedula(e.target.value.replace(/\D/g, '')); setError(null); setCampoFaltante(null); }} inputMode="numeric" placeholder="Número del documento" className={`${inputCls} pl-10`} />
             </div>
           </label>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 mb-5">
+        <div id="campo-correo" className={`grid grid-cols-1 gap-5 sm:grid-cols-2 mb-5 ${resalte('campo-correo')}`}>
           <label>
             <span className={labelCls}>Correo electrónico <span className="text-red-500">*</span></span>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                 <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
               </div>
-              <input value={email} onChange={(e) => { setEmail(e.target.value); setError(null); }} type="email" placeholder="ejemplo@correo.com" className={`${inputCls} pl-10`} />
+              <input value={email} onChange={(e) => { setEmail(e.target.value); setError(null); setCampoFaltante(null); }} type="email" placeholder="ejemplo@correo.com" className={`${inputCls} pl-10`} />
             </div>
           </label>
           <label>
@@ -383,19 +404,19 @@ export default function CheckoutForm() {
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                 <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
               </div>
-              <input value={emailConfirm} onChange={(e) => { setEmailConfirm(e.target.value); setError(null); }} type="email" placeholder="Repite tu correo" className={`${inputCls} pl-10`} />
+              <input value={emailConfirm} onChange={(e) => { setEmailConfirm(e.target.value); setError(null); setCampoFaltante(null); }} type="email" placeholder="Repite tu correo" className={`${inputCls} pl-10`} />
             </div>
           </label>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 mb-8">
+        <div id="campo-telefono" className={`grid grid-cols-1 gap-5 sm:grid-cols-2 mb-8 ${resalte('campo-telefono')}`}>
            <label>
             <span className={labelCls}>Teléfono / WhatsApp <span className="text-red-500">*</span></span>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                  <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
               </div>
-              <input value={phone} onChange={(e) => { setPhone(e.target.value.replace(/[^\d+\s]/g, '')); setError(null); }} inputMode="tel" placeholder="+57 300 000 0000" className={`${inputCls} pl-10`} />
+              <input value={phone} onChange={(e) => { setPhone(e.target.value.replace(/[^\d+\s]/g, '')); setError(null); setCampoFaltante(null); }} inputMode="tel" placeholder="+57 300 000 0000" className={`${inputCls} pl-10`} />
             </div>
           </label>
         </div>
