@@ -30,6 +30,18 @@ export default function CheckoutForm() {
     window.addEventListener('cz-plan', onPlan as EventListener);
     return () => window.removeEventListener('cz-plan', onPlan as EventListener);
   }, []);
+
+  // Enlace directo a un plan: certitradicion.com/?plan=express preselecciona ese plan y
+  // baja al formulario. Lo usan los artículos del CATÁLOGO de WhatsApp del cliente (cada
+  // uno enlaza a su plan), y también sirve para campañas que apuntan a un plan puntual.
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get('plan');
+    if (p === 'basico' || p === 'express' || p === 'avanzado') {
+      setPlan(p);
+      // tras el primer render: llevar al formulario ya con el plan puesto.
+      setTimeout(() => document.getElementById('comprar')?.scrollIntoView({ behavior: 'smooth' }), 300);
+    }
+  }, []);
   
   // Propiedad
   const [oficina, setOficina] = useState('');
