@@ -231,6 +231,57 @@ export async function getWompiHealth(): Promise<WompiHealth> {
   }
 }
 
+// ── Embudo: dónde se cae la gente ──────────────────────────────────────────────────────
+// Cuenta VISITANTES ÚNICOS (por sesión), no eventos: 10 recargas de la misma persona es
+// 1 visitante. Cada paso incluye a los que llegaron más lejos (un embudo de verdad).
+export interface Funnel {
+  dias: number;
+  visitas: number;
+  vieronPlanes: number;
+  validaron: number;
+  alPago: number;
+  pagaron: number;
+  porCampana: { campana: string; visitas: number; alPago: number; pagaron: number }[];
+}
+
+export async function getFunnel(dias = 7): Promise<Funnel> {
+  const vacio: Funnel = { dias, visitas: 0, vieronPlanes: 0, validaron: 0, alPago: 0, pagaron: 0, porCampana: [] };
+  if (!process.env.DATABASE_URL) return vacio;
+  try {
+    const pool = getPool();
+    await pool.query(`CREATE TABLE IF NOT EXISTS site_events (
+      id BIGSERIAL PRIMARY KEY, at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      sid TEXT NOT NULL, event TEXT NOT NULL, path TEXT,
+      utm_source TEXT, utm_medium TEXT, utm_campaign TEXT, utm_content TEXT, ref TEXT
+    )`);
+    const desde = `now() - interval '${Math.max(1, Math.min(90, dias))} days'`;
+    const [pasos, camp, pagos] = await Promise.all([
+      pool.query(`SELECT event, COUNT(DISTINCT sid) AS n FROM site_events WHERE at > ${desde} GROUP BY event`),
+      pool.query(`SELECT COALESCE(NULLIF(utm_campaign,''),'(directo / sin campaña)') AS campana,
+                         COUNT(DISTINCT sid) FILTER (WHERE event='view') AS visitas,
+                         COUNT(DISTINCT sid) FILTER (WHERE event='checkout') AS al_pago
+                  FROM site_events WHERE at > ${desde} GROUP BY 1 ORDER BY visitas DESC LIMIT 8`),
+      // Los pagos salen de orders (la verdad del negocio), no de un evento del navegador.
+      pool.query(`SELECT COUNT(*) AS n FROM orders
+                  WHERE status IN ('PAID','GENERATING','DELIVERED') AND created_at > ${desde}`),
+    ]);
+    const p = new Map<string, number>(pasos.rows.map((r: { event: string; n: string }) => [r.event, n(r.n)]));
+    return {
+      dias,
+      visitas: p.get('view') ?? 0,
+      vieronPlanes: p.get('plan_click') ?? 0,
+      validaron: p.get('validate_ok') ?? 0,
+      alPago: p.get('checkout') ?? 0,
+      pagaron: n(pagos.rows[0]?.n),
+      porCampana: camp.rows.map((r: { campana: string; visitas: string; al_pago: string }) => ({
+        campana: r.campana, visitas: n(r.visitas), alPago: n(r.al_pago), pagaron: 0,
+      })),
+    };
+  } catch {
+    return vacio;
+  }
+}
+
 export interface RobotHealth {
   state: 'online' | 'degraded' | 'offline' | 'unknown';
   heartbeatAt: string | null;

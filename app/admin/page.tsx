@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getSession, getDashboard, getMetrics, getSnrStatus, getRobotHealth, getWompiHealth, SALDO_THRESHOLD_CENTS } from '@/lib/admin';
+import { getSession, getDashboard, getMetrics, getSnrStatus, getRobotHealth, getWompiHealth, getFunnel, SALDO_THRESHOLD_CENTS } from '@/lib/admin';
 import { formatCOP } from '@/lib/config';
 import LogoutButton from './LogoutButton';
 import BatchPanel from './BatchPanel';
@@ -8,6 +8,7 @@ import MetricsCharts from './MetricsCharts';
 import OrderActions from './OrderActions';
 import SaldoRefresh from './SaldoRefresh';
 import SnrAccounts from './SnrAccounts';
+import FunnelPanel from './FunnelPanel';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,8 +32,8 @@ const STATUS_LABEL: Record<string, string> = {
 export default async function AdminDashboard() {
   const role = await getSession();
   if (!role) redirect('/admin/login');
-  const [d, metrics, snr, health, wompi] = await Promise.all([
-    getDashboard(), getMetrics(), getSnrStatus(), getRobotHealth(), getWompiHealth(),
+  const [d, metrics, snr, health, wompi, funnel] = await Promise.all([
+    getDashboard(), getMetrics(), getSnrStatus(), getRobotHealth(), getWompiHealth(), getFunnel(7),
   ]);
 
   // Estado del robot: sano si hubo OK reciente y no falló después.
@@ -111,6 +112,8 @@ export default async function AdminDashboard() {
         )}
 
         <WompiBanner w={wompi} />
+
+        <FunnelPanel f={funnel} />
 
         {/* Estado del pool de cuentas SNR */}
         {snr && (

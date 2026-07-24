@@ -6,6 +6,7 @@ import { oficinaCode } from '@/lib/oficinas';
 import { PLANS, formatCOP, type PlanId } from '@/lib/config';
 import PlanTagline, { PlanFeature } from '@/components/PlanTagline';
 import PlanIcon from '@/components/PlanIcon';
+import { track } from '@/lib/track';
 
 type VResult = { disponible: boolean | null; estado: string | null; direccion: string | null; circulo: string | null; mocked?: boolean; error?: string };
 
@@ -101,6 +102,7 @@ export default function CheckoutForm() {
       });
       const j = await r.json();
       setVResult(j);
+      track(j?.disponible === true ? 'validate_ok' : 'validate_fail');
     } catch {
       setVResult({ disponible: null, estado: null, direccion: null, circulo: null, error: 'Error de red al consultar' });
     } finally {
@@ -181,6 +183,7 @@ export default function CheckoutForm() {
     setStep('paying');
 
     // Meta: inicio de checkout (el Purchase se marca en /estado al confirmarse el pago).
+    track('checkout', { plan });
     (window as unknown as { fbq?: (...a: unknown[]) => void }).fbq?.('track', 'InitiateCheckout', {
       value: PLANS[plan].priceCop,
       currency: 'COP',

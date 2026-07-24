@@ -3,12 +3,14 @@
 import { PLANS, formatCOP, type PlanId } from '@/lib/config';
 import PlanTagline from '@/components/PlanTagline';
 import PlanIcon from '@/components/PlanIcon';
+import { track } from '@/lib/track';
 
 // Los 3 planes visibles DE UNA en el hero (antes solo se veía el Básico y los otros dos
 // aparecían al final del checkout). Elegir uno preselecciona el plan en el formulario
 // (evento cz-plan que CheckoutForm escucha) y baja a #comprar.
 export default function HeroPlans() {
   const elegir = (pid: PlanId) => {
+    track('plan_click', { plan: pid });
     window.dispatchEvent(new CustomEvent('cz-plan', { detail: pid }));
     document.getElementById('comprar')?.scrollIntoView({ behavior: 'smooth' });
   };
