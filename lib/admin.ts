@@ -182,6 +182,55 @@ export async function getSnrStatus(): Promise<SnrStatus | null> {
 // `updated_at` viejo significa robot caído, aunque no haya pedidos que fallen.
 const HEARTBEAT_EVERY_MIN = 10;
 
+// ── Salud de la pasarela: ¿Wompi está reportando? ──────────────────────────────────────
+// Un pedido "pendiente de pago" se ve IGUAL si el cliente abandonó el checkout que si pagó
+// y el webhook nunca llegó. Esto separa los dos casos mirando la bitácora wompi_events.
+export interface WompiHealth {
+  lastAt: string | null;        // último evento recibido de Wompi (de cualquier tipo)
+  lastResult: string | null;
+  lastReference: string | null;
+  lastApprovedAt: string | null; // último pago APROBADO procesado
+  eventos7d: number;
+  firmaInvalida7d: number;       // >0 = revisar el secreto de eventos en el panel de Wompi
+  pendientesRecientes: number;   // checkouts sin pagar de las últimas 24 h
+}
+
+export async function getWompiHealth(): Promise<WompiHealth> {
+  const vacio: WompiHealth = {
+    lastAt: null, lastResult: null, lastReference: null, lastApprovedAt: null,
+    eventos7d: 0, firmaInvalida7d: 0, pendientesRecientes: 0,
+  };
+  if (!process.env.DATABASE_URL) return vacio;
+  try {
+    const pool = getPool();
+    await pool.query(`CREATE TABLE IF NOT EXISTS wompi_events (
+      id BIGSERIAL PRIMARY KEY,
+      at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      event TEXT, reference TEXT, tx_status TEXT,
+      firma_ok BOOLEAN NOT NULL, resultado TEXT NOT NULL
+    )`);
+    const [ultimo, aprobado, conteo, pend] = await Promise.all([
+      pool.query('SELECT at, resultado, reference FROM wompi_events ORDER BY at DESC LIMIT 1'),
+      pool.query("SELECT at FROM wompi_events WHERE resultado = 'aprobado' ORDER BY at DESC LIMIT 1"),
+      pool.query(`SELECT COUNT(*) AS total, COUNT(*) FILTER (WHERE NOT firma_ok) AS malos
+                  FROM wompi_events WHERE at > now() - interval '7 days'`),
+      pool.query(`SELECT COUNT(*) AS c FROM orders
+                  WHERE status = 'PENDING_PAYMENT' AND created_at > now() - interval '24 hours'`),
+    ]);
+    return {
+      lastAt: iso(ultimo.rows[0]?.at),
+      lastResult: ultimo.rows[0]?.resultado ?? null,
+      lastReference: ultimo.rows[0]?.reference ?? null,
+      lastApprovedAt: iso(aprobado.rows[0]?.at),
+      eventos7d: n(conteo.rows[0]?.total),
+      firmaInvalida7d: n(conteo.rows[0]?.malos),
+      pendientesRecientes: n(pend.rows[0]?.c),
+    };
+  } catch {
+    return vacio;
+  }
+}
+
 export interface RobotHealth {
   state: 'online' | 'degraded' | 'offline' | 'unknown';
   heartbeatAt: string | null;

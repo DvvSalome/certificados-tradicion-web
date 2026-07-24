@@ -4,6 +4,7 @@ import { orders } from '@/lib/orders';
 import { triggerGenerarCTL } from '@/lib/n8n';
 import { sendAlert } from '@/lib/alerts';
 import { capiPurchase } from '@/lib/meta-capi';
+import { registrarEventoWompi } from '@/lib/wompi-log';
 
 export const runtime = 'nodejs';
 
@@ -14,20 +15,48 @@ interface WompiEvent {
 
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => null)) as WompiEvent | null;
-  if (!body || !verifyEvent(body)) return NextResponse.json({ error: 'Firma inválida' }, { status: 401 });
-  if (body.event !== 'transaction.updated') return NextResponse.json({ ok: true, ignored: true });
+  // Cada salida queda en la bitácora (wompi_events) → el panel puede decir si Wompi reporta.
+  if (!body || !verifyEvent(body)) {
+    await registrarEventoWompi({
+      event: body?.event ?? null,
+      reference: body?.data?.transaction?.reference ?? null,
+      txStatus: body?.data?.transaction?.status ?? null,
+      firmaOk: false,
+      resultado: 'firma_invalida',
+    });
+    return NextResponse.json({ error: 'Firma inválida' }, { status: 401 });
+  }
+  const evLog = {
+    event: body.event ?? null,
+    reference: body.data?.transaction?.reference ?? null,
+    txStatus: body.data?.transaction?.status ?? null,
+    firmaOk: true,
+  };
+  if (body.event !== 'transaction.updated') {
+    await registrarEventoWompi({ ...evLog, resultado: 'ignorado' });
+    return NextResponse.json({ ok: true, ignored: true });
+  }
 
   const tx = body.data?.transaction;
   const reference = tx?.reference;
-  if (!reference || !tx) return NextResponse.json({ ok: true, noRef: true });
+  if (!reference || !tx) {
+    await registrarEventoWompi({ ...evLog, resultado: 'sin_referencia' });
+    return NextResponse.json({ ok: true, noRef: true });
+  }
 
   const order = await orders.get(reference);
-  if (!order) return NextResponse.json({ ok: true, unknownRef: true });
+  if (!order) {
+    await registrarEventoWompi({ ...evLog, resultado: 'referencia_desconocida' });
+    return NextResponse.json({ ok: true, unknownRef: true });
+  }
 
   if (tx.status === 'APPROVED') {
     // Claim ATÓMICO e idempotente: PENDING_PAYMENT -> GENERATING. Solo el ganador procede (sin doble generación).
     const claimed = await orders.claimForGeneration(reference, String(tx.id));
-    if (!claimed) return NextResponse.json({ ok: true, already: order.status });
+    if (!claimed) {
+      await registrarEventoWompi({ ...evLog, resultado: 'ya_procesado' });
+      return NextResponse.json({ ok: true, already: order.status });
+    }
 
     // FUENTE DE VERDAD: re-consultar la transacción en Wompi y validar estado + referencia + MONTO + moneda.
     const real = await getTransaction(String(tx.id));
@@ -40,6 +69,7 @@ export async function POST(req: Request) {
     if (!ok) {
       console.warn('[wompi webhook] verificación de transacción falló', { reference, real });
       await orders.update(reference, { status: 'PENDING_PAYMENT' }); // revertir claim (permite reintento de Wompi)
+      await registrarEventoWompi({ ...evLog, resultado: 'verificacion_fallida' });
       return NextResponse.json({ error: 'Verificación de transacción falló' }, { status: 400 });
     }
 
@@ -72,8 +102,10 @@ export async function POST(req: Request) {
         data: { referencia: reference, matricula: claimed.matricula, oficina: claimed.oficina },
       });
     }
+    await registrarEventoWompi({ ...evLog, resultado: 'aprobado' });
   } else if (tx.status && ['DECLINED', 'ERROR', 'VOIDED'].includes(tx.status)) {
     if (order.status === 'PENDING_PAYMENT') await orders.update(reference, { status: 'FAILED', transactionId: String(tx.id) });
+    await registrarEventoWompi({ ...evLog, resultado: 'rechazado' });
   }
 
   return NextResponse.json({ ok: true });

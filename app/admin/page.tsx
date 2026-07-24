@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getSession, getDashboard, getMetrics, getSnrStatus, getRobotHealth, SALDO_THRESHOLD_CENTS } from '@/lib/admin';
+import { getSession, getDashboard, getMetrics, getSnrStatus, getRobotHealth, getWompiHealth, SALDO_THRESHOLD_CENTS } from '@/lib/admin';
 import { formatCOP } from '@/lib/config';
 import LogoutButton from './LogoutButton';
 import BatchPanel from './BatchPanel';
@@ -31,7 +31,9 @@ const STATUS_LABEL: Record<string, string> = {
 export default async function AdminDashboard() {
   const role = await getSession();
   if (!role) redirect('/admin/login');
-  const [d, metrics, snr, health] = await Promise.all([getDashboard(), getMetrics(), getSnrStatus(), getRobotHealth()]);
+  const [d, metrics, snr, health, wompi] = await Promise.all([
+    getDashboard(), getMetrics(), getSnrStatus(), getRobotHealth(), getWompiHealth(),
+  ]);
 
   // Estado del robot: sano si hubo OK reciente y no falló después.
   const robotOk = d.robot.lastOkAt && (!d.robot.lastError || (d.robot.lastOkAt >= (d.robot.lastRunAt ?? '')));
@@ -107,6 +109,8 @@ export default async function AdminDashboard() {
             <span className="font-semibold">Último error del robot:</span> {d.robot.lastError}
           </div>
         )}
+
+        <WompiBanner w={wompi} />
 
         {/* Estado del pool de cuentas SNR */}
         {snr && (
@@ -231,7 +235,51 @@ function HealthBanner({ health }: { health: Awaited<ReturnType<typeof getRobotHe
   );
 }
 
-function Kpi({ label, value, hint, tone = 'default', alert, dot, action }: { label: string; value: string; hint?: string; tone?: 'default' | 'brand' | 'accent' | 'danger' | 'muted'; alert?: string; dot?: boolean; action?: React.ReactNode }) {
+// Estado de la PASARELA. Responde la pregunta que los pedidos solos no responden: un
+// "pendiente de pago" se ve igual si el cliente abandonó el checkout que si pagó y el
+// webhook de Wompi nunca llegó. Aquí se ven los eventos que Wompi realmente mandó.
+function WompiBanner({ w }: { w: Awaited<ReturnType<typeof getWompiHealth>> }) {
+  const RESULTADO: Record<string, string> = {
+    aprobado: 'pago aprobado', rechazado: 'pago rechazado', ignorado: 'evento informativo',
+    ya_procesado: 'repetido (ya procesado)', sin_referencia: 'sin referencia',
+    referencia_desconocida: 'referencia desconocida', verificacion_fallida: 'no verificó contra Wompi',
+    firma_invalida: 'firma inválida',
+  };
+  const nunca = !w.lastAt;
+  const firmaMal = w.firmaInvalida7d > 0;
+  const bg = firmaMal ? 'border-[#f3c2bd] bg-[#fdecec]' : nunca ? 'border-[#f0d8a8] bg-[#fdf6e8]' : 'border-[#bbf7d0] bg-[#f0fdf4]';
+  const color = firmaMal ? '#b42318' : nunca ? '#b45309' : '#15803d';
+
+  return (
+    <section className={`rounded-2xl border px-5 py-4 ${bg}`}>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span className="size-2.5 rounded-full" style={{ background: color }} />
+        <span className="text-sm font-bold" style={{ color }}>
+          {firmaMal ? 'Wompi: firma inválida' : nunca ? 'Wompi: sin eventos todavía' : 'Wompi reportando'}
+        </span>
+        <span className="text-[12px] text-[var(--muted)]">
+          {w.lastAt ? `último aviso ${ago(w.lastAt)} · ${RESULTADO[w.lastResult ?? ''] ?? w.lastResult}` : 'nunca ha llegado un aviso de pago'}
+          {w.eventos7d > 0 && ` · ${w.eventos7d} en 7 días`}
+        </span>
+      </div>
+
+      <p className="mt-2 text-[12px] leading-snug text-[var(--muted)]">
+        {firmaMal ? (
+          <>Llegaron <b>{w.firmaInvalida7d}</b> avisos con firma inválida: el secreto de eventos del panel de Wompi no coincide con <code>WOMPI_EVENTS_SECRET</code>. Mientras siga así, un pago aprobado NO generará el certificado.</>
+        ) : nunca ? (
+          <>Aún no ha llegado ningún aviso de pago. Es normal si nadie ha pagado todavía. Cuando entre la primera venta real debe aparecer aquí; si no aparece, revisa que en el panel de Wompi el URL de eventos sea <code>https://certitradicion.com/api/wompi/webhook</code>.</>
+        ) : (
+          <>La pasarela está avisando correctamente.{w.lastApprovedAt ? ` Último pago aprobado ${ago(w.lastApprovedAt)}.` : ' Aún sin pagos aprobados.'}</>
+        )}
+        {w.pendientesRecientes > 0 && (
+          <> · <b>{w.pendientesRecientes}</b> checkout(s) sin pagar en 24 h (normal: gente que abre y no paga).</>
+        )}
+      </p>
+    </section>
+  );
+}
+
+function Kpi({ label, value, hint, tone = 'default', alert, dot, action }:{ label: string; value: string; hint?: string; tone?: 'default' | 'brand' | 'accent' | 'danger' | 'muted'; alert?: string; dot?: boolean; action?: React.ReactNode }) {
   const color = tone === 'danger' ? 'var(--accent)' : tone === 'accent' ? 'var(--accent)' : 'var(--brand)';
   const valColor = tone === 'danger' ? '#b42318' : 'var(--foreground)';
   return (
