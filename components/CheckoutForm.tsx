@@ -63,7 +63,6 @@ export default function CheckoutForm() {
   const [tipoId, setTipoId] = useState('CC');
   const [cedula, setCedula] = useState('');
   const [email, setEmail] = useState('');
-  const [emailConfirm, setEmailConfirm] = useState('');
   const [phone, setPhone] = useState('');
 
   // Checks
@@ -96,7 +95,7 @@ export default function CheckoutForm() {
       const savedCedula = localStorage.getItem('crt_cedula');
       const savedNombres = localStorage.getItem('crt_nombres');
       const savedApellidos = localStorage.getItem('crt_apellidos');
-      if (savedEmail) { setEmail(savedEmail); setEmailConfirm(savedEmail); }
+      if (savedEmail) setEmail(savedEmail);
       if (savedPhone) setPhone(savedPhone);
       if (savedCedula) setCedula(savedCedula);
       if (savedNombres) setNombres(savedNombres);
@@ -156,7 +155,6 @@ export default function CheckoutForm() {
     apellidos.trim().length > 0 &&
     cedula.trim().length > 0 &&
     email.trim().length > 0 &&
-    email === emailConfirm &&
     phone.trim().length > 7 &&
     termsAccepted &&
     privacyAccepted &&
@@ -186,7 +184,6 @@ export default function CheckoutForm() {
       else if (!nombres.trim() || !apellidos.trim()) { setError('Te faltan tus nombres y apellidos.'); irACampo('campo-nombre'); }
       else if (!cedula.trim()) { setError('Te falta tu número de documento.'); irACampo('campo-cedula'); }
       else if (!email.trim()) { setError('Te falta tu correo (ahí llega el certificado).'); irACampo('campo-correo'); }
-      else if (email !== emailConfirm) { setError('Los dos correos no coinciden.'); irACampo('campo-correo'); }
       else if (phone.trim().length < 8) { setError('Te falta tu WhatsApp.'); irACampo('campo-telefono'); }
       else if (!termsAccepted || !privacyAccepted) {
         setError('Te falta marcar las casillas de términos y privacidad (son obligatorias).');
@@ -421,15 +418,6 @@ export default function CheckoutForm() {
                 <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
               </div>
               <input value={email} onChange={(e) => { setEmail(e.target.value); setError(null); setCampoFaltante(null); }} type="email" placeholder="ejemplo@correo.com" className={`${inputCls} pl-10`} />
-            </div>
-          </label>
-          <label>
-            <span className={labelCls}>Confirma tu correo <span className="text-red-500">*</span></span>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                <svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-              </div>
-              <input value={emailConfirm} onChange={(e) => { setEmailConfirm(e.target.value); setError(null); setCampoFaltante(null); }} type="email" placeholder="Repite tu correo" className={`${inputCls} pl-10`} />
             </div>
           </label>
         </div>
