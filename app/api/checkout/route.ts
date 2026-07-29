@@ -6,6 +6,7 @@ import { signDownload } from '@/lib/download-token';
 import { planAmountCents, getPlan } from '@/lib/config';
 import { isOficina } from '@/lib/oficinas';
 import { verificar, rateLimited } from '@/lib/verify';
+import { enviarLeadAlCrm } from '@/lib/crm';
 
 export const runtime = 'nodejs';
 // El checkout revalida contra el SNR antes de cobrar (fail-closed), así que hereda el mismo riesgo que
@@ -15,6 +16,21 @@ export const maxDuration = 30;
 function clientIp(req: Request): string {
   const xff = req.headers.get('x-forwarded-for');
   return (xff ? xff.split(',')[0] : '') || req.headers.get('x-real-ip') || 'anon';
+}
+
+// Atribución del lead: de qué campaña venía la página desde la que compró. Sale del referer porque
+// el checkout es server-to-server y no ve la URL del navegador. Si no hay, el lead entra igual.
+function utmDeReferer(referer: string | null): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!referer) return out;
+  try {
+    const p = new URL(referer).searchParams;
+    for (const k of ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'gclid', 'fbclid']) {
+      const v = p.get(k);
+      if (v) out[k] = v.slice(0, 120);
+    }
+  } catch { /* referer no parseable → sin atribución */ }
+  return out;
 }
 
 // Normaliza al formato wa_id de WhatsApp (dígitos con indicativo de país, sin +/espacios) para que coincida
@@ -82,6 +98,16 @@ export async function POST(req: Request) {
 
   const reference = 'CTL-' + randomUUID().replace(/-/g, '').slice(0, 20);
   await orders.create({ reference, matricula, oficina, email, phone, amountInCents, status: 'PENDING_PAYMENT', plan, createdAt: new Date().toISOString(), nombres, apellidos, tipoId, cedula, consentAt: new Date().toISOString() });
+
+  // El comprador entra al CRM YA, sin esperar al pago: si abandona en la pasarela, el equipo tiene a
+  // quién llamar. Best-effort y sin await — un CRM lento no puede demorar la redirección al pago.
+  void enviarLeadAlCrm({
+    nombre: [nombres, apellidos].filter(Boolean).join(' ') || null,
+    email, phone, etapa: 'interesado', referencia: reference,
+    plan, matricula, oficina, montoCents: amountInCents,
+    landingUrl: req.headers.get('referer'),
+    utm: utmDeReferer(req.headers.get('referer')),
+  }).then((r) => { if (!r.ok) console.error('[crm] lead no enviado: ' + r.error); });
 
   // URL pública del sitio. Detrás de un proxy (Traefik/Vercel) NO usar req.url (da el origen interno localhost).
   // Prioridad: APP_BASE_URL (fijo y seguro) -> X-Forwarded-Host -> req.url.
