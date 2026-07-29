@@ -15,7 +15,6 @@ const CHAT_URL = 'https://crm.fourgsolutions.com/chat/wc_certitradicion_main';
 export default function CrmChat() {
   const [open, setOpen] = useState(false);
   const [loaded, setLoaded] = useState(false); // el iframe se monta al primer clic y no se desmonta (conserva la conversación)
-  const [showBubble, setShowBubble] = useState(false);
   const [src, setSrc] = useState(CHAT_URL);
   const pathname = usePathname();
 
@@ -35,8 +34,6 @@ export default function CrmChat() {
       `&ref=${encodeURIComponent(document.referrer.slice(0, 512))}` +
       `&utm=${encodeURIComponent(JSON.stringify(utm))}`;
     setSrc(`${CHAT_URL}?${qs}`);
-    const t = setTimeout(() => setShowBubble(true), 1800);
-    return () => clearTimeout(t);
   }, []);
 
   // El panel interno no lleva el chat (es para visitantes, no para el operador).
@@ -45,7 +42,6 @@ export default function CrmChat() {
   const toggle = () => {
     setOpen((o) => !o);
     setLoaded(true);
-    setShowBubble(false);
   };
 
   return (
@@ -66,27 +62,9 @@ export default function CrmChat() {
           open ? 'top-16 right-4 sm:top-auto sm:bottom-6 sm:right-5' : 'bottom-44 right-4 sm:bottom-6 sm:right-5'
         }`}
       >
-        {showBubble && !open && (
-          <div className="ctl-fade-up relative w-[250px] rounded-2xl border border-black/5 bg-white px-4 py-3.5 shadow-[0_16px_44px_-10px_rgba(13,27,42,0.4)]">
-            <button
-              type="button"
-              onClick={() => setShowBubble(false)}
-              aria-label="Cerrar"
-              className="absolute -right-2.5 -top-2.5 grid size-6 place-items-center rounded-full bg-white text-[var(--muted-2)] shadow-md ring-1 ring-black/5 transition hover:text-[var(--foreground)]"
-            >
-              <svg viewBox="0 0 24 24" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <path d="M6 6l12 12M18 6L6 18" />
-              </svg>
-            </button>
-            <button type="button" onClick={toggle} className="block text-left">
-              <p className="text-[13.5px] leading-snug text-[var(--foreground)]">
-                ¿Dudas con tu certificado? Te ayudamos en minutos.
-              </p>
-            </button>
-            <span className="absolute -bottom-1.5 right-7 size-3 rotate-45 border-b border-r border-black/5 bg-white" />
-          </div>
-        )}
-
+        {/* Sin globo de invitación: medido en un Pixel 7, ocupaba 135px fijos (15% de la pantalla), NO se iba
+            solo —seguía ahí a los 12s y tras scrollear— y tapaba dos campos obligatorios del formulario
+            (tipo y número de documento). El botón del chat sigue disponible para quien lo necesite. */}
         <button
           type="button"
           onClick={toggle}
