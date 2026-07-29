@@ -66,9 +66,16 @@ function conLimite<T>(p: Promise<T>, ms: number): Promise<T | null> {
   return Promise.race([p, new Promise<null>((r) => setTimeout(() => r(null), ms))]);
 }
 
-async function consultarPuente(oficina: string, matricula: string): Promise<VerifyResult> {
+// PRESUPUESTO DE TIEMPO. Las funciones de Vercel en plan Hobby mueren a los 10s por defecto, así que un
+// timeout de 15s nunca llegaba a cumplirse: Vercel cortaba antes y el visitante veía un error. Las rutas que
+// llaman aquí declaran maxDuration; aun así el gasto total (caché + 2 intentos) se mantiene por debajo para
+// que el usuario tenga una respuesta, no una pantalla colgada: 1.5s + 6s + 8s ≈ 15.5s en el peor caso.
+const PUENTE_MS_1 = Number(process.env.VERIFY_BRIDGE_MS_1 || 6000);
+const PUENTE_MS_2 = Number(process.env.VERIFY_BRIDGE_MS_2 || 8000);
+
+async function consultarPuente(oficina: string, matricula: string, ms: number): Promise<VerifyResult> {
   const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 15000);
+  const t = setTimeout(() => ctrl.abort(), ms);
   try {
     const res = await fetch(VERIFY_BRIDGE, {
       method: 'POST',
@@ -101,8 +108,8 @@ export async function verificar(oficina: string, matricula: string): Promise<Ver
   // Un solo intento dejaba ~1 de cada 5 validaciones sin respuesta (medido en producción el 2026-07-28), y
   // como el checkout es fail-closed cada fallo es una venta perdida. Con un reintento el fallo compuesto
   // baja de ~20% a ~4%. Solo se reintenta lo NO concluyente (error/timeout): un "no existe" es definitivo.
-  let r = await consultarPuente(oficina, matricula);
-  if (r.error) r = await consultarPuente(oficina, matricula);
+  let r = await consultarPuente(oficina, matricula, PUENTE_MS_1);
+  if (r.error) r = await consultarPuente(oficina, matricula, PUENTE_MS_2);
 
   // Escritura best-effort y SIN await: esperar el INSERT contra el Postgres remoto le sumaba segundos a la
   // respuesta que el usuario está esperando, justo en el paso previo al pago.

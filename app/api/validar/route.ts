@@ -3,6 +3,9 @@ import { verificar, rateLimited } from '@/lib/verify';
 import { isOficina } from '@/lib/oficinas';
 
 export const runtime = 'nodejs';
+// Sin esto Vercel corta a los 10s (igual que en /api/saldo): la consulta al SNR pasaba de ahí y el visitante
+// veía un error justo antes de pagar. El gasto real lo acota lib/verify (~15.5s en el peor caso).
+export const maxDuration = 30;
 
 function clientIp(req: Request): string {
   const xff = req.headers.get('x-forwarded-for');

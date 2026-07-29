@@ -8,6 +8,9 @@ import { isOficina } from '@/lib/oficinas';
 import { verificar, rateLimited } from '@/lib/verify';
 
 export const runtime = 'nodejs';
+// El checkout revalida contra el SNR antes de cobrar (fail-closed), así que hereda el mismo riesgo que
+// /api/validar: sin esto Vercel corta a los 10s y la compra muere en el último clic.
+export const maxDuration = 30;
 
 function clientIp(req: Request): string {
   const xff = req.headers.get('x-forwarded-for');
