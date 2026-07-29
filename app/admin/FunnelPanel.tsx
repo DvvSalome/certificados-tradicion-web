@@ -7,7 +7,8 @@ const nf = (n: number) => n.toLocaleString('es-CO');
 export default function FunnelPanel({ f }: { f: Funnel }) {
   const pasos = [
     { txt: 'Entraron al sitio', n: f.visitas, ayuda: 'Visitantes únicos' },
-    { txt: 'Eligieron un plan', n: f.vieronPlanes, ayuda: 'Tocaron una tarjeta de plan' },
+    { txt: 'Eligieron un plan', n: f.vieronPlanes, ayuda: 'Tocaron una tarjeta de plan (paso opcional)' },
+    { txt: 'Empezaron a llenar', n: f.empezaronForm, ayuda: 'Escribieron su primer dato en el formulario' },
     { txt: 'Validaron su matrícula', n: f.validaron, ayuda: 'El SNR confirmó que existe' },
     { txt: 'Fueron a pagar', n: f.alPago, ayuda: 'Completaron el formulario' },
     { txt: 'Pagaron', n: f.pagaron, ayuda: 'Compra confirmada', final: true },
@@ -56,6 +57,22 @@ export default function FunnelPanel({ f }: { f: Funnel }) {
               </div>
             );
           })}
+
+          {/* Una validación fallida NO es un visitante curioso: es alguien que ya escribió su matrícula y se
+              quedó sin poder pagar (el checkout no cobra si el SNR no confirma). Es la fuga más cara. */}
+          {f.validacionFallida > 0 && (
+            <div className="mt-3 rounded-lg border border-[#f5c2c0] bg-[#fef3f2] px-3.5 py-2.5">
+              <p className="text-[12.5px] font-semibold text-[#b42318]">
+                {nf(f.validacionFallida)} {f.validacionFallida === 1 ? 'persona intentó validar' : 'personas intentaron validar'} y no se pudo
+                {f.validaron + f.validacionFallida > 0 && (
+                  <> · falla {Math.round((f.validacionFallida / (f.validaron + f.validacionFallida)) * 100)}% de las veces</>
+                )}
+              </p>
+              <p className="mt-0.5 text-[11px] text-[#912018]">
+                Sin confirmación del SNR no se puede cobrar, así que cada una de estas es una venta perdida.
+              </p>
+            </div>
+          )}
 
           {f.porCampana.length > 0 && (
             <div className="mt-3 border-t border-[var(--border)] pt-3">

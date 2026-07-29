@@ -57,11 +57,16 @@ async function setCached(oficina: string, matricula: string, r: VerifyResult): P
 // EasyPanel: certificados.fourgsolutions.com/api/verificar → certificados_robot:3000/verificar.
 const VERIFY_BRIDGE = 'https://certificados.fourgsolutions.com/api/verificar';
 
-// Caché primero; si no, consulta al VPS (rápido) y cachea el resultado conclusivo.
-export async function verificar(oficina: string, matricula: string): Promise<VerifyResult> {
-  const cached = await getCached(oficina, matricula);
-  if (cached) return cached;
+// El Postgres también vive en el VPS (Colombia) y estas funciones corren en Vercel (EE.UU.): una conexión
+// fría tarda segundos. La caché es una OPTIMIZACIÓN, no puede volverse el cuello de botella → se acota, y si
+// no contesta a tiempo se consulta al robot directo (~800ms, más rápido que esperar la caché).
+const CACHE_READ_MS = Number(process.env.VERIFY_CACHE_READ_MS || 1500);
 
+function conLimite<T>(p: Promise<T>, ms: number): Promise<T | null> {
+  return Promise.race([p, new Promise<null>((r) => setTimeout(() => r(null), ms))]);
+}
+
+async function consultarPuente(oficina: string, matricula: string): Promise<VerifyResult> {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), 15000);
   try {
@@ -73,18 +78,34 @@ export async function verificar(oficina: string, matricula: string): Promise<Ver
     });
     if (!res.ok) return { disponible: null, estado: null, direccion: null, circulo: null, cached: false, error: 'verificar ' + res.status };
     const info = await res.json();
-    const fresh: VerifyResult = {
+    return {
       disponible: !!info.disponible,
       estado: info.estado ?? null,
       direccion: info.direccion ?? null,
       circulo: info.circulo ?? null,
       cached: false,
     };
-    if (fresh.estado && fresh.disponible) await setCached(oficina, matricula, fresh).catch(() => {});
-    return fresh;
   } catch (e) {
     return { disponible: null, estado: null, direccion: null, circulo: null, cached: false, error: String(e).slice(0, 120) };
   } finally {
     clearTimeout(t);
   }
+}
+
+// Caché primero; si no, consulta al VPS (rápido) y cachea el resultado conclusivo.
+export async function verificar(oficina: string, matricula: string): Promise<VerifyResult> {
+  // Un fallo de la caché NUNCA debe tumbar la validación: si tarda o revienta, seguimos al robot.
+  const cached = await conLimite(getCached(oficina, matricula).catch(() => null), CACHE_READ_MS);
+  if (cached) return cached;
+
+  // Un solo intento dejaba ~1 de cada 5 validaciones sin respuesta (medido en producción el 2026-07-28), y
+  // como el checkout es fail-closed cada fallo es una venta perdida. Con un reintento el fallo compuesto
+  // baja de ~20% a ~4%. Solo se reintenta lo NO concluyente (error/timeout): un "no existe" es definitivo.
+  let r = await consultarPuente(oficina, matricula);
+  if (r.error) r = await consultarPuente(oficina, matricula);
+
+  // Escritura best-effort y SIN await: esperar el INSERT contra el Postgres remoto le sumaba segundos a la
+  // respuesta que el usuario está esperando, justo en el paso previo al pago.
+  if (r.estado && r.disponible) void setCached(oficina, matricula, r).catch(() => {});
+  return r;
 }

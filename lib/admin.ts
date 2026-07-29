@@ -238,14 +238,16 @@ export interface Funnel {
   dias: number;
   visitas: number;
   vieronPlanes: number;
+  empezaronForm: number;
   validaron: number;
+  validacionFallida: number;
   alPago: number;
   pagaron: number;
   porCampana: { campana: string; visitas: number; alPago: number; pagaron: number }[];
 }
 
 export async function getFunnel(dias = 7): Promise<Funnel> {
-  const vacio: Funnel = { dias, visitas: 0, vieronPlanes: 0, validaron: 0, alPago: 0, pagaron: 0, porCampana: [] };
+  const vacio: Funnel = { dias, visitas: 0, vieronPlanes: 0, empezaronForm: 0, validaron: 0, validacionFallida: 0, alPago: 0, pagaron: 0, porCampana: [] };
   if (!process.env.DATABASE_URL) return vacio;
   try {
     const pool = getPool();
@@ -270,7 +272,11 @@ export async function getFunnel(dias = 7): Promise<Funnel> {
       dias,
       visitas: p.get('view') ?? 0,
       vieronPlanes: p.get('plan_click') ?? 0,
+      // 'plan_click' solo lo disparan las tarjetas del hero, que son opcionales: quien baja directo al
+      // formulario no aparecía en ningún paso hasta validar. 'form_start' cierra ese hueco.
+      empezaronForm: p.get('form_start') ?? 0,
       validaron: p.get('validate_ok') ?? 0,
+      validacionFallida: p.get('validate_fail') ?? 0,
       alPago: p.get('checkout') ?? 0,
       pagaron: n(pagos.rows[0]?.n),
       porCampana: camp.rows.map((r: { campana: string; visitas: string; al_pago: string }) => ({

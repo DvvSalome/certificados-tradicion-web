@@ -46,6 +46,16 @@ export default function CheckoutForm() {
   // Propiedad
   const [oficina, setOficina] = useState('');
   const [matricula, setMatricula] = useState('');
+
+  // El embudo saltaba de 'plan_click' (opcional: solo las tarjetas del hero) a 'validate_ok', dejando ciego
+  // justo el tramo donde se pierde la venta: los que empiezan a llenar y se rinden. Se marca UNA vez por
+  // sesión, en el primer dato que el visitante escribe.
+  const formStartRef = useRef(false);
+  const marcarFormStart = () => {
+    if (formStartRef.current) return;
+    formStartRef.current = true;
+    track('form_start');
+  };
   
   // Comprador
   const [nombres, setNombres] = useState('');
@@ -268,13 +278,13 @@ export default function CheckoutForm() {
         <div id="campo-inmueble" className={`grid grid-cols-1 gap-5 sm:grid-cols-2 ${resalte('campo-inmueble')}`}>
           <label>
             <span className={labelCls}>Oficina de registro <span className="text-red-500">*</span></span>
-            <OficinaSelect value={oficina} onChange={(v) => { setOficina(v); setVResult(null); setError(null); setCampoFaltante(null); }} />
+            <OficinaSelect value={oficina} onChange={(v) => { marcarFormStart(); setOficina(v); setVResult(null); setError(null); setCampoFaltante(null); }} />
           </label>
           <label>
             <span className={labelCls}>Matrícula inmobiliaria <span className="text-red-500">*</span></span>
             <input
               value={matricula}
-              onChange={(e) => { setMatricula(e.target.value.replace(/\D/g, '')); setVResult(null); setError(null); setCampoFaltante(null); }}
+              onChange={(e) => { marcarFormStart(); setMatricula(e.target.value.replace(/\D/g, '')); setVResult(null); setError(null); setCampoFaltante(null); }}
               onBlur={() => validarMatricula(true)}
               inputMode="numeric"
               placeholder="Ej: 12345 (sin la oficina)"
