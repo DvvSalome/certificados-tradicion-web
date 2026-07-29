@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { randomUUID } from 'crypto';
 import { orders } from '@/lib/orders';
 import { checkoutUrl } from '@/lib/wompi';
@@ -100,14 +100,20 @@ export async function POST(req: Request) {
   await orders.create({ reference, matricula, oficina, email, phone, amountInCents, status: 'PENDING_PAYMENT', plan, createdAt: new Date().toISOString(), nombres, apellidos, tipoId, cedula, consentAt: new Date().toISOString() });
 
   // El comprador entra al CRM YA, sin esperar al pago: si abandona en la pasarela, el equipo tiene a
-  // quién llamar. Best-effort y sin await — un CRM lento no puede demorar la redirección al pago.
-  void enviarLeadAlCrm({
-    nombre: [nombres, apellidos].filter(Boolean).join(' ') || null,
-    email, phone, etapa: 'interesado', referencia: reference,
-    plan, matricula, oficina, montoCents: amountInCents,
-    landingUrl: req.headers.get('referer'),
-    utm: utmDeReferer(req.headers.get('referer')),
-  }).then((r) => { if (!r.ok) console.error('[crm] lead no enviado: ' + r.error); });
+  // quién llamar. Va en after() y no en un `void promesa`: en serverless la función se congela apenas
+  // responde, así que un fire-and-forget suelto NUNCA llega a ejecutarse (verificado en producción).
+  // after() corre después de responder, así que tampoco demora la redirección al pago.
+  const referer = req.headers.get('referer');
+  after(async () => {
+    const r = await enviarLeadAlCrm({
+      nombre: [nombres, apellidos].filter(Boolean).join(' ') || null,
+      email, phone, etapa: 'interesado', referencia: reference,
+      plan, matricula, oficina, montoCents: amountInCents,
+      landingUrl: referer,
+      utm: utmDeReferer(referer),
+    });
+    if (!r.ok) console.error('[crm] lead no enviado: ' + r.error);
+  });
 
   // URL pública del sitio. Detrás de un proxy (Traefik/Vercel) NO usar req.url (da el origen interno localhost).
   // Prioridad: APP_BASE_URL (fijo y seguro) -> X-Forwarded-Host -> req.url.
