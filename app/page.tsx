@@ -10,7 +10,6 @@ import { RotatingTail } from '@/components/RotatingTail';
 import StatsCounter from '@/components/StatsCounter';
 import WhyUs from '@/components/WhyUs';
 import Testimonials from '@/components/Testimonials';
-import PricingSection from '@/components/PricingSection';
 import FaqSection from '@/components/FaqSection';
 import { PLANS, formatCOP, type PlanId } from '@/lib/config';
 
@@ -73,7 +72,9 @@ export default function Home() {
           </a>
           <nav className="hidden items-center gap-6 text-sm font-medium text-white/80 sm:flex">
             <a href="#como-funciona" className="transition-colors hover:text-white">Cómo funciona</a>
-            <a href="#precio" className="transition-colors hover:text-white">Precio</a>
+            {/* La sección de precios duplicada salió de la home (los planes viven en el hero y en el
+                formulario); el detalle completo quedó en la página /precio. */}
+            <a href="/precio" className="transition-colors hover:text-white">Precio</a>
             <a href="#preguntas-frecuentes" className="transition-colors hover:text-white">Preguntas</a>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-2 text-white">
               <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -132,6 +133,52 @@ export default function Home() {
         <HeroPlans />
       </div>
 
+      {/* ===== CÓMO FUNCIONA — ANTES del formulario. El tráfico de anuncios llega frío:
+          primero entender el proceso y ver prueba, y solo DESPUÉS se le piden datos.
+          (Antes toda la persuasión vivía debajo del checkout y nadie llegaba a verla.) ===== */}
+      <section id="como-funciona" className="bg-white py-16 lg:py-24 border-t border-[var(--border)]">
+        <div className="mx-auto max-w-6xl px-6 flex flex-col lg:flex-row gap-12 items-center">
+          <div className="flex-1 flex flex-col gap-6">
+            <div>
+              <p className="font-bold text-[12px] tracking-widest uppercase text-[var(--brand)]">En tres pasos</p>
+              <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-[var(--foreground)] sm:text-4xl">¿Cómo funciona?</h2>
+            </div>
+
+            <div className="flex flex-col gap-8 mt-4">
+              {[
+                { n: '1', t: 'Ingresa oficina y matrícula', d: 'El formulario más corto del mercado.' },
+                { n: '2', t: 'Verificamos y pagas seguro', d: 'Confirmamos tu inmueble antes de cobrarte. Pago rápido con Wompi.' },
+                { n: '3', t: 'Recíbelo al instante', d: 'PDF oficial directo a tu correo y WhatsApp.', last: true },
+              ].map((s) => (
+                <div key={s.n} className="cz-reveal flex gap-4">
+                  <div className="flex flex-col items-center">
+                    <span className={`grid place-items-center w-9 h-9 rounded-full text-white font-bold text-sm ${s.last ? 'bg-[var(--accent)]' : 'bg-[var(--brand)]'}`}>
+                      {s.last ? (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+                      ) : s.n}
+                    </span>
+                    {!s.last && <span className="w-0.5 h-full bg-gray-200 mt-2" />}
+                  </div>
+                  <div className={s.last ? "" : "pb-4"}>
+                    <p className="font-semibold text-lg text-[var(--foreground)]">{s.t}</p>
+                    <p className="mt-1 text-[15px] text-[var(--muted)]">{s.d}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* La tarjeta del escáner (la animación original del hero) vive aquí desde que
+              el hero pasó a la animación grande del estudio. */}
+          <div className="w-full lg:w-5/12">
+            <CertScanCard />
+          </div>
+        </div>
+      </section>
+
+      {/* ===== PRUEBA SOCIAL: contadores + testimonios, ARRIBA de la petición de datos ===== */}
+      <StatsCounter />
+      <Testimonials />
+
       {/* ===== SOLICITAR: ¿cómo encuentro mi matrícula? + formulario + video ===== */}
       <section id="comprar" className="scroll-mt-24 border-t border-[var(--border)] bg-white py-14 lg:py-20">
         {/* max-w-7xl + formulario a 8/12: la sección se sentía comprimida con espacio muerto a los lados. */}
@@ -174,57 +221,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== PRUEBA SOCIAL (contador vivo, escala por visita) ===== */}
-      <StatsCounter />
-
       {/* ===== POR QUÉ CON NOSOTROS ===== */}
       <WhyUs />
-
-      {/* ===== COMO FUNCIONA ===== */}
-      <section id="como-funciona" className="bg-white py-16 lg:py-24 border-t border-[var(--border)]">
-        <div className="mx-auto max-w-6xl px-6 flex flex-col lg:flex-row gap-12 items-center">
-          <div className="flex-1 flex flex-col gap-6">
-            <div>
-              <p className="font-bold text-[12px] tracking-widest uppercase text-[var(--brand)]">En tres pasos</p>
-              <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-[var(--foreground)] sm:text-4xl">¿Cómo funciona?</h2>
-            </div>
-            
-            <div className="flex flex-col gap-8 mt-4">
-              {[
-                { n: '1', t: 'Ingresa oficina y matrícula', d: 'El formulario más corto del mercado.' },
-                { n: '2', t: 'Verificamos y pagas seguro', d: 'Confirmamos tu inmueble antes de cobrarte. Pago rápido con Wompi.' },
-                { n: '3', t: 'Recíbelo al instante', d: 'PDF oficial directo a tu correo y WhatsApp.', last: true },
-              ].map((s) => (
-                <div key={s.n} className="cz-reveal flex gap-4">
-                  <div className="flex flex-col items-center">
-                    <span className={`grid place-items-center w-9 h-9 rounded-full text-white font-bold text-sm ${s.last ? 'bg-[var(--accent)]' : 'bg-[var(--brand)]'}`}>
-                      {s.last ? (
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
-                      ) : s.n}
-                    </span>
-                    {!s.last && <span className="w-0.5 h-full bg-gray-200 mt-2" />}
-                  </div>
-                  <div className={s.last ? "" : "pb-4"}>
-                    <p className="font-semibold text-lg text-[var(--foreground)]">{s.t}</p>
-                    <p className="mt-1 text-[15px] text-[var(--muted)]">{s.d}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          {/* La tarjeta del escáner (la animación original del hero) vive aquí desde que
-              el hero pasó a la animación grande del estudio. */}
-          <div className="w-full lg:w-5/12">
-            <CertScanCard />
-          </div>
-        </div>
-      </section>
-
-      {/* ===== PRECIO ===== */}
-      <PricingSection />
-
-      {/* ===== TESTIMONIOS ===== */}
-      <Testimonials />
 
       {/* ===== PREGUNTAS FRECUENTES ===== */}
       <FaqSection />

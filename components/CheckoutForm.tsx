@@ -149,6 +149,13 @@ export default function CheckoutForm() {
   const isUnverified = !!vResult && !isVerified && !isRejected;
   const canProceed = isVerified;
 
+  // PASO 2 (datos personales, casillas y plan): se abre solo cuando el inmueble quedó VERIFICADO.
+  // Pedir 13 campos de una a tráfico frío era la fricción #1 del checkout en móvil; así el visitante
+  // invierte 2 campos, recibe la dirección real de su inmueble como recompensa, y ahí sí se le pide
+  // el resto. Una vez abierto no se vuelve a cerrar: editar la matrícula no bota lo ya escrito.
+  const [paso2, setPaso2] = useState(false);
+  useEffect(() => { if (isVerified) setPaso2(true); }, [isVerified]);
+
   const isFormComplete =
     canProceed &&
     nombres.trim().length > 0 &&
@@ -178,6 +185,9 @@ export default function CheckoutForm() {
   async function confirmAndPay() {
     if (!isFormComplete || loading || validating) {
       if (!canProceed) {
+        // El CTA del paso 1 dice "Verificar mi inmueble": si los campos ya están llenos y aún no hay
+        // resultado, el clic DEBE verificar, no regañar con "te falta la matrícula".
+        if (oficina && matricula.trim() && !vResult) { validarMatricula(false); return; }
         setError(isRejected ? 'No encontramos esa matrícula en esa oficina. Verifica los datos.' : isUnverified ? 'El portal oficial del SNR no está disponible en este momento. Intenta más tarde.' : 'Te falta la oficina de registro y la matrícula.');
         irACampo('campo-inmueble');
       }
@@ -363,6 +373,17 @@ export default function CheckoutForm() {
           )}
         </div>
 
+        {/* Paso 1 en reposo: decirle al visitante qué va a pasar (el resto del form está oculto). */}
+        {!paso2 && !validating && !vResult && (
+          <div className="mt-4 rounded-xl border border-dashed border-gray-300 bg-white p-4 text-center">
+            <p className="text-[13.5px] font-bold text-[var(--foreground)]">Paso 1 de 2 · Verifica tu inmueble</p>
+            <p className="mt-1 text-[12.5px] text-gray-500">
+              Escribe la oficina y la matrícula. Confirmamos tu inmueble contra el registro oficial y se abre el resto del formulario.
+            </p>
+          </div>
+        )}
+
+        {paso2 && (<>
         {/* SECTION 2: COMPRADOR */}
         <h3 className={sectionTitleCls}>Información del comprador</h3>
         
@@ -550,6 +571,7 @@ export default function CheckoutForm() {
             </label>
           </div>
         )}
+        </>)}
 
         {/* FOOTER "Total a pagar": barra que SIGUE EL SCROLL (como LegalCheck).
             Móvil = fija abajo (fixed). Desktop = STICKY: flota sobre el formulario y baja con el scroll
@@ -599,7 +621,7 @@ export default function CheckoutForm() {
                 ) : (
                   <>
                     <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                    Comprar ahora
+                    {paso2 ? 'Comprar ahora' : 'Verificar mi inmueble'}
                   </>
                 )}
               </button>
