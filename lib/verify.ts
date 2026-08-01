@@ -69,14 +69,14 @@ function conLimite<T>(p: Promise<T>, ms: number): Promise<T | null> {
 // PRESUPUESTO DE TIEMPO. Las funciones de Vercel en plan Hobby mueren a los 10s por defecto, así que un
 // timeout de 15s nunca llegaba a cumplirse: Vercel cortaba antes y el visitante veía un error. Las rutas que
 // llaman aquí declaran maxDuration; aun así el gasto total (caché + 2 intentos) se mantiene por debajo para
-// que el usuario tenga una respuesta, no una pantalla colgada: 1.5s + 12s + 14s ≈ 27.5s en el peor caso,
+// que el usuario tenga una respuesta, no una pantalla colgada: 1.5s + 26s ≈ 27.5s en el peor caso,
 // bajo el maxDuration de 30s que declaran las rutas.
 //
 // Los 6s+8s de antes NO alcanzaban: medido contra el robot real el 2026-08-01, una consulta
 // tarda ~4.5s con el navegador caliente pero ~21s cuando arranca en frio. El checkout mostraba
 // "el SNR esta caido" con el SNR perfectamente vivo, y no dejaba pagar.
-const PUENTE_MS_1 = Number(process.env.VERIFY_BRIDGE_MS_1 || 12000);
-const PUENTE_MS_2 = Number(process.env.VERIFY_BRIDGE_MS_2 || 14000);
+const PUENTE_MS_1 = Number(process.env.VERIFY_BRIDGE_MS_1 || 26000);
+const PUENTE_MS_2 = Number(process.env.VERIFY_BRIDGE_MS_2 || 3000);
 
 async function consultarPuente(oficina: string, matricula: string, ms: number): Promise<VerifyResult> {
   const ctrl = new AbortController();
@@ -114,7 +114,12 @@ export async function verificar(oficina: string, matricula: string): Promise<Ver
   // como el checkout es fail-closed cada fallo es una venta perdida. Con un reintento el fallo compuesto
   // baja de ~20% a ~4%. Solo se reintenta lo NO concluyente (error/timeout): un "no existe" es definitivo.
   let r = await consultarPuente(oficina, matricula, PUENTE_MS_1);
-  if (r.error) r = await consultarPuente(oficina, matricula, PUENTE_MS_2);
+  // El reintento SOLO si el primer intento falló RÁPIDO (red caída, 502 del puente).
+  // Si fue timeout no se reintenta: el robot atiende las consultas EN SERIE, así que
+  // sigue ocupado con esta misma matrícula y el reintento se encola detrás — medido en
+  // producción el 2026-08-01: 12s + 14s = 26s y los dos abortaban. Esperar una vez lo
+  // suficiente funciona; insistir, no.
+  if (r.error && !/abort/i.test(r.error)) r = await consultarPuente(oficina, matricula, PUENTE_MS_2);
 
   // Escritura best-effort y SIN await: esperar el INSERT contra el Postgres remoto le sumaba segundos a la
   // respuesta que el usuario está esperando, justo en el paso previo al pago.
