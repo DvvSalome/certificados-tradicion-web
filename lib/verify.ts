@@ -69,9 +69,14 @@ function conLimite<T>(p: Promise<T>, ms: number): Promise<T | null> {
 // PRESUPUESTO DE TIEMPO. Las funciones de Vercel en plan Hobby mueren a los 10s por defecto, así que un
 // timeout de 15s nunca llegaba a cumplirse: Vercel cortaba antes y el visitante veía un error. Las rutas que
 // llaman aquí declaran maxDuration; aun así el gasto total (caché + 2 intentos) se mantiene por debajo para
-// que el usuario tenga una respuesta, no una pantalla colgada: 1.5s + 6s + 8s ≈ 15.5s en el peor caso.
-const PUENTE_MS_1 = Number(process.env.VERIFY_BRIDGE_MS_1 || 6000);
-const PUENTE_MS_2 = Number(process.env.VERIFY_BRIDGE_MS_2 || 8000);
+// que el usuario tenga una respuesta, no una pantalla colgada: 1.5s + 12s + 14s ≈ 27.5s en el peor caso,
+// bajo el maxDuration de 30s que declaran las rutas.
+//
+// Los 6s+8s de antes NO alcanzaban: medido contra el robot real el 2026-08-01, una consulta
+// tarda ~4.5s con el navegador caliente pero ~21s cuando arranca en frio. El checkout mostraba
+// "el SNR esta caido" con el SNR perfectamente vivo, y no dejaba pagar.
+const PUENTE_MS_1 = Number(process.env.VERIFY_BRIDGE_MS_1 || 12000);
+const PUENTE_MS_2 = Number(process.env.VERIFY_BRIDGE_MS_2 || 14000);
 
 async function consultarPuente(oficina: string, matricula: string, ms: number): Promise<VerifyResult> {
   const ctrl = new AbortController();

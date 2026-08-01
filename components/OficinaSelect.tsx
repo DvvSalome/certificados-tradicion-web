@@ -49,7 +49,7 @@ export default function OficinaSelect({
       </div>
 
       {open && (
-        <ul className="ctl-fade-up absolute z-30 mt-1.5 max-h-64 w-full overflow-auto rounded-xl border border-[var(--border)] bg-white py-1 shadow-[0_12px_40px_-12px_rgba(13,27,42,0.25)]">
+        <ul className="ctl-fade-up absolute z-50 mt-1.5 max-h-64 w-full overflow-auto rounded-xl border border-[var(--border)] bg-white py-1 shadow-[0_12px_40px_-12px_rgba(13,27,42,0.25)]">
           {filtered.length === 0 ? (
             <li className="px-4 py-3 text-sm text-[var(--muted-2)]">Sin resultados para “{query}”.</li>
           ) : (

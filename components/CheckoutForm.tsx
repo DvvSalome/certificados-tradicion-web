@@ -188,7 +188,7 @@ export default function CheckoutForm() {
         // El CTA del paso 1 dice "Verificar mi inmueble": si los campos ya están llenos y aún no hay
         // resultado, el clic DEBE verificar, no regañar con "te falta la matrícula".
         if (oficina && matricula.trim() && !vResult) { validarMatricula(false); return; }
-        setError(isRejected ? 'No encontramos esa matrícula en esa oficina. Verifica los datos.' : isUnverified ? 'El portal oficial del SNR no está disponible en este momento. Intenta más tarde.' : 'Te falta la oficina de registro y la matrícula.');
+        setError(isRejected ? 'No encontramos esa matrícula en esa oficina. Verifica los datos.' : isUnverified ? 'No pudimos verificar tu matrícula. Toca Reintentar en unos segundos.' : 'Te falta la oficina de registro y la matrícula.');
         irACampo('campo-inmueble');
       }
       else if (!nombres.trim() || !apellidos.trim()) { setError('Te faltan tus nombres y apellidos.'); irACampo('campo-nombre'); }
@@ -362,8 +362,11 @@ export default function CheckoutForm() {
                     <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 9v4M12 17h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
                   </div>
                   <div>
-                    <div className="font-bold text-amber-800 text-[13.5px]">El portal oficial del SNR no está disponible</div>
-                    <div className="text-xs text-amber-700 mt-0.5 max-w-md">El portal de la Superintendencia de Notariado y Registro puede estar en mantenimiento o caído. <b>No podemos procesar el pago hasta poder verificar tu matrícula.</b> Por favor, intenta de nuevo en unos minutos.</div>
+                    {/* No se culpa al SNR: la consulta puede fallar por NUESTRO lado (el robot
+                        verificador tarda), y decir "el SNR está caído" con el SNR vivo confunde
+                        al comprador y deja mal a la entidad. Se dice lo único que sabemos. */}
+                    <div className="font-bold text-amber-800 text-[13.5px]">No pudimos verificar tu matrícula ahora</div>
+                    <div className="text-xs text-amber-700 mt-0.5 max-w-md">La consulta al registro está demorando más de lo normal. <b>No procesamos el pago hasta confirmar tu matrícula</b>, para no cobrarte por un certificado que no podamos entregar. Toca «Reintentar» en unos segundos.</div>
                   </div>
                 </div>
                 <button type="button" onClick={() => validarMatricula(false)} className="text-xs font-bold text-amber-700 underline hover:text-amber-800 shrink-0">
