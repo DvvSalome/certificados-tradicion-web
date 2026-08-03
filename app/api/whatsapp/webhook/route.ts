@@ -95,16 +95,38 @@ async function procesar(raw: string) {
     // (correo reenviado, URL /estado, captura) y entregar datos del inmueble a quien no pagó (Habeas Data).
     // cert_pdf sale como base64 (encode en SQL): el pool de Vercel va por un proxy HTTP con JSON.stringify,
     // un Buffer crudo llegaría corrupto como {"type":"Buffer",...}. Reconstruimos el Buffer con Buffer.from.
+    // La comparación de la referencia va SIN distinguir mayúsculas, en los dos lados.
+    // Antes se hacía `reference = $1` con `ref.toUpperCase()`, y eso NUNCA podía coincidir:
+    // el checkout genera la referencia con randomUUID(), que devuelve el hex en minúscula
+    // ('CTL-1e86381a…'), y la columna es TEXT (case-sensitive). Resultado: todo cliente que
+    // mandaba su referencia recibía "no encuentro un certificado", con el pago hecho y el PDF
+    // guardado. Solo funcionaba el camino sin referencia (por teléfono).
+    // Se compara con upper() en ambos lados y no bajando el input, porque el teclado del celular
+    // autocapitaliza y el cliente puede escribirla como sea.
+    // ponytail: upper() no usa el índice de la PK. Con este volumen de pedidos da igual.
     const { rows } = ref
       ? await getPool().query<Cert>(
-          "SELECT reference, encode(cert_pdf,'base64') AS cert_pdf_b64, encode(estudio_pdf,'base64') AS estudio_pdf_b64, matricula FROM orders WHERE reference = $1 AND phone = $2 AND cert_pdf IS NOT NULL",
-          [ref.toUpperCase(), from])
+          "SELECT reference, encode(cert_pdf,'base64') AS cert_pdf_b64, encode(estudio_pdf,'base64') AS estudio_pdf_b64, matricula FROM orders WHERE upper(reference) = upper($1) AND phone = $2 AND cert_pdf IS NOT NULL",
+          [ref, from])
       : await getPool().query<Cert>(
           "SELECT reference, encode(cert_pdf,'base64') AS cert_pdf_b64, encode(estudio_pdf,'base64') AS estudio_pdf_b64, matricula FROM orders WHERE phone = $1 AND cert_pdf IS NOT NULL ORDER BY cert_pdf_at DESC LIMIT 1",
           [from]);
     const row = rows[0];
     if (!row || !row.cert_pdf_b64) {
       console.error(`[wa webhook] sin certificado autorizado para ${from}${ref ? ` (ref ${ref})` : ''}`);
+      // DIAGNÓSTICO: la consulta de arriba exige referencia + teléfono + PDF a la vez, así que al
+      // fallar no se sabe cuál de las tres condiciones falló. Esta consulta lo dice. Del teléfono
+      // guardado solo se loguean los últimos 4 dígitos: sirve para comparar sin volcar el número.
+      if (ref) {
+        try {
+          const d = await getPool().query<{ phone: string | null; tiene_pdf: boolean; status: string }>(
+            "SELECT phone, (cert_pdf IS NOT NULL) AS tiene_pdf, status FROM orders WHERE upper(reference) = upper($1)",
+            [ref]);
+          const o = d.rows[0];
+          if (!o) console.error(`[wa webhook] diag: la referencia ${ref} NO existe en orders`);
+          else console.error(`[wa webhook] diag: ${ref} existe · status=${o.status} · pdf=${o.tiene_pdf} · phone guardado ***${(o.phone || '').slice(-4)} vs from ***${from.slice(-4)}`);
+        } catch (e) { console.error('[wa webhook] diag falló:', e); }
+      }
       await enviarTexto(from, ref
         ? 'Mmm, no encuentro un certificado con esa referencia a nombre de este número 🤔. Verifica que sea la referencia de tu correo de confirmación (empieza por CTL-) y escríbeme desde el mismo número de WhatsApp con el que pagaste 🙏'
         : '¡Hola! 👋 Soy el asistente de Certitradición 💜 Aún no veo un certificado a nombre de este número. Si ya hiciste tu pedido, envíame la referencia (empieza por CTL-) que está en tu correo de confirmación, o escríbeme desde el mismo número con el que pagaste. ¿Aún no lo solicitas? 👉 certitradicion.com');

@@ -74,7 +74,7 @@ export interface Dashboard {
   certCount: number;
   ordersByStatus: Record<string, number>;
   recentGenerations: { matricula: string; oficina: string; status: string; costCents: number | null; error: string | null; at: string }[];
-  recentOrders: { reference: string; matricula: string; oficina: string; status: string; amountCents: number; plan: string; hasPdf: boolean; at: string }[];
+  recentOrders: { reference: string; matricula: string; oficina: string; status: string; amountCents: number; plan: string; hasPdf: boolean; at: string; generadoAt: string | null }[];
   robot: { lastRunAt: string | null; lastOkAt: string | null; lastError: string | null; okToday: number; failToday: number };
 }
 
@@ -101,7 +101,7 @@ export async function getDashboard(): Promise<Dashboard> {
         (SELECT COUNT(*) FROM generations WHERE status='OK') AS certs`),
     pool.query(`SELECT status, COUNT(*) AS c FROM orders GROUP BY status`),
     pool.query(`SELECT matricula, oficina, status, cost_in_cents, error, created_at FROM generations ORDER BY created_at DESC LIMIT 15`),
-    pool.query(`SELECT reference, matricula, oficina, status, amount_in_cents, plan, (cert_pdf IS NOT NULL) AS has_pdf, created_at FROM orders ORDER BY created_at DESC LIMIT 15`),
+    pool.query(`SELECT reference, matricula, oficina, status, amount_in_cents, plan, (cert_pdf IS NOT NULL) AS has_pdf, created_at, cert_pdf_at FROM orders ORDER BY created_at DESC LIMIT 15`),
     pool.query(`SELECT
         (SELECT created_at FROM generations ORDER BY created_at DESC LIMIT 1) AS last_run,
         (SELECT created_at FROM generations WHERE status='OK' ORDER BY created_at DESC LIMIT 1) AS last_ok,
@@ -133,6 +133,7 @@ export async function getDashboard(): Promise<Dashboard> {
     recentOrders: ords.rows.map((r) => ({
       reference: r.reference, matricula: r.matricula, oficina: r.oficina, status: r.status,
       amountCents: n(r.amount_in_cents), plan: r.plan ?? 'basico', hasPdf: !!r.has_pdf, at: iso(r.created_at)!,
+      generadoAt: iso(r.cert_pdf_at) ?? null,
     })),
     robot: {
       lastRunAt: iso(robot.rows[0]?.last_run), lastOkAt: iso(robot.rows[0]?.last_ok),

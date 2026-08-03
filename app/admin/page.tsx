@@ -13,6 +13,14 @@ import FunnelPanel from './FunnelPanel';
 export const dynamic = 'force-dynamic';
 
 const fmt = (c: number) => formatCOP(c / 100);
+
+// Fecha corta en hora de Colombia. El servidor corre en UTC (Vercel), así que sin timeZone
+// explícito un pedido de las 7 p.m. se vería como del día siguiente.
+const fechaHora = (iso: string | null) =>
+  !iso ? '—' : new Date(iso).toLocaleString('es-CO', {
+    timeZone: 'America/Bogota', day: '2-digit', month: '2-digit', year: '2-digit',
+    hour: '2-digit', minute: '2-digit', hour12: true,
+  });
 // Lo que el SNR cobra por certificado ($23.000). Estaba repetido a mano en dos sitios.
 const SNR_COST_CENTS = 2_300_000;
 const ago = (iso: string | null) => {
@@ -146,12 +154,14 @@ export default async function AdminDashboard() {
           {d.recentOrders.length === 0 ? (
             <Empty>Sin pedidos todavía.</Empty>
           ) : (
-            <Table head={['Ref', 'Matrícula', 'Estado', 'Valor', 'Acciones']}>
+            <Table head={['Ref', 'Matrícula', 'Estado', 'Pedido', 'Generado', 'Valor', 'Acciones']}>
               {d.recentOrders.map((o) => (
                 <tr key={o.reference} className="border-t border-[var(--border)] align-top">
                   <Td mono>{o.reference.slice(0, 10)}…</Td>
                   <Td mono>{o.matricula}</Td>
                   <Td><Badge ok={o.status === 'DELIVERED'} warn={o.status === 'FAILED'}>{STATUS_LABEL[o.status] ?? o.status}</Badge></Td>
+                  <Td>{fechaHora(o.at)}</Td>
+                  <Td>{fechaHora(o.generadoAt)}</Td>
                   <Td>{fmt(o.amountCents)}</Td>
                   <Td><OrderActions reference={o.reference} status={o.status} hasPdf={o.hasPdf} isSuperadmin={role === 'superadmin'} /></Td>
                 </tr>
