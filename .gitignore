@@ -32,6 +32,13 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...salvo las plantillas sin valores, que sí deben versionarse
+!.env.example
+!**/.env.example
+
+# Artefactos de reconocimiento: capturas, dumps HTML y PDFs reales del SNR.
+# Pesan ~8 MB y los CTL traen datos personales de propietarios. No van al repo.
+recon/artifacts/
 
 # vercel
 .vercel

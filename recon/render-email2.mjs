@@ -1,0 +1,21 @@
+import { chromium } from 'playwright';
+import fs from 'fs';
+import sharp from 'sharp';
+import { pdfToPng } from 'pdf-to-png-converter';
+import { ctlEmailHtml } from '../email/ctl-template.mjs';
+
+const pdf = fs.readFileSync('recon/artifacts/CTL-95200.pdf');
+const pages = await pdfToPng(pdf, { pagesToProcess: [1], viewportScale: 2 });
+const blurred = await sharp(pages[0].content).resize({ width: 1040 }).blur(18).png().toBuffer();
+const { width, height } = await sharp(blurred).metadata();
+const cx = width / 2, cy = height / 2;
+const svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="#0d1b2a" opacity="0.5"/><g transform="translate(${cx},${cy - 56})"><circle r="58" fill="#fff" opacity="0.14"/><rect x="-30" y="-2" width="60" height="46" rx="9" fill="#fff"/><path d="M -19 -2 V -19 a 19 19 0 0 1 38 0 V -2" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round"/><circle cx="0" cy="20" r="6" fill="#103A73"/></g><text x="${cx}" y="${cy + 52}" text-anchor="middle" font-family="Arial" font-size="40" font-weight="bold" fill="#fff" letter-spacing="2">VISTA PROTEGIDA</text></svg>`;
+const protectedPng = await sharp(blurred).composite([{ input: Buffer.from(svg), top: 0, left: 0 }]).png().toBuffer();
+let html = ctlEmailHtml({ matricula: '95200', oficina: 'BARRANQUILLA', fecha: '25 de junio de 2026', previewCid: 'ctlpreview', descargaUrl: 'https://certitradicion.com/estado?ref=CTL-DEMO95200' });
+html = html.replace('cid:ctlpreview', 'data:image/png;base64,' + protectedPng.toString('base64'));
+const b = await chromium.launch();
+const pg = await (await b.newContext({ viewport: { width: 680, height: 1500 }, deviceScaleFactor: 2 })).newPage();
+await pg.setContent(html, { waitUntil: 'networkidle' });
+await pg.screenshot({ path: 'recon/artifacts/email-render2.png', fullPage: true });
+await b.close();
+console.log('render OK -> recon/artifacts/email-render2.png');
