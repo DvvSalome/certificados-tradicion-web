@@ -1,7 +1,7 @@
 'use client';
 
 import { PLANS, formatCOP, type PlanId } from '@/lib/config';
-import PlanTagline from '@/components/PlanTagline';
+import PlanTagline, { PlanFeature } from '@/components/PlanTagline';
 import PlanIcon from '@/components/PlanIcon';
 import { track } from '@/lib/track';
 
@@ -25,7 +25,7 @@ export default function HeroPlans() {
               key={pid}
               type="button"
               onClick={() => elegir(pid)}
-              className={`group relative flex flex-col items-start rounded-2xl border-2 p-5 text-left transition-all hover:-translate-y-0.5 hover:shadow-lg ${
+              className={`group relative flex h-full flex-col items-start rounded-2xl border-2 p-5 text-left transition-all hover:-translate-y-0.5 hover:shadow-lg ${
                 p.recommended
                   ? 'border-[var(--brand)] bg-[var(--brand-50)] shadow-md'
                   : 'border-[var(--border)] bg-white shadow-sm hover:border-[var(--brand-ring)]'
@@ -46,7 +46,28 @@ export default function HeroPlans() {
                 {formatCOP(p.priceCop)}
               </p>
               <p className="mt-1 min-h-[36px] text-[12.5px] leading-snug text-[var(--muted)]"><PlanTagline text={p.tagline} /></p>
-              <span className={`mt-3 inline-flex items-center gap-1.5 text-[13px] font-bold ${p.recommended ? 'text-[var(--brand)]' : 'text-[var(--muted)]'} group-hover:text-[var(--brand)]`}>
+
+              {/* Qué incluye. El copy sale de PLANS[].features (lib/config.ts), que es la MISMA
+                  lista que ve el checkout: si cambia el producto, cambia en un solo lugar.
+                  Antes el hero solo mostraba el tagline y el visitante elegía plan sin saber
+                  qué se llevaba. */}
+              <ul className="mt-3 w-full space-y-1.5 border-t border-[var(--border)] pt-3">
+                {p.features.map((f, i) => (
+                  <li key={i} className="flex items-start gap-1.5 text-[11.5px] leading-[1.45] text-[var(--muted)]">
+                    <svg
+                      className={`mt-[3px] size-3 shrink-0 ${p.recommended ? 'text-[var(--brand)]' : 'text-[var(--muted-2)]'}`}
+                      viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5"
+                      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"
+                    >
+                      <path d="M20 6 9 17l-5-5" />
+                    </svg>
+                    <span><PlanFeature text={f} /></span>
+                  </li>
+                ))}
+              </ul>
+
+              {/* mt-auto: los planes tienen 3 y 5 items, así los tres botones quedan a la misma altura. */}
+              <span className={`mt-auto pt-4 inline-flex items-center gap-1.5 text-[13px] font-bold ${p.recommended ? 'text-[var(--brand)]' : 'text-[var(--muted)]'} group-hover:text-[var(--brand)]`}>
                 Elegir este plan
                 <svg className="size-4 transition-transform group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
               </span>
