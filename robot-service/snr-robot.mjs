@@ -249,11 +249,28 @@ export class SnrRobot {
     if (await cerrar.count().catch(() => 0)) { await cerrar.click({ force: true }).catch(() => {}); }
     else { const a = p.getByRole('button', { name: /^Aceptar$/ }).first(); if (await a.isVisible().catch(() => false)) await a.click({ force: true }).catch(() => {}); }
     // btnPagar se habilita por AJAX tras cerrar el popup: ESPERAR activamente (no waits fijos, es flaky).
-    await p.waitForFunction(() => {
+    // DEVUELVE si quedó habilitado. Antes esto solo logueaba la advertencia y generar() hacía el clic
+    // igual, contra un botón `disabled`: 15s de espera + 30s de timeout y un error de Playwright que no
+    // decía la causa real. Visto en producción el 2026-08-05 con la matrícula 145597.
+    return await p.waitForFunction(() => {
       const b = document.querySelector('[id="formGeneracionCertificados:btnPagar"]');
       return b && !b.disabled && !b.classList.contains('ui-state-disabled');
-    }, { timeout: 15000 }).then(() => this.log('[snr] carrito listo, Pagar habilitado'))
-      .catch(() => this.log('[snr] ⚠ Pagar no se habilitó en 15s'));
+    }, { timeout: 15000 })
+      .then(() => { this.log('[snr] carrito listo, Pagar habilitado'); return true; })
+      .catch(() => { this.log('[snr] ⚠ Pagar no se habilitó en 15s'); return false; });
+  }
+
+  // PrimeFaces tapa la pantalla con un overlay mientras corre cada petición AJAX. Con el overlay puesto,
+  // un click normal de Playwright espera a que el elemento reciba el puntero, el overlay lo intercepta, y
+  // se vence a los 30s AUNQUE el botón esté habilitado. Ese fue el primer intento fallido de la 145597.
+  async esperarSinOverlay(timeout = 15000) {
+    await this.page.waitForFunction(() => {
+      const sel = '.ui-blockui, .ui-widget-overlay, .ui-ajax-loader';
+      return !Array.from(document.querySelectorAll(sel)).some((e) => {
+        const s = getComputedStyle(e);
+        return s.display !== 'none' && s.visibility !== 'hidden' && e.offsetParent !== null;
+      });
+    }, { timeout }).catch(() => this.log('[snr] ⚠ el overlay de PrimeFaces sigue visible'));
   }
 
   async limpiarCarrito() { await this.page.click(S.btnLimpiar).catch(() => {}); await this.page.waitForTimeout(1000); }
@@ -314,14 +331,26 @@ export class SnrRobot {
     // Error con code NO_DISPONIBLE → el backend dispara la DEVOLUCIÓN automática al cliente.
     const info = await this.consultar(oficina, matricula);
     if (!info.disponible) throw Object.assign(new Error(`matrícula ${matricula} no disponible: ${info.estado || info.raw}`), { code: 'NO_DISPONIBLE' });
-    await this.agregarAlCarrito();
+    const carritoListo = await this.agregarAlCarrito();
 
     if (dryRun) { await this.limpiarCarrito(); return { dryRun: true, info }; }
+
+    // Si "Pagar" no se habilitó, el SNR no cerró bien el popup del carrito. Cortar acá: hacer clic igual
+    // solo quema 30s y devuelve un timeout de Playwright que oculta la causa. Todavía NO se cobró nada,
+    // así que el reintento es seguro.
+    if (!carritoListo) {
+      throw Object.assign(
+        new Error(`el carrito no habilitó "Pagar" para la matrícula ${matricula} (el SNR no cerró el popup de confirmación). No se cobró saldo.`),
+        { code: 'CARRITO_NO_LISTO' });
+    }
 
     // ── PASO QUE COBRA SALDO (flujo PROBADO end-to-end con 95200) ──
     const p = this.page;
     // 1) Pagar → diálogo PrimeFaces.confirm → "Sí"
-    await p.click(S.btnPagar);
+    // Este clic NO cobra: solo abre el diálogo de confirmación. El cobro real es "Realizar Pago" (paso 3).
+    // Por eso es seguro esperar al overlay y reintentar acá.
+    await this.esperarSinOverlay();
+    await p.click(S.btnPagar, { timeout: 15000 });
     await p.waitForSelector('.ui-confirmdialog-yes', { timeout: 12000 }).catch(() => {});
     await p.locator('.ui-confirmdialog-yes').first().click({ force: true })
       .catch(async () => { await p.getByRole('button', { name: /^S[ií]$/ }).first().click({ force: true }).catch(() => {}); });
@@ -399,7 +428,14 @@ export class SnrRobot {
     }
 
     // ── PASO QUE COBRA (UN pago por los N del carrito) ──
-    await p.click(S.btnPagar);
+    // Mismo guardia que en generar(): con el overlay de PrimeFaces puesto el clic se vence a los 30s
+    // aunque el botón esté habilitado. Acá NO se corta si sigue deshabilitado: en el lote ya hay N ítems
+    // dentro y abandonar dejaría el carrito sucio para la próxima corrida. Se avisa y se intenta igual.
+    await this.esperarSinOverlay();
+    await p.click(S.btnPagar, { timeout: 15000 }).catch((e) => {
+      this.log(`[lote] ⚠ el clic en Pagar falló (${String(e.message).split('\n')[0]}); reintento forzado`);
+      return p.locator(S.btnPagar).first().click({ force: true });
+    });
     await p.waitForSelector('.ui-confirmdialog-yes', { timeout: 12000 }).catch(() => {});
     await p.locator('.ui-confirmdialog-yes').first().click({ force: true })
       .catch(async () => { await p.getByRole('button', { name: /^S[ií]$/ }).first().click({ force: true }).catch(() => {}); });
