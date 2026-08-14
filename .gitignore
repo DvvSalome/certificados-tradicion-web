@@ -51,3 +51,6 @@ next-env.d.ts
 
 # Subagent-driven dev ledger (scratch)
 .superpowers/
+
+# deps del robot-service (se instalan en el contenedor)
+robot-service/node_modules/

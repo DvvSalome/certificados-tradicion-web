@@ -8,7 +8,7 @@ import PlanTagline, { PlanFeature } from '@/components/PlanTagline';
 import PlanIcon from '@/components/PlanIcon';
 import { track } from '@/lib/track';
 
-type VResult = { disponible: boolean | null; estado: string | null; direccion: string | null; circulo: string | null; mocked?: boolean; error?: string };
+type VResult = { disponible: boolean | null; estado: string | null; direccion: string | null; circulo: string | null; mocked?: boolean; error?: string; motivo?: string | null; turno?: string | null };
 
 const ID_TYPES = [
   { value: 'CC', label: 'Cédula de ciudadanía' },
@@ -142,11 +142,16 @@ export default function CheckoutForm() {
   }, [oficina, matricula, vResult, validating]);
 
   const isVerified = vResult?.disponible === true;
+  // El inmueble EXISTE pero el SNR no lo expide hoy y dijo por qué (ej. "en calificación": tiene un
+  // turno de registro en trámite). Antes esto caía en isUnverified y le decíamos "está demorando,
+  // reintenta", así que el cliente reintentaba para siempre contra algo que no iba a cambiar en el
+  // día. Caso real 2026-08-13: matrícula 018-19471, turno 2026-018-6-7971.
+  const isBlocked = vResult?.disponible === false && !vResult?.error && !!vResult?.motivo;
   // "No encontrada" GENUINO (el SNR dijo claramente que no existe). Un error/timeout NO es rechazo.
-  const isRejected = vResult?.disponible === false && !vResult?.error;
+  const isRejected = vResult?.disponible === false && !vResult?.error && !isBlocked;
   // No se pudo verificar (portal del SNR caído/lento/en mantenimiento). NO dejamos pagar: si no podemos
   // verificar, tampoco vamos a poder generar → mejor "intenta más tarde" que cobrar y devolver.
-  const isUnverified = !!vResult && !isVerified && !isRejected;
+  const isUnverified = !!vResult && !isVerified && !isRejected && !isBlocked;
   const canProceed = isVerified;
 
   // PASO 2 (datos personales, casillas y plan): se abre solo cuando el inmueble quedó VERIFICADO.
@@ -188,7 +193,7 @@ export default function CheckoutForm() {
         // El CTA del paso 1 dice "Verificar mi inmueble": si los campos ya están llenos y aún no hay
         // resultado, el clic DEBE verificar, no regañar con "te falta la matrícula".
         if (oficina && matricula.trim() && !vResult) { validarMatricula(false); return; }
-        setError(isRejected ? 'No encontramos esa matrícula en esa oficina. Verifica los datos.' : isUnverified ? 'No pudimos verificar tu matrícula. Toca Reintentar en unos segundos.' : 'Te falta la oficina de registro y la matrícula.');
+        setError(isBlocked ? `El registro reporta este inmueble como ${vResult?.estado}. No se puede expedir el certificado hasta que cierre ese trámite.` : isRejected ? 'No encontramos esa matrícula en esa oficina. Verifica los datos.' : isUnverified ? 'No pudimos verificar tu matrícula. Toca Reintentar en unos segundos.' : 'Te falta la oficina de registro y la matrícula.');
         irACampo('campo-inmueble');
       }
       else if (!nombres.trim() || !apellidos.trim()) { setError('Te faltan tus nombres y apellidos.'); irACampo('campo-nombre'); }
@@ -352,6 +357,38 @@ export default function CheckoutForm() {
                 <button type="button" onClick={() => validarMatricula(false)} className="text-xs font-bold text-red-700 underline hover:text-red-800">
                   Reintentar
                 </button>
+             </div>
+          )}
+
+          {isBlocked && !validating && (
+             <div className="rounded-xl border border-sky-200 bg-sky-50 p-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-sky-500 text-white mt-0.5">
+                    <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  </div>
+                  <div>
+                    <div className="font-bold text-sky-900 text-[13.5px]">
+                      Este inmueble existe, pero hoy no se puede certificar
+                    </div>
+                    <div className="text-xs text-sky-800 mt-1 max-w-lg">
+                      El registro reporta la matrícula <b className="font-mono">{oficinaCode(oficina) || '—'} - {matricula}</b> como <b>{vResult?.estado}</b>. {vResult?.motivo}
+                      {vResult?.turno ? <> Turno en trámite: <b className="font-mono">{vResult.turno}</b>.</> : null}
+                    </div>
+                    <div className="text-xs text-sky-800 mt-2 max-w-lg">
+                      <b>No te cobramos nada.</b> Cuando el trámite cierre en el registro, el certificado vuelve a estar disponible.
+                      Si necesitas ayuda con este caso, escríbenos por WhatsApp y lo revisamos contigo.
+                    </div>
+                    <div className="mt-2.5 flex flex-wrap items-center gap-3">
+                      <a href="https://wa.me/573245092914" target="_blank" rel="noopener noreferrer"
+                         className="text-xs font-bold text-sky-800 underline hover:text-sky-900">
+                        Escribirnos por WhatsApp
+                      </a>
+                      <button type="button" onClick={() => validarMatricula(false)} className="text-xs font-bold text-sky-700 underline hover:text-sky-800">
+                        Consultar otra matrícula
+                      </button>
+                    </div>
+                  </div>
+                </div>
              </div>
           )}
 

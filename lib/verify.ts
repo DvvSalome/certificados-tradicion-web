@@ -8,6 +8,11 @@ export interface VerifyResult {
   cached: boolean;
   mocked?: boolean;
   error?: string;
+  // Razón CONCLUYENTE por la que el SNR no expide (ej. "matrícula en calificación"), con su turno.
+  // Distingue "existe pero hoy no se puede" de "no existe" y de "el portal está lento": son tres
+  // mensajes distintos para el cliente y antes los tres caían en "reintenta en unos segundos".
+  motivo?: string | null;
+  turno?: string | null;
 }
 
 const CACHE_HOURS = Number(process.env.VERIFY_CACHE_HOURS || 24);
@@ -96,6 +101,8 @@ async function consultarPuente(oficina: string, matricula: string, ms: number): 
       direccion: info.direccion ?? null,
       circulo: info.circulo ?? null,
       cached: false,
+      motivo: info.motivo ?? null,
+      turno: info.turno ?? null,
     };
   } catch (e) {
     return { disponible: null, estado: null, direccion: null, circulo: null, cached: false, error: String(e).slice(0, 120) };

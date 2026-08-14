@@ -343,7 +343,9 @@ const server = http.createServer(async (req, res) => {
       try {
         const info = await doVerify(oficina, matricula);
         res.writeHead(200, { 'content-type': 'application/json' });
-        res.end(JSON.stringify({ oficina, matricula, disponible: !!info.disponible, estado: info.estado, direccion: info.direccion, circulo: info.circulo }));
+        // motivo/turno viajan cuando el SNR dio una razón CONCLUYENTE para no expedir (ej. matrícula
+        // en calificación). Sin esto el web no puede distinguirlo de "el portal está lento".
+        res.end(JSON.stringify({ oficina, matricula, disponible: !!info.disponible, estado: info.estado, direccion: info.direccion, circulo: info.circulo, motivo: info.motivo ?? null, turno: info.turno ?? null }));
       } catch (e) {
         console.error('[verify] error final: ' + e.message);
         res.writeHead(502, { 'content-type': 'application/json' });

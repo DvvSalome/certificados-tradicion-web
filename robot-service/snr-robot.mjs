@@ -173,6 +173,31 @@ export class SnrRobot {
     const notFound = /no se encuentra|no se encontr[oó]|no existe|No se ha encontrado|matr[ií]cula no v[aá]lida/i.test(info.raw);
     const snrError = /Error de validaci[oó]n|no es posible generar|error interno|servicio no (est[aá] )?disponible|intente (m[aá]s tarde|nuevamente)|502|503|timeout/i.test(info.raw);
     const hasInfo = /Estado\s+(Disponible|No)/i.test(info.raw) || !!info.estado;
+
+    // El SNR envuelve en un diálogo titulado "Error de validacion Matricula" DOS cosas distintas:
+    // fallos suyos (portal caído, lento) y respuestas de negocio DEFINITIVAS. Las segundas caían en
+    // el mismo saco y el sitio le decía al cliente "está demorando, reintenta", que nunca iba a
+    // funcionar. Caso real 2026-08-13, matrícula 018-19471:
+    //   "No se puede Generar el certificado Matricula en calificacion. No se puede expedir el
+    //    Certificado de Tradicion Inmobiliaria. - 18-Turno: 2026-018-6-7971"
+    // Eso es concluyente: el predio tiene un turno de registro en trámite y NO se puede expedir
+    // hasta que cierre. Se detecta ANTES de clasificar como fallo del portal.
+    const MOTIVOS = [
+      [/en\s+calificaci[oó]n/i, 'En calificación', 'El predio tiene un trámite de registro en curso. El SNR no expide el certificado hasta que ese turno cierre.'],
+      [/matr[ií]cula\s+cerrada|folio\s+cerrado/i, 'Matrícula cerrada', 'Esta matrícula fue cerrada en el registro y ya no expide certificado.'],
+      [/en\s+proceso\s+de\s+(registro|inscripci[oó]n)/i, 'En proceso de registro', 'Hay una inscripción en curso sobre el predio.'],
+    ];
+    const motivo = MOTIVOS.find(([re]) => re.test(info.raw));
+    if (motivo) {
+      const turno = (info.raw.match(/Turno:\s*([0-9\-]+)/i) || [])[1] || null;
+      info.estado = motivo[1];
+      info.disponible = false;
+      info.motivo = motivo[2];
+      info.turno = turno;
+      this.log(`[snr] ${matricula} NO expedible (concluyente): ${motivo[1]}${turno ? ` turno ${turno}` : ''}`);
+      return info;
+    }
+
     if (snrError && !hasInfo && !notFound) throw Object.assign(new Error('portal SNR con error, no concluyente: ' + info.raw.slice(0, 120)), { code: 'SNR_ERROR' });
     if (!hasInfo && !notFound) throw new Error('consulta pública sin resultado: ' + info.raw.slice(0, 120));
     info.disponible = !notFound && /disponible/i.test(info.estado || '') && !/no\s*disponible/i.test(info.estado || '');
