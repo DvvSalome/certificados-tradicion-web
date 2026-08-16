@@ -1,10 +1,17 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { recordGeneration } from '@/lib/admin';
 import { orders } from '@/lib/orders';
 import { sendAlert } from '@/lib/alerts';
 import { refundForInvalidMatricula } from '@/lib/refunds';
+import { pedidoAlCrmPorRef } from '@/lib/crm';
 
 export const runtime = 'nodejs';
+
+// Espeja el estado FINAL de la orden en el CRM (después de la transición, nunca antes).
+// after(): en serverless un fire-and-forget suelto no llega a correr.
+function espejarPedido(reference?: string): void {
+  if (reference) after(async () => { await pedidoAlCrmPorRef(reference); });
+}
 
 // El robot/n8n reporta el resultado de cada generación. El panel lo captura en la bitácora;
 // si falló, marca la orden FAILED y dispara alerta de fallo del flujo (WhatsApp+Email).
@@ -52,12 +59,14 @@ export async function POST(req: Request) {
   if (b.status === 'OK') {
     // transición atómica: solo marca DELIVERED si seguía en curso (no pisa REFUNDED/FAILED por un reporte tardío).
     if (b.reference) await orders.transition(b.reference, ['GENERATING', 'PAID'], 'DELIVERED');
+    espejarPedido(b.reference);
     return NextResponse.json({ ok: true });
   }
 
   // FALLO. Si fue por matrícula inválida/no disponible → DEVOLUCIÓN automática al cliente.
   if (b.errorCode === 'NO_DISPONIBLE' && b.reference) {
     const r = await refundForInvalidMatricula(b.reference);
+    espejarPedido(b.reference);
     return NextResponse.json({ ok: true, refunded: r.refunded, manual: r.manual });
   }
 
@@ -72,5 +81,6 @@ export async function POST(req: Request) {
     message: `No se pudo generar ${b.reference ? b.reference + ' — ' : ''}matrícula ${b.matricula} (${b.oficina}). ${b.error ? 'Error: ' + b.error + '. ' : ''}\n📞 Contactar al cliente: ${contacto}\n🔧 Panel: ${panel} — revisar robot/saldo y gestionar reintento o devolución. El cliente PAGÓ.`,
     data: { matricula: b.matricula, oficina: b.oficina, referencia: b.reference ?? null, email: ord?.email ?? null, phone: ord?.phone ?? null, error: b.error ?? null },
   });
+  espejarPedido(b.reference);
   return NextResponse.json({ ok: true });
 }

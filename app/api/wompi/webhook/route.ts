@@ -1,10 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { verifyEvent, getTransaction } from '@/lib/wompi';
 import { orders } from '@/lib/orders';
 import { triggerGenerarCTL } from '@/lib/n8n';
 import { sendAlert } from '@/lib/alerts';
 import { capiPurchase } from '@/lib/meta-capi';
 import { registrarEventoWompi } from '@/lib/wompi-log';
+import { pedidoAlCrmPorRef } from '@/lib/crm';
 
 export const runtime = 'nodejs';
 
@@ -103,9 +104,23 @@ export async function POST(req: Request) {
       });
     }
     await registrarEventoWompi({ ...evLog, resultado: 'aprobado' });
+
+    // La venta BUENA también avisa (2026-08-15: una clienta compró y nadie se enteró
+    // hasta horas después; solo alertábamos los fallos). n8n abanica a WhatsApp+correo,
+    // y el espejo en el CRM enciende la campana y el módulo /pedidos.
+    after(async () => {
+      await sendAlert({
+        kind: 'venta_confirmada',
+        title: `💰 Venta confirmada: $${Math.round(claimed.amountInCents / 100).toLocaleString('es-CO')}`,
+        message: `Pago aprobado de ${reference}. Matrícula ${claimed.matricula} (${claimed.oficina}), plan ${claimed.plan ?? order.plan}. Cliente: ${[claimed.phone ? `WhatsApp +${claimed.phone}` : null, claimed.email].filter(Boolean).join(' · ') || 'sin contacto'}. El certificado se está generando.`,
+        data: { referencia: reference, matricula: claimed.matricula, oficina: claimed.oficina, monto: claimed.amountInCents },
+      });
+      await pedidoAlCrmPorRef(reference);
+    });
   } else if (tx.status && ['DECLINED', 'ERROR', 'VOIDED'].includes(tx.status)) {
     if (order.status === 'PENDING_PAYMENT') await orders.update(reference, { status: 'FAILED', transactionId: String(tx.id) });
     await registrarEventoWompi({ ...evLog, resultado: 'rechazado' });
+    after(async () => { await pedidoAlCrmPorRef(reference); });
   }
 
   return NextResponse.json({ ok: true });

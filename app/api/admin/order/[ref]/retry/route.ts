@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { getSession } from '@/lib/admin';
 import { getPool } from '@/lib/db';
 import { triggerGenerarCTL } from '@/lib/n8n';
 import { getTransaction } from '@/lib/wompi';
+import { pedidoAlCrmPorRef } from '@/lib/crm';
 
 export const runtime = 'nodejs';
 
@@ -40,5 +41,6 @@ export async function POST(_req: Request, ctx: { params: Promise<{ ref: string }
     email: o.email, phone: o.phone, transactionId: o.transaction_id ?? '', plan: o.plan,
   });
   if (!r.ok) return NextResponse.json({ error: 'No se pudo disparar la generación: ' + (r.error || r.status) }, { status: 502 });
+  after(async () => { await pedidoAlCrmPorRef(ref); }); // espejo en /pedidos del CRM (quedó PAID de nuevo)
   return NextResponse.json({ ok: true, mocked: r.mocked });
 }

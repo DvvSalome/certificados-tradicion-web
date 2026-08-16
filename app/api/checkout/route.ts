@@ -6,7 +6,7 @@ import { signDownload } from '@/lib/download-token';
 import { planAmountCents, getPlan } from '@/lib/config';
 import { isOficina } from '@/lib/oficinas';
 import { verificar, rateLimited } from '@/lib/verify';
-import { enviarLeadAlCrm } from '@/lib/crm';
+import { enviarLeadAlCrm, pedidoAlCrm } from '@/lib/crm';
 
 export const runtime = 'nodejs';
 // El checkout revalida contra el SNR antes de cobrar (fail-closed), así que hereda el mismo riesgo que
@@ -113,6 +113,12 @@ export async function POST(req: Request) {
       utm: utmDeReferer(referer),
     });
     if (!r.ok) console.error('[crm] lead no enviado: ' + r.error);
+    // El pedido nace en el módulo /pedidos del CRM desde ya (pendiente de pago).
+    const p = await pedidoAlCrm({
+      reference, status: 'PENDING_PAYMENT', matricula, oficina, plan,
+      email, phone, amountInCents,
+    });
+    if (!p.ok) console.error('[crm] pedido no enviado: ' + p.error);
   });
 
   // URL pública del sitio. Detrás de un proxy (Traefik/Vercel) NO usar req.url (da el origen interno localhost).
