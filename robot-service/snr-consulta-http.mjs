@@ -57,10 +57,33 @@ export async function consultaHttp(oficina, matricula) {
   // "no encontrada" GENUINO vs error del SISTEMA del SNR. "Error de validación" / "no es posible generar" NO
   // significan "no existe" (portal lento/caído) → deben LANZAR (→ fallback navegador y, si todo falla, el web
   // hace fail-open y NO bloquea a un cliente real con una matrícula válida).
-  const notFound = /no se encuentra|No se ha encontrado|No Disponible/i.test(xml);
-  const snrError = /Error de validaci[oó]n|no es posible generar|error interno|servicio no (est[aá] )?disponible|intente (m[aá]s tarde|nuevamente)/i.test(xml);
+  //
+  // ⚠ SE MIRA `modal`, NO `xml`. El AJAX del SNR reenvía varios componentes y algunos traen PLANTILLAS
+  // OCULTAS con las frases "Error de validación" y "no es posible generar". Probando contra el XML entero,
+  // TODA consulta buena se leía como error del portal → excepción → fallback al navegador → cola envenenada
+  // → checkout muerto. Caída del 2026-09-06: nadie pudo comprar hasta que se acotó al modal.
+  const notFound = /no se encuentra|No se ha encontrado/i.test(modal);
+  const snrError = /Error de validaci[oó]n|no es posible generar|error interno|servicio no (est[aá] )?disponible|intente (m[aá]s tarde|nuevamente)/i.test(modal);
+
+  // ⚠ PORTAL SIN VALIDAR (visto el 2026-09-06). El SNR empezó a responder ESTE mismo modal para
+  // CUALQUIER matrícula, exista o no: "La matrícula fue encontrada, pero no registra dirección en la
+  // oficina de registro, puede generar el certificado sin esta información", con Estado "No Disponible",
+  // sin dirección y sin círculo. Comprobado: 99999999 (inventada) devuelve exactamente lo mismo que una
+  // real. O sea que su pre-validación NO está discriminando y su "fue encontrada" no vale como prueba.
+  //
+  // Por eso NO se puede tratar como disponible (cobraríamos certificados de folios inexistentes) ni como
+  // "no existe" (bloquearíamos a clientes con matrículas buenas). Es NO CONCLUYENTE, y se marca con su
+  // propio código para que el caller no gaste 26s de navegador intentando lo mismo.
+  const sinDireccion = !labels[0] && !labels[1];
+  const portalSinValidar = sinDireccion
+    && /matr[ií]cula fue encontrada|puede generar el certificado/i.test(modal)
+    && (!estado || /no\s*disponible/i.test(estado));
+
   if (estado && /disponible/i.test(estado) && !/no\s*disponible/i.test(estado)) {
     return { disponible: true, estado, direccion: labels[0] || null, circulo: labels[1] || null, cached: false };
+  }
+  if (portalSinValidar) {
+    throw Object.assign(new Error('el SNR responde lo mismo para toda matrícula (pre-validación caída)'), { code: 'SNR_SIN_VALIDAR' });
   }
   if (snrError) throw Object.assign(new Error('portal SNR con error (HTTP), no concluyente'), { code: 'SNR_ERROR' });
   if (notFound || (estado && /no\s*disponible/i.test(estado))) {

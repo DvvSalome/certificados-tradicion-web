@@ -295,27 +295,49 @@ async function keepAlive() {
   }
 }
 
+// Techo duro por consulta. Las verificaciones comparten UNA página en serie (`chain`), así que una
+// sola consulta colgada bloquea a todas las que vengan detrás, para siempre, y ni reiniciar el
+// servicio salva si la siguiente se cuelga igual. Pasó el 2026-09-06: el checkout quedó muerto.
+const VERIFY_MS = Number(process.env.VERIFY_TIMEOUT_MS || 40000);
+
+function conTiempo(promesa, ms, etiqueta) {
+  let t;
+  return Promise.race([
+    promesa,
+    new Promise((_, rej) => { t = setTimeout(() => rej(new Error(`${etiqueta} superó ${ms}ms`)), ms); }),
+  ]).finally(() => clearTimeout(t));
+}
+
 // Fallback con NAVEGADOR (consulta pública Playwright): serializado sobre la página compartida del verifyRobot.
 function browserVerify(oficina, matricula) {
   const run = chain.then(async () => {
-    try {
-      const r = await ensureVerifyRobot();
-      return await r.consultarPublico(oficina, matricula);
-    } catch (e) {
-      console.error('[verify] reintento navegador tras error: ' + e.message);
-      await resetVerifyRobot();
-      const r = await ensureVerifyRobot();
-      return await r.consultarPublico(oficina, matricula);
+    for (let intento = 1; intento <= 2; intento++) {
+      try {
+        const r = await ensureVerifyRobot();
+        return await conTiempo(r.consultarPublico(oficina, matricula), VERIFY_MS, `consulta pública (intento ${intento})`);
+      } catch (e) {
+        console.error(`[verify] intento ${intento} falló: ${e.message}`);
+        // SIEMPRE se tira el navegador. Si fue timeout, la página quedó ocupada por una operación
+        // que sigue viva: reusarla contagia el cuelgue a la siguiente consulta.
+        await resetVerifyRobot();
+        if (intento === 2) throw e;
+      }
     }
   });
-  chain = run.catch(() => {});
+  chain = run.catch(() => {}); // la cola sigue aunque esta consulta muera
   return run;
 }
 
 async function doVerify(oficina, matricula) {
   // 1) RÁPIDO: HTTP directo (sin navegador, ~0.5s, en PARALELO). Si falla por lo que sea → fallback navegador.
   try { return await consultaHttp(oficina, matricula); }
-  catch (e) { console.error('[verify] HTTP falló (' + e.message + ') → fallback navegador'); }
+  catch (e) {
+    // El navegador consulta EL MISMO formulario público: si el portal dejó de validar, va a ver
+    // exactamente lo mismo, solo que 30s más tarde y ocupando la página compartida. Ese fallback
+    // inútil fue el que trabó la cola el 2026-09-06 y dejó el checkout colgado media hora.
+    if (e?.code === 'SNR_SIN_VALIDAR') { console.error('[verify] SNR sin validar → sin fallback (sería lo mismo)'); throw e; }
+    console.error('[verify] HTTP falló (' + e.message + ') → fallback navegador');
+  }
   // 2) Fallback: consulta pública con navegador (más lenta pero adaptable a cambios del portal).
   return browserVerify(oficina, matricula);
 }
