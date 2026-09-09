@@ -90,6 +90,19 @@ async function procesar(raw: string) {
     const ref = texto.match(/CTL-[A-Za-z0-9]+/i)?.[0];
     console.error(`[wa webhook] ENTRANTE de ${from}: "${texto.slice(0, 80)}"${ref ? ` (ref ${ref})` : ' (sin ref)'}`);
 
+    // ── UNA SOLA VOZ HABLA CON EL CLIENTE ────────────────────────────────────────────
+    // Este número está suscrito a DOS apps de Meta: la del sitio (esta) y la del CRM.
+    // Meta le entrega cada mensaje a las dos, y las dos contestaban: el cliente recibía
+    // DOS respuestas distintas al mismo "hola", a veces contradictorias ("no veo tu
+    // certificado" y "te lo consigo en minutos"). Comprobado el 2026-09-09.
+    //
+    // El dueño de la conversación es el CRM: sabe de embudo, etapas, historial y asesor.
+    // El sitio conserva SOLO lo que el CRM no puede hacer: reconocer una referencia
+    // CTL- y devolver ese PDF exacto desde su base.
+    //
+    // Sin referencia => silencio. No es que no haya nada que decir: es que ya lo dijo el CRM.
+    if (!ref) { console.error('[wa webhook] sin referencia CTL- → lo atiende el CRM, no respondo'); continue; }
+
     // AUTORIZACIÓN: solo entregamos certificados cuyo pedido tenga ESTE mismo número (phone == from).
     // El número se captura al pagar. La referencia sola NO basta: es un token que puede filtrarse
     // (correo reenviado, URL /estado, captura) y entregar datos del inmueble a quien no pagó (Habeas Data).
@@ -127,9 +140,9 @@ async function procesar(raw: string) {
           else console.error(`[wa webhook] diag: ${ref} existe · status=${o.status} · pdf=${o.tiene_pdf} · phone guardado ***${(o.phone || '').slice(-4)} vs from ***${from.slice(-4)}`);
         } catch (e) { console.error('[wa webhook] diag falló:', e); }
       }
-      await enviarTexto(from, ref
-        ? 'Mmm, no encuentro un certificado con esa referencia a nombre de este número 🤔. Verifica que sea la referencia de tu correo de confirmación (empieza por CTL-) y escríbeme desde el mismo número de WhatsApp con el que pagaste 🙏'
-        : '¡Hola! 👋 Soy el asistente de Certitradición 💜 Aún no veo un certificado a nombre de este número. Si ya hiciste tu pedido, envíame la referencia (empieza por CTL-) que está en tu correo de confirmación, o escríbeme desde el mismo número con el que pagaste. ¿Aún no lo solicitas? 👉 certitradicion.com');
+      // Aqui SIEMPRE hay referencia (arriba se corta si no la hay), y este mensaje si es del
+      // sitio: el CRM no puede saber que una referencia concreta no cuadra con este numero.
+      await enviarTexto(from, 'Mmm, no encuentro un certificado con esa referencia a nombre de este número 🤔. Verifica que sea la referencia de tu correo de confirmación (empieza por CTL-) y escríbeme desde el mismo número de WhatsApp con el que pagaste 🙏');
       continue;
     }
     const cdKey = `${from}:${row.reference}`;
