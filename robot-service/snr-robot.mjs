@@ -105,13 +105,29 @@ export class SnrRobot {
     await p.click(S.btnLogin);
     await p.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
     await p.waitForTimeout(2500);
-    const ok = await p.getByText('Certificado Tradicion', { exact: false }).first().count().catch(() => 0);
-    if (!ok) {
+
+    // ¿ENTRAMOS? Se mide con marcas que SOLO existen despues del login.
+    //
+    // Antes se buscaba el literal 'Certificado Tradicion'. El 2026-09-09 eso dejo de existir:
+    // el SNR escribe "Certificado de Tradicion" (con "de" en medio y con tilde), asi que la
+    // comparacion fallaba SIEMPRE y abortabamos con "no aparece el dashboard" aunque el login
+    // hubiera entrado bien. Un cliente pago y se quedo sin su certificado por esto.
+    //
+    // Y tampoco sirve buscar el nombre del producto: "certificado de tradicion" tambien esta en
+    // la pagina PUBLICA, asi que daria por bueno un login fallido. Se usan marcas privadas.
+    const texto = ((await p.textContent('body').catch(() => '')) || '')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const dentro = /cerrar sesion|mis certificados|mi cuenta|saldo/.test(texto);
+
+    if (!dentro) {
       // ¿el SNR mostró el bloqueo por "cantidad inusual de ingresos por día"? → código aparte para
       // que el pool marque ESTA cuenta en cooldown y salte a la siguiente (no es un fallo transitorio).
       const bloqueada = await p.getByText(/cantidad inusual de ingresos/i).first().count().catch(() => 0);
       if (bloqueada) throw Object.assign(new Error('cuenta SNR bloqueada (cantidad inusual de ingresos por día)'), { code: 'ACCOUNT_BLOCKED' });
-      throw new Error('login falló (no aparece el dashboard)');
+      // Se adjunta lo que SI se vio: sin esto, un cambio de texto del portal se diagnostica a
+      // ciegas (nos costo horas el 2026-09-09).
+      const pista = texto.replace(/\s+/g, ' ').slice(0, 180);
+      throw new Error('login falló (no aparece el dashboard) · pantalla: "' + pista + '"');
     }
     await this._saveState();
     this.log('[snr] login OK');
