@@ -1,5 +1,7 @@
 // Cliente WhatsApp Cloud API (Meta). Envía el certificado (documento) DENTRO de la ventana de servicio de
 // 24h → gratis, sin plantilla. Token + phone number ID por env (nunca en código/git).
+import { mensajeAlCrm } from './crm';
+
 const BASE = 'https://graph.facebook.com/v21.0';
 const TOKEN = () => process.env.WHATSAPP_TOKEN || '';
 const PHONE_ID = () => process.env.WHATSAPP_PHONE_NUMBER_ID || '';
@@ -24,27 +26,47 @@ async function uploadMedia(pdf: Buffer, filename: string): Promise<string> {
   return j.id as string;
 }
 
+// Todo lo que sale por aquí queda espejado en el CRM de FourG, para que el asesor vea lo que el
+// sitio ya le contestó al cliente (si no, el chat cae en "Esperando" con la respuesta ya dada).
+// Best-effort y después del envío: un CRM caído jamás frena un certificado.
+async function espejar(to: string, wamid: string | null, text: string, kind: 'text' | 'document' = 'text', filename: string | null = null): Promise<void> {
+  if (!wamid) return;
+  const r = await mensajeAlCrm({ to, wamid, text, kind, filename, phoneNumberId: PHONE_ID() });
+  if (!r.ok) console.error('[wa] espejo al CRM falló:', r.error);
+}
+
 // Envía el certificado (PDF) a un número. Dentro de la ventana de 24h = gratis (sin plantilla).
-export async function enviarDocumento(to: string, pdf: Buffer, filename: string, caption: string): Promise<void> {
+// Devuelve el wamid de Meta.
+export async function enviarDocumento(to: string, pdf: Buffer, filename: string, caption: string): Promise<string | null> {
   const mediaId = await uploadMedia(pdf, filename);
   const res = await fetch(`${BASE}/${PHONE_ID()}/messages`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${TOKEN()}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ messaging_product: 'whatsapp', to, type: 'document', document: { id: mediaId, filename, caption } }),
   });
-  if (!res.ok) throw new Error('WA send doc: ' + JSON.stringify(await res.json().catch(() => ({}))).slice(0, 200));
+  const j = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error('WA send doc: ' + JSON.stringify(j).slice(0, 200));
+  const wamid: string | null = j?.messages?.[0]?.id ?? null;
+  await espejar(to, wamid, `📎 ${filename}\n${caption}`, 'document', filename);
+  return wamid;
 }
 
 // Texto simple (para respuestas de ayuda/error dentro de la ventana). Best-effort, pero loguea si falla.
-export async function enviarTexto(to: string, body: string): Promise<void> {
+// Devuelve el wamid de Meta, o null si no salió.
+export async function enviarTexto(to: string, body: string): Promise<string | null> {
   try {
     const res = await fetch(`${BASE}/${PHONE_ID()}/messages`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${TOKEN()}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ messaging_product: 'whatsapp', to, type: 'text', text: { body } }),
     });
-    if (!res.ok) console.error('[wa] enviarTexto falló:', JSON.stringify(await res.json().catch(() => ({}))).slice(0, 200));
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok) { console.error('[wa] enviarTexto falló:', JSON.stringify(j).slice(0, 200)); return null; }
+    const wamid: string | null = j?.messages?.[0]?.id ?? null;
+    await espejar(to, wamid, body);
+    return wamid;
   } catch (e) {
     console.error('[wa] enviarTexto error:', (e as Error).message);
+    return null;
   }
 }

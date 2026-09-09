@@ -98,6 +98,51 @@ export async function pedidoAlCrmPorRef(reference: string): Promise<{ ok: boolea
   }
 }
 
+// ── WhatsApp enviados → CRM ──────────────────────────────────────────────────
+// Lo que el sitio manda por WhatsApp con su propio token (respuestas de estado, el PDF del
+// certificado) no pasa por el CRM y Meta no se lo cuenta: el asesor veía al cliente preguntando
+// y a nadie contestando, y el chat caía en "Esperando" (2026-09-09). Cada envío exitoso se
+// espeja aquí, best-effort. El receptor es idempotente por wamid: reintentar nunca duplica.
+
+const URL_MENSAJES = process.env.CRM_MESSAGE_URL || 'https://crm.fourgsolutions.com/api/integrations/inbound/message';
+
+export interface MensajeCrm {
+  to: string;                    // wa_id del cliente (dígitos)
+  wamid: string;                 // id que devolvió Meta al enviar
+  text: string;                  // lo que se le mostró al cliente (para un PDF: nombre + caption)
+  kind?: 'text' | 'document';
+  filename?: string | null;
+  phoneNumberId?: string | null; // por cuál número salió, para que el CRM lo cuelgue de esa conexión
+}
+
+export async function mensajeAlCrm(m: MensajeCrm): Promise<{ ok: boolean; error?: string }> {
+  if (!KEY || !SECRET) return { ok: false, error: 'sin credenciales' };
+  const body = JSON.stringify({
+    source_key: KEY,
+    source: 'certitradicion.com',
+    to: m.to,
+    provider_msg_id: m.wamid,
+    text: m.text,
+    kind: m.kind ?? 'text',
+    filename: m.filename ?? null,
+    phone_number_id: m.phoneNumberId ?? null,
+    sent_at: new Date().toISOString(),
+  });
+  const sig = 'sha256=' + createHmac('sha256', SECRET).update(body, 'utf8').digest('hex');
+  try {
+    const r = await fetch(URL_MENSAJES, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-fourg-signature': sig },
+      body,
+      signal: AbortSignal.timeout(4000),
+    });
+    if (!r.ok) return { ok: false, error: 'HTTP ' + r.status };
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: String(e).slice(0, 120) };
+  }
+}
+
 export async function enviarLeadAlCrm(l: LeadCrm): Promise<{ ok: boolean; error?: string }> {
   if (!KEY || !SECRET) return { ok: false, error: 'sin credenciales' }; // no configurado → no-op silencioso
 
