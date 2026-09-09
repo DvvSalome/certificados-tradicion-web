@@ -81,13 +81,17 @@ async function generarOne(job) {
     try {
       return await generarConCuenta(robot, cuenta, job);
     } catch (e) {
-      // BLOQUEO de cuenta → marcar en cooldown y reintentar con la siguiente cuenta usable.
-      if (e.code === 'ACCOUNT_BLOCKED' && cuenta && intentoCuenta < totalCuentas()) {
-        marcarBloqueada(cuenta);
-        console.error(`[robot] cuenta ${cuenta} BLOQUEADA (cantidad inusual de ingresos) → fallback a otra cuenta`);
+      // Cuenta INUTILIZABLE (bloqueada por uso inusual, o clave rechazada) → sacarla del pool
+      // y reintentar con la siguiente. Antes solo rotaba con ACCOUNT_BLOCKED: el 2026-09-09 la
+      // clave de la primera cuenta dejo de servir, el pool la reintentaba a ella para siempre y
+      // un cliente que ya habia pagado se quedo sin su certificado con OTRA cuenta buena al lado.
+      const inutilizable = e.code === 'ACCOUNT_BLOCKED' || e.code === 'LOGIN_RECHAZADO';
+      if (inutilizable && cuenta && intentoCuenta < totalCuentas()) {
+        marcarBloqueada(cuenta, Date.now(), e.code === 'LOGIN_RECHAZADO' ? 'clave rechazada' : 'bloqueada');
+        console.error(`[robot] cuenta ${cuenta} fuera de juego (${e.code}) → fallback a otra cuenta`);
         await resetGenRobot();
         if (pickAccount()) continue; // hay otra cuenta usable → reintenta con ella
-        await reportPanel({ reference, matricula, oficina, status: 'FAILED', errorCode: 'ERROR', error: 'todas las cuentas SNR bloqueadas hoy — recargar o agregar cuenta' });
+        await reportPanel({ reference, matricula, oficina, status: 'FAILED', errorCode: 'ERROR', error: 'ninguna cuenta SNR utilizable (bloqueadas, sin saldo o con la clave rechazada) — revisar credenciales o recargar' });
         return;
       }
       // Otros errores: comportamiento de siempre (NO_DISPONIBLE no resetea; otro sí).

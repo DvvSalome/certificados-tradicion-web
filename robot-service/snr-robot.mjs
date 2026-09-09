@@ -127,7 +127,11 @@ export class SnrRobot {
       // Se adjunta lo que SI se vio: sin esto, un cambio de texto del portal se diagnostica a
       // ciegas (nos costo horas el 2026-09-09).
       const pista = texto.replace(/\s+/g, ' ').slice(0, 180);
-      throw new Error('login falló (no aparece el dashboard) · pantalla: "' + pista + '"');
+      // Codigo propio: una clave rechazada NO es un fallo transitorio y no se arregla
+      // reintentando con la MISMA cuenta. El pool tiene que sacarla y probar la siguiente.
+      throw Object.assign(
+        new Error('login rechazado por el SNR (¿clave cambiada?) · pantalla: "' + pista + '"'),
+        { code: 'LOGIN_RECHAZADO' });
     }
     await this._saveState();
     this.log('[snr] login OK');

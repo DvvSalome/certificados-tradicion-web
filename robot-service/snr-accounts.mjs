@@ -89,8 +89,8 @@ export function pickAccount(now = Date.now()) {
 }
 
 // Marca una cuenta bloqueada (login rechazado por el SNR) hasta la próxima medianoche Colombia.
-export function marcarBloqueada(user, now = Date.now()) {
-  const st = state.get(user); if (st) { st.cooldownUntil = nextMidnightColombiaMs(now); st.reason = 'bloqueada'; }
+export function marcarBloqueada(user, now = Date.now(), reason = 'bloqueada') {
+  const st = state.get(user); if (st) { st.cooldownUntil = nextMidnightColombiaMs(now); st.reason = reason; }
 }
 // Marca una cuenta sin saldo (no alcanza para 1 cert). Se "recupera" sola cuando setSaldo la suba.
 export function marcarSinSaldo(user) {
