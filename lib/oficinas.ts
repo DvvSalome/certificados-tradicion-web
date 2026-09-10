@@ -75,3 +75,19 @@ const SET = new Set(OFICINAS);
 export function isOficina(v: unknown): v is string {
   return typeof v === 'string' && SET.has(v);
 }
+
+const plano = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/[^A-Z0-9 ()]/g, ' ').replace(/\s+/g, ' ').trim();
+
+// La oficina tal como la escribe una persona por WhatsApp ("medellin sur", "Bogotá norte", "cali"):
+// una sola coincidencia → esa; varias ("medellin", "bogota") → se le pregunta cuál; ninguna → null.
+export function buscarOficina(texto: string): { oficina: string } | { opciones: string[] } | null {
+  const t = plano(String(texto ?? ''));
+  if (t.length < 3) return null;
+  const exacta = OFICINAS.find((o) => plano(o) === t);
+  if (exacta) return { oficina: exacta };
+  const palabras = t.split(' ');
+  const candidatas = OFICINAS.filter((o) => { const p = plano(o); return palabras.every((w) => p.includes(w)); });
+  if (candidatas.length === 1) return { oficina: candidatas[0] };
+  if (candidatas.length > 1 && candidatas.length <= 6) return { opciones: candidatas };
+  return null;
+}
