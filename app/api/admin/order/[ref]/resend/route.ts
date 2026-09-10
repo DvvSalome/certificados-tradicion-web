@@ -3,16 +3,19 @@ import { getSession } from '@/lib/admin';
 import { getPool } from '@/lib/db';
 import { reenviarCtl } from '@/lib/email';
 import { enviarDocumento, whatsappConfigured } from '@/lib/whatsapp';
+import { verificarFirmaDelCrm } from '@/lib/crm';
 
 export const runtime = 'nodejs';
 
-// Reenvía el CTL de un pedido por correo o WhatsApp desde el panel. Usa el cert_pdf guardado (sin re-tocar
-// el SNR → no cuesta). Gated por sesión de admin.
+// Reenvía el CTL de un pedido por correo o WhatsApp. Usa el cert_pdf guardado (sin re-tocar el SNR
+// → no cuesta). Lo dispara el panel (sesión de admin) o el asesor desde el CRM (petición firmada).
 export async function POST(req: Request, ctx: { params: Promise<{ ref: string }> }) {
-  if (!(await getSession())) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+  const raw = await req.text();
+  if (!(await getSession()) && !verificarFirmaDelCrm(req, raw)) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   if (!process.env.DATABASE_URL) return NextResponse.json({ error: 'sin db' }, { status: 404 });
   const { ref } = await ctx.params;
-  const { channel } = (await req.json().catch(() => ({}))) as { channel?: 'email' | 'whatsapp' };
+  let channel: string | undefined;
+  try { channel = (JSON.parse(raw || '{}') as { channel?: string }).channel; } catch { /* cuerpo inválido → 400 abajo */ }
   if (channel !== 'email' && channel !== 'whatsapp') return NextResponse.json({ error: 'channel debe ser email o whatsapp' }, { status: 400 });
 
   // cert_pdf como base64 (el pool de Vercel va por proxy HTTP con JSON.stringify → un Buffer llegaría corrupto).

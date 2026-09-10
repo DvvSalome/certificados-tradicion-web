@@ -3,16 +3,17 @@ import { getSession } from '@/lib/admin';
 import { getPool } from '@/lib/db';
 import { triggerGenerarCTL } from '@/lib/n8n';
 import { getTransaction } from '@/lib/wompi';
-import { pedidoAlCrmPorRef } from '@/lib/crm';
+import { pedidoAlCrmPorRef, verificarFirmaDelCrm } from '@/lib/crm';
 
 export const runtime = 'nodejs';
 
-// Reintenta la generación de un pedido FALLIDO. OJO: vuelve a generar en el SNR (cuesta). Solo superadmin,
-// solo si el pedido está FAILED. Limpia el claim de idempotencia (generation_jobs) para que el robot pueda
+// Reintenta la generación de un pedido FALLIDO. OJO: vuelve a generar en el SNR (cuesta). Solo superadmin
+// del panel, o un administrador de la empresa desde el CRM (petición firmada; el CRM gatea el rol), y solo
+// si el pedido está FAILED. Limpia el claim de idempotencia (generation_jobs) para que el robot pueda
 // re-tomarlo, y re-dispara vía el puente. El operador decide (evita reintentos automáticos que dupliquen cobro).
-export async function POST(_req: Request, ctx: { params: Promise<{ ref: string }> }) {
+export async function POST(req: Request, ctx: { params: Promise<{ ref: string }> }) {
   const role = await getSession();
-  if (role !== 'superadmin') return NextResponse.json({ error: 'Solo superadmin' }, { status: 403 });
+  if (role !== 'superadmin' && !verificarFirmaDelCrm(req, await req.text())) return NextResponse.json({ error: 'Solo superadmin' }, { status: 403 });
   if (!process.env.DATABASE_URL) return NextResponse.json({ error: 'sin db' }, { status: 404 });
   const { ref } = await ctx.params;
 

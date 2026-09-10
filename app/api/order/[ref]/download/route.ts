@@ -4,12 +4,15 @@ import { verifyDownload } from '@/lib/download-token';
 
 export const runtime = 'nodejs';
 
+// Descarga del PDF por referencia + token firmado. `?doc=estudio` baja el Estudio de Títulos
+// (plan Express); sin `doc`, el Certificado. El CRM enlaza estos mismos URLs desde /pedidos.
 export async function GET(req: Request, ctx: { params: Promise<{ ref: string }> }) {
   const { ref } = await ctx.params;
+  const url = new URL(req.url);
 
   // El PDF trae PII de terceros (propietarios). Se exige el token firmado que se emitió tras el pago
   // (viaja en la redirección a /estado). La sola referencia — que se filtra en correos/historial — NO basta.
-  const token = new URL(req.url).searchParams.get('t');
+  const token = url.searchParams.get('t');
   if (!verifyDownload(ref, token)) {
     return NextResponse.json({ error: 'Enlace de descarga inválido o vencido. Ábrelo desde el enlace que recibiste tras el pago, o pide tu certificado por WhatsApp.' }, { status: 403 });
   }
@@ -19,23 +22,28 @@ export async function GET(req: Request, ctx: { params: Promise<{ ref: string }> 
     return NextResponse.json({ error: 'Descarga no disponible en modo memoria' }, { status: 404 });
   }
 
+  const estudio = url.searchParams.get('doc') === 'estudio';
   try {
-    // cert_pdf como base64 (encode en SQL): el pool de Vercel va por un proxy HTTP con JSON.stringify → un
+    // PDF como base64 (encode en SQL): el pool de Vercel va por un proxy HTTP con JSON.stringify → un
     // Buffer crudo llegaría corrupto como {"type":"Buffer",...}. Reconstruimos con Buffer.from.
-    const { rows } = await getPool().query("SELECT encode(cert_pdf,'base64') AS cert_pdf_b64, matricula FROM orders WHERE reference = $1", [ref]);
+    const { rows } = await getPool().query(
+      `SELECT encode(${estudio ? 'estudio_pdf' : 'cert_pdf'},'base64') AS pdf_b64, matricula FROM orders WHERE reference = $1`,
+      [ref],
+    );
     const order = rows[0];
 
-    if (!order || !order.cert_pdf_b64) {
-      return NextResponse.json({ error: 'Documento no encontrado o aún no generado' }, { status: 404 });
+    if (!order || !order.pdf_b64) {
+      return NextResponse.json({ error: estudio ? 'Estudio de Títulos no encontrado o aún no generado' : 'Documento no encontrado o aún no generado' }, { status: 404 });
     }
 
-    const pdfBuffer = Buffer.from(order.cert_pdf_b64, 'base64');
+    const pdfBuffer = Buffer.from(order.pdf_b64, 'base64');
+    const filename = estudio ? `Estudio-Titulos-${order.matricula}.pdf` : `Certificado-Tradicion-${order.matricula}.pdf`;
 
     return new NextResponse(pdfBuffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="Certificado-Tradicion-${order.matricula}.pdf"`,
+        'Content-Disposition': `attachment; filename="${filename}"`,
       },
     });
   } catch (error) {
