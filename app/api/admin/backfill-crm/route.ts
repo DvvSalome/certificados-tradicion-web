@@ -14,8 +14,9 @@ export const maxDuration = 60;
 //
 // event_at = updated_at de cada orden: las fechas del panel del CRM quedan reales,
 // no todas con la hora del backfill.
-export async function POST() {
-  if ((await getSession()) !== 'superadmin') return NextResponse.json({ error: 'Solo superadmin' }, { status: 403 });
+export async function POST(req: Request) {
+  // Sesión de superadmin del panel, o petición firmada desde el CRM (misma firma que resend/retry).
+  if ((await getSession()) !== 'superadmin' && !verificarFirmaDelCrm(req, await req.text())) return NextResponse.json({ error: 'Solo superadmin' }, { status: 403 });
   if (!process.env.DATABASE_URL) return NextResponse.json({ error: 'sin db' }, { status: 404 });
 
   const { rows } = await getPool().query(
