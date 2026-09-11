@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { pedidoAlCrmPorRef } from '@/lib/crm';
+import { NextResponse, after } from 'next/server';
 import { getPool } from '@/lib/db';
 
 export const runtime = 'nodejs';
@@ -29,5 +30,10 @@ export async function POST(req: Request) {
     await getPool().query("UPDATE orders SET estudio_pdf = decode($2, 'base64') WHERE reference = $1", [b.reference, b.estudioBase64]);
     out.estudio = buf.length;
   }
+  // El PDF puede llegar después del evento DELIVERED: actualiza documentos y acciones.
+  after(async () => {
+    const result = await pedidoAlCrmPorRef(b.reference!);
+    if (!result.ok) console.error("No se pudo sincronizar el documento con el CRM", result.error);
+  });
   return NextResponse.json({ ok: true, ...out });
 }
