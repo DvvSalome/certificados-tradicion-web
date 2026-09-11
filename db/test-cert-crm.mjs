@@ -22,3 +22,20 @@ assert.deepEqual(events, ['stored']);
 await afters[0]();
 assert.deepEqual(events, ['stored', 'order']);
 console.log('PASS: solo sincroniza después de guardar un PDF autorizado y válido');
+const queries = [], synced = [], backfill = {};
+vm.runInNewContext(ts.transpileModule(readFileSync('app/api/admin/backfill-crm/route.ts', 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText, {
+  exports: backfill, URL, Date, process: { env: { DATABASE_URL: 'test' } }, require(name) {
+    if (name === 'next/server') return { NextResponse: { json: (body, opts) => ({ body, status: opts?.status ?? 200 }) } };
+    if (name === '@/lib/admin') return { getSession: async () => null };
+    if (name === '@/lib/crm') return { verificarFirmaDelCrm: req => req.headers.get('x-test-auth') === 'yes', pedidoAlCrmPorRef: async ref => { synced.push(ref); return { ok: true }; } };
+    if (name === '@/lib/db') return { getPool: () => ({ query: async (sql, params) => { queries.push({sql, params: Array.from(params)}); return { rows: [{ reference: params[0], updated_at: '2026-09-11T20:00:00Z' }] }; } }) };
+    throw Error(name);
+  }
+});
+assert.equal((await backfill.POST(new Request('https://example.test/api/admin/backfill-crm?reference=one', {method:'POST'}))).status,403);
+assert.equal(queries.length,0);
+await backfill.POST(new Request('https://example.test/api/admin/backfill-crm?reference=one', {method:'POST',headers:{'x-test-auth':'yes'}}));
+assert.ok(queries[0].sql.includes('WHERE reference = $1'));
+assert.deepEqual(queries[0].params,['one']);
+assert.deepEqual(synced,['one']);
+console.log('PASS: refresco firmado y limitado a una referencia, sin replay masivo');
