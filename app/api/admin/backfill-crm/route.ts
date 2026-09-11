@@ -19,8 +19,13 @@ export async function POST(req: Request) {
   if ((await getSession()) !== 'superadmin' && !verificarFirmaDelCrm(req, await req.text())) return NextResponse.json({ error: 'Solo superadmin' }, { status: 403 });
   if (!process.env.DATABASE_URL) return NextResponse.json({ error: 'sin db' }, { status: 404 });
 
+  const reference = new URL(req.url).searchParams.get('reference');
+  if (reference !== null && (!reference || reference.length > 100)) return NextResponse.json({ error: 'Referencia inválida' }, { status: 400 });
   const { rows } = await getPool().query(
-    'SELECT reference, created_at, updated_at FROM orders ORDER BY created_at ASC LIMIT 500',
+    reference
+      ? 'SELECT reference, created_at, updated_at FROM orders WHERE reference = $1'
+      : 'SELECT reference, created_at, updated_at FROM orders ORDER BY created_at ASC LIMIT 500',
+    reference ? [reference] : [],
   );
 
   let ok = 0;
