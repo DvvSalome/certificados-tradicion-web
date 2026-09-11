@@ -108,7 +108,7 @@ export async function pedidoAlCrm(p: PedidoCrm, eventAt?: string | null): Promis
   // Acciones: rutas de ESTE sitio que el CRM llama firmadas. Reenviar no cuesta (usa el PDF
   // guardado); reintentar toca el SNR y cuesta, así que va marcado como riesgoso.
   const ruta = `/api/admin/order/${p.reference}`;
-  const sinPdf = !p.hasCertPdf ? (p.status === 'DELIVERED' ? 'El PDF ya se borró (privacidad)' : 'Todavía no hay certificado generado') : null;
+  const sinPdf = !p.hasCertPdf ? (p.status === 'DELIVERED' ? 'El sitio no tiene un PDF disponible: aún no se guardó o venció su conservación' : 'Todavía no hay certificado generado') : null;
   const actions = [
     { key: 'reenviar_correo', label: '✉ Correo', method: 'POST', path: `${ruta}/resend`, body: { channel: 'email' },
       enabled: !!p.hasCertPdf && !!p.email, reason: sinPdf ?? (!p.email ? 'El pedido no tiene correo' : null), needs: 'certificado' },
