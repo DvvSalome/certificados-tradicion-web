@@ -43,7 +43,9 @@ export async function GET(req: Request, ctx: { params: Promise<{ ref: string }> 
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Cache-Control': 'private, no-store',
+        'Content-Security-Policy': "frame-ancestors 'self' https://crm.fourgsolutions.com",
+        'Content-Disposition': ` ${url.searchParams.get('preview') === '1' ? 'inline' : 'attachment'}; filename="${filename}"`.trim(),
       },
     });
   } catch (error) {
