@@ -1,6 +1,7 @@
 // Cliente WhatsApp Cloud API (Meta). Envía el certificado (documento) DENTRO de la ventana de servicio de
 // 24h → gratis, sin plantilla. Token + phone number ID por env (nunca en código/git).
 import { mensajeAlCrm } from './crm';
+import { signDownload } from './download-token';
 
 const BASE = 'https://graph.facebook.com/v21.0';
 const TOKEN = () => process.env.WHATSAPP_TOKEN || '';
@@ -29,15 +30,15 @@ async function uploadMedia(pdf: Buffer, filename: string): Promise<string> {
 // Todo lo que sale por aquí queda espejado en el CRM de FourG, para que el asesor vea lo que el
 // sitio ya le contestó al cliente (si no, el chat cae en "Esperando" con la respuesta ya dada).
 // Best-effort y después del envío: un CRM caído jamás frena un certificado.
-async function espejar(to: string, wamid: string | null, text: string, kind: 'text' | 'document' = 'text', filename: string | null = null): Promise<void> {
+async function espejar(to: string, wamid: string | null, text: string, kind: 'text' | 'document' = 'text', filename: string | null = null, documentUrl: string | null = null): Promise<void> {
   if (!wamid) return;
-  const r = await mensajeAlCrm({ to, wamid, text, kind, filename, phoneNumberId: PHONE_ID() });
+  const r = await mensajeAlCrm({ to, wamid, text, kind, filename, documentUrl, phoneNumberId: PHONE_ID() });
   if (!r.ok) console.error('[wa] espejo al CRM falló:', r.error);
 }
 
 // Envía el certificado (PDF) a un número. Dentro de la ventana de 24h = gratis (sin plantilla).
 // Devuelve el wamid de Meta.
-export async function enviarDocumento(to: string, pdf: Buffer, filename: string, caption: string): Promise<string | null> {
+export async function enviarDocumento(to: string, pdf: Buffer, filename: string, caption: string, reference: string, doc?: 'estudio'): Promise<string | null> {
   const mediaId = await uploadMedia(pdf, filename);
   const res = await fetch(`${BASE}/${PHONE_ID()}/messages`, {
     method: 'POST',
@@ -47,7 +48,8 @@ export async function enviarDocumento(to: string, pdf: Buffer, filename: string,
   const j = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error('WA send doc: ' + JSON.stringify(j).slice(0, 200));
   const wamid: string | null = j?.messages?.[0]?.id ?? null;
-  await espejar(to, wamid, `📎 ${filename}\n${caption}`, 'document', filename);
+  const url = `${process.env.APP_BASE_URL || 'https://certitradicion.com'}/api/order/${encodeURIComponent(reference)}/download?t=${signDownload(reference)}${doc ? '&doc=estudio' : ''}&preview=1`;
+  await espejar(to, wamid, `📎 ${filename}\n${caption}`, 'document', filename, url);
   return wamid;
 }
 

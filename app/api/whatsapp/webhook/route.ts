@@ -153,6 +153,7 @@ async function procesar(raw: string) {
         Buffer.from(row.cert_pdf_b64, 'base64'),
         `Certificado-Tradicion-${row.matricula}.pdf`,
         `Aquí tienes tu Certificado de Tradición y Libertad (matrícula ${row.matricula}). ¡Gracias por usar Certitradición!`,
+        row.reference,
       );
       console.error(`[wa webhook] ✅ CTL (${row.reference}, matrícula ${row.matricula}) enviado a ${from}`);
       // Express: si el pedido tiene Estudio de Títulos guardado, lo enviamos también como 2º documento.
@@ -163,6 +164,7 @@ async function procesar(raw: string) {
             Buffer.from(row.estudio_pdf_b64, 'base64'),
             `Estudio-Titulos-${row.matricula}.pdf`,
             `Y aquí tu Estudio de Títulos: propietarios, gravámenes, banderas de riesgo y avalúo estimado. ⚖️ Análisis informativo, no reemplaza asesoría legal.`,
+            row.reference, 'estudio',
           );
           console.error(`[wa webhook] ✅ Estudio (${row.reference}) enviado a ${from}`);
         } catch (ee) { console.error('[wa webhook] envío estudio falló:', (ee as Error).message); }

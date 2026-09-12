@@ -33,7 +33,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ ref: string }>
     if (!o.phone) return NextResponse.json({ error: 'El pedido no tiene teléfono' }, { status: 400 });
     if (!whatsappConfigured()) return NextResponse.json({ error: 'WhatsApp no configurado' }, { status: 500 });
     await enviarDocumento(o.phone, pdf, `Certificado-Tradicion-${o.matricula}.pdf`,
-      `Aquí tienes tu Certificado de Tradición y Libertad (matrícula ${o.matricula}). — Certitradición`);
+      `Aquí tienes tu Certificado de Tradición y Libertad (matrícula ${o.matricula}). — Certitradición`, ref);
     return NextResponse.json({ ok: true, sentTo: `+${o.phone}` });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message.slice(0, 200) }, { status: 502 });

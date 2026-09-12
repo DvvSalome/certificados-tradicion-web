@@ -181,6 +181,7 @@ export interface MensajeCrm {
   text: string;                  // lo que se le mostró al cliente (para un PDF: nombre + caption)
   kind?: 'text' | 'document';
   filename?: string | null;
+  documentUrl?: string | null;
   phoneNumberId?: string | null; // por cuál número salió, para que el CRM lo cuelgue de esa conexión
 }
 
@@ -194,6 +195,8 @@ export async function mensajeAlCrm(m: MensajeCrm): Promise<{ ok: boolean; error?
     text: m.text,
     kind: m.kind ?? 'text',
     filename: m.filename ?? null,
+    document_url: m.documentUrl ?? null,
+    document_mime: m.kind === 'document' ? 'application/pdf' : null,
     phone_number_id: m.phoneNumberId ?? null,
     sent_at: new Date().toISOString(),
   });
