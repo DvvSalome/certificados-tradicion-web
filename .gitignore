@@ -54,3 +54,6 @@ next-env.d.ts
 
 # deps del robot-service (se instalan en el contenedor)
 robot-service/node_modules/
+
+# respaldo del vigilante de n8n: lleva el secreto del puente, no va al repo
+recon/n8n-vigilante-respaldo.json
