@@ -339,7 +339,28 @@ async function doVerify(oficina, matricula) {
     // El navegador consulta EL MISMO formulario público: si el portal dejó de validar, va a ver
     // exactamente lo mismo, solo que 30s más tarde y ocupando la página compartida. Ese fallback
     // inútil fue el que trabó la cola el 2026-09-06 y dejó el checkout colgado media hora.
-    if (e?.code === 'SNR_SIN_VALIDAR') { console.error('[verify] SNR sin validar → sin fallback (sería lo mismo)'); throw e; }
+    // NO CONCLUYENTE, pero NO es una caída del portal: es una respuesta inútil sobre ESTA matrícula.
+    // El formulario público devuelve el mismo modal ("fue encontrada, sin dirección, puede generar")
+    // para folios en calificación y para matrículas inventadas (probado con 99999999 el 2026-09-06 y
+    // otra vez el 2026-09-19). Antes esto lanzaba → 502 → el cliente leía "el portal no está
+    // disponible, intenta más tarde" y reintentaba para siempre contra algo que no iba a cambiar.
+    //
+    // El 2026-09-19 se comprobó CADA folio que caía aquí contra el portal AUTENTICADO (que sí
+    // discrimina): todos eran "Matrícula en calificación, no se puede expedir" o "no se ha encontrado
+    // la matrícula". Ninguno era vendible. Por eso se responde un NO honesto con su razón, que el web
+    // ya sabe pintar (isBlocked), en vez de un error de sistema. El fail-closed no cambia: no se cobra.
+    if (e?.code === 'SNR_SIN_VALIDAR') {
+      console.error(`[verify] ${oficina} ${matricula}: el portal público no discrimina → no concluyente honesto`);
+      return {
+        disponible: false,
+        estado: 'Sin confirmar en el portal',
+        direccion: null,
+        circulo: null,
+        turno: null,
+        ambiguo: true,
+        motivo: 'El portal del SNR no está entregando los datos de esta matrícula. Suele pasar cuando el folio está en calificación (un trámite de registro en curso) o cuando el número no existe.',
+      };
+    }
     console.error('[verify] HTTP falló (' + e.message + ') → fallback navegador');
   }
   // 2) Fallback: consulta pública con navegador (más lenta pero adaptable a cambios del portal).
@@ -371,7 +392,9 @@ const server = http.createServer(async (req, res) => {
         res.writeHead(200, { 'content-type': 'application/json' });
         // motivo/turno viajan cuando el SNR dio una razón CONCLUYENTE para no expedir (ej. matrícula
         // en calificación). Sin esto el web no puede distinguirlo de "el portal está lento".
-        res.end(JSON.stringify({ oficina, matricula, disponible: !!info.disponible, estado: info.estado, direccion: info.direccion, circulo: info.circulo, motivo: info.motivo ?? null, turno: info.turno ?? null }));
+        // `ambiguo`: el portal público no pudo discriminar esta matrícula (ni existe ni no existe).
+        // Es un NO para el checkout, pero el web lo cuenta distinto a "el folio está en calificación".
+        res.end(JSON.stringify({ oficina, matricula, disponible: !!info.disponible, estado: info.estado, direccion: info.direccion, circulo: info.circulo, motivo: info.motivo ?? null, turno: info.turno ?? null, ambiguo: !!info.ambiguo }));
       } catch (e) {
         console.error('[verify] error final: ' + e.message);
         res.writeHead(502, { 'content-type': 'application/json' });

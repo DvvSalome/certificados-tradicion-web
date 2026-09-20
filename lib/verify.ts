@@ -13,6 +13,10 @@ export interface VerifyResult {
   // mensajes distintos para el cliente y antes los tres caían en "reintenta en unos segundos".
   motivo?: string | null;
   turno?: string | null;
+  // El portal PÚBLICO del SNR no pudo discriminar esta matrícula: devuelve el mismo modal para un
+  // folio en calificación y para un número inventado. Es un NO (no se cobra), pero no afirmamos que
+  // el inmueble exista, así que el mensaje al cliente es distinto al de "en calificación".
+  ambiguo?: boolean;
 }
 
 const CACHE_HOURS = Number(process.env.VERIFY_CACHE_HOURS || 24);
@@ -103,6 +107,7 @@ async function consultarPuente(oficina: string, matricula: string, ms: number): 
       cached: false,
       motivo: info.motivo ?? null,
       turno: info.turno ?? null,
+      ambiguo: info.ambiguo === true,
     };
   } catch (e) {
     return { disponible: null, estado: null, direccion: null, circulo: null, cached: false, error: String(e).slice(0, 120) };

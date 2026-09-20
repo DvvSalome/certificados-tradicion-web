@@ -92,6 +92,12 @@ export async function crearCheckout(
   //    tampoco vamos a poder generar → mejor no cobrar. (mocked = entorno local sin robot → se permite.)
   const check = await verificar(oficina, matricula);
   if (check.disponible !== true && !check.mocked) {
+    // El SNR dio una razón (folio en calificación, o su portal público no discrimina esta matrícula):
+    // se la pasamos tal cual al cliente. Decirle "no encontramos esa matrícula" sería mentirle, y
+    // decirle "el portal está caído" lo deja reintentando contra algo que no va a cambiar hoy.
+    if (check.disponible === false && !check.error && check.motivo) {
+      return { ok: false, status: 422, error: check.motivo };
+    }
     if (check.disponible === false && !check.error) {
       return { ok: false, status: 422, error: 'No encontramos esa matrícula en esa oficina. Verifícala antes de pagar.' };
     }

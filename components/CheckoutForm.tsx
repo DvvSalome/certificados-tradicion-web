@@ -8,7 +8,7 @@ import PlanTagline, { PlanFeature } from '@/components/PlanTagline';
 import PlanIcon from '@/components/PlanIcon';
 import { track } from '@/lib/track';
 
-type VResult = { disponible: boolean | null; estado: string | null; direccion: string | null; circulo: string | null; mocked?: boolean; error?: string; motivo?: string | null; turno?: string | null };
+type VResult = { disponible: boolean | null; estado: string | null; direccion: string | null; circulo: string | null; mocked?: boolean; error?: string; motivo?: string | null; turno?: string | null; ambiguo?: boolean };
 
 const ID_TYPES = [
   { value: 'CC', label: 'Cédula de ciudadanía' },
@@ -193,7 +193,7 @@ export default function CheckoutForm() {
         // El CTA del paso 1 dice "Verificar mi inmueble": si los campos ya están llenos y aún no hay
         // resultado, el clic DEBE verificar, no regañar con "te falta la matrícula".
         if (oficina && matricula.trim() && !vResult) { validarMatricula(false); return; }
-        setError(isBlocked ? `El registro reporta este inmueble como ${vResult?.estado}. No se puede expedir el certificado hasta que cierre ese trámite.` : isRejected ? 'No encontramos esa matrícula en esa oficina. Verifica los datos.' : isUnverified ? 'No pudimos verificar tu matrícula. Toca Reintentar en unos segundos.' : 'Te falta la oficina de registro y la matrícula.');
+        setError(isBlocked ? (vResult?.ambiguo ? String(vResult?.motivo) : `El registro reporta este inmueble como ${vResult?.estado}. No se puede expedir el certificado hasta que cierre ese trámite.`) : isRejected ? 'No encontramos esa matrícula en esa oficina. Verifica los datos.' : isUnverified ? 'No pudimos verificar tu matrícula. Toca Reintentar en unos segundos.' : 'Te falta la oficina de registro y la matrícula.');
         irACampo('campo-inmueble');
       }
       else if (!nombres.trim() || !apellidos.trim()) { setError('Te faltan tus nombres y apellidos.'); irACampo('campo-nombre'); }
@@ -368,11 +368,17 @@ export default function CheckoutForm() {
                   </div>
                   <div>
                     <div className="font-bold text-sky-900 text-[13.5px]">
-                      Este inmueble existe, pero hoy no se puede certificar
+                      {vResult?.ambiguo
+                        ? 'No pudimos confirmar esta matrícula con el SNR'
+                        : 'Este inmueble existe, pero hoy no se puede certificar'}
                     </div>
                     <div className="text-xs text-sky-800 mt-1 max-w-lg">
-                      El registro reporta la matrícula <b className="font-mono">{oficinaCode(oficina) || '—'} - {matricula}</b> como <b>{vResult?.estado}</b>. {vResult?.motivo}
-                      {vResult?.turno ? <> Turno en trámite: <b className="font-mono">{vResult.turno}</b>.</> : null}
+                      {vResult?.ambiguo ? <>
+                        {vResult?.motivo} Revisa el número <b className="font-mono">{oficinaCode(oficina) || '—'} - {matricula}</b>; si está bien escrito, el folio puede estar en trámite y vuelve a estar disponible cuando cierre.
+                      </> : <>
+                        El registro reporta la matrícula <b className="font-mono">{oficinaCode(oficina) || '—'} - {matricula}</b> como <b>{vResult?.estado}</b>. {vResult?.motivo}
+                        {vResult?.turno ? <> Turno en trámite: <b className="font-mono">{vResult.turno}</b>.</> : null}
+                      </>}
                     </div>
                     <div className="text-xs text-sky-800 mt-2 max-w-lg">
                       <b>No te cobramos nada.</b> Cuando el trámite cierre en el registro, el certificado vuelve a estar disponible.

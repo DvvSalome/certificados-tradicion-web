@@ -82,8 +82,13 @@ for (const p of PRUEBAS) {
     const r = await pedir({ oficina: p.oficina, matricula: p.matricula });
     const httpOk = r.codigo >= 200 && r.codigo < 300;
     const b = r.cuerpo;
-    ok = httpOk && !b.error && (b.disponible === true || !!b.estado || !!b.motivo);
-    detalle = ok ? 'ok' : (!httpOk ? ('HTTP ' + r.codigo) : (b.error ? String(b.error).slice(0, 60) : 'respuesta sin datos'));
+    // EXIGE disponible === true, no basta con "el puente respondió". Las tres matrículas de prueba
+    // SÍ están disponibles, así que cualquier otra cosa (incluido el "no concluyente honesto" que
+    // el robot devuelve cuando el portal público deja de discriminar) es señal de problema en ese
+    // folio, y se escala al siguiente. Si los tres dan eso, la pre-validación del SNR se cayó de
+    // verdad y nadie puede comprar: ahí sí es alarma.
+    ok = httpOk && b.disponible === true;
+    detalle = ok ? 'ok' : (!httpOk ? ('HTTP ' + r.codigo) : (b.error ? String(b.error).slice(0, 60) : (b.ambiguo ? 'el portal no discrimina' : (b.estado ? String(b.estado).slice(0, 40) : 'respuesta sin datos'))));
   } catch (e) {
     detalle = 'sin respuesta: ' + String((e && e.message) || e).slice(0, 50);
   }
