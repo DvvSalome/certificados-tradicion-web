@@ -1,6 +1,7 @@
 import { pedidoAlCrmPorRef } from '@/lib/crm';
 import { NextResponse, after } from 'next/server';
 import { getPool } from '@/lib/db';
+import { driveConfigurado, subirCertificado } from '@/lib/drive';
 
 export const runtime = 'nodejs';
 
@@ -30,8 +31,22 @@ export async function POST(req: Request) {
     await getPool().query("UPDATE orders SET estudio_pdf = decode($2, 'base64') WHERE reference = $1", [b.reference, b.estudioBase64]);
     out.estudio = buf.length;
   }
-  // El PDF puede llegar después del evento DELIVERED: actualiza documentos y acciones.
+  // Copia al Drive de FourG ANTES de avisarle al CRM, para que el pedido viaje ya con su enlace
+  // permanente. El PDF local se purga a las CERT_PDF_TTL_HOURS; el de Drive queda para siempre y es
+  // el que Alexis reenvía a sus clientes directos. Best-effort: si Drive falla, la entrega al cliente
+  // NO se toca (ya salió por correo y WhatsApp) y queda el error en el log.
   after(async () => {
+    if (driveConfigurado()) {
+      for (const [b64, campo, sufijo] of [[b.pdfBase64, 'drive_cert_url', ''], [b.estudioBase64, 'drive_estudio_url', '-estudio']] as const) {
+        if (!b64) continue;
+        try {
+          const a = await subirCertificado(`${b.reference}${sufijo}.pdf`, Buffer.from(b64, 'base64'));
+          await getPool().query(`UPDATE orders SET ${campo} = $2 WHERE reference = $1`, [b.reference, a.url]);
+        } catch (e) {
+          console.error('[drive] no se pudo guardar ' + b.reference + sufijo + ':', String((e as Error).message));
+        }
+      }
+    }
     const result = await pedidoAlCrmPorRef(b.reference!);
     if (!result.ok) console.error("No se pudo sincronizar el documento con el CRM", result.error);
   });

@@ -89,6 +89,10 @@ export interface PedidoCrm {
   certPdfAt?: string | null;    // desde cuándo está guardado el PDF (se purga a las CERT_PDF_TTL_HOURS)
   attempts?: number | null;
   lastError?: string | null;    // último error del robot para esta referencia
+  // Copia permanente en el Drive de FourG: sobrevive a la purga del PDF local y es la que Alexis
+  // reenvía a sus clientes directos. Solo la abre quien esté con la cuenta de FourG (no es pública).
+  driveCertUrl?: string | null;
+  driveEstudioUrl?: string | null;
 }
 
 export async function pedidoAlCrm(p: PedidoCrm, eventAt?: string | null): Promise<{ ok: boolean; error?: string }> {
@@ -103,6 +107,9 @@ export async function pedidoAlCrm(p: PedidoCrm, eventAt?: string | null): Promis
   const documents = [
     ...(p.hasCertPdf ? [{ key: 'certificado', label: 'Certificado', url: descarga(), expires_at: vence }] : []),
     ...(p.hasEstudioPdf ? [{ key: 'estudio', label: 'Estudio de títulos', url: descarga('estudio'), expires_at: vence }] : []),
+    // Sin expires_at: la copia de Drive no caduca, es la que queda cuando el PDF local ya se purgó.
+    ...(p.driveCertUrl ? [{ key: 'certificado_drive', label: 'Certificado (Drive)', url: p.driveCertUrl, expires_at: null }] : []),
+    ...(p.driveEstudioUrl ? [{ key: 'estudio_drive', label: 'Estudio de títulos (Drive)', url: p.driveEstudioUrl, expires_at: null }] : []),
   ];
 
   // Acciones: rutas de ESTE sitio que el CRM llama firmadas. Reenviar no cuesta (usa el PDF
@@ -146,7 +153,7 @@ export async function pedidoAlCrmPorRef(reference: string, eventAt?: string | nu
     const { rows } = await getPool().query(
       `SELECT o.reference, o.status, o.matricula, o.oficina, o.plan, o.email, o.phone, o.amount_in_cents, o.transaction_id,
               (o.cert_pdf IS NOT NULL) AS has_cert_pdf, (o.estudio_pdf IS NOT NULL) AS has_estudio_pdf,
-              o.cert_pdf_at, o.attempts,
+              o.cert_pdf_at, o.attempts, o.drive_cert_url, o.drive_estudio_url,
               (SELECT g.error FROM generations g WHERE g.reference = o.reference AND g.status = 'FAILED'
                 ORDER BY g.created_at DESC LIMIT 1) AS last_error
          FROM orders o WHERE o.reference = $1`,
@@ -163,6 +170,8 @@ export async function pedidoAlCrmPorRef(reference: string, eventAt?: string | nu
       certPdfAt: r.cert_pdf_at ? new Date(r.cert_pdf_at).toISOString() : null,
       attempts: r.attempts != null ? Number(r.attempts) : null,
       lastError: r.last_error ?? null,
+      driveCertUrl: r.drive_cert_url ?? null,
+      driveEstudioUrl: r.drive_estudio_url ?? null,
     }, eventAt);
   } catch (e) {
     return { ok: false, error: String(e).slice(0, 120) };
