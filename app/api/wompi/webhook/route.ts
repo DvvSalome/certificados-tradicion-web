@@ -3,6 +3,7 @@ import { verifyEvent, getTransaction } from '@/lib/wompi';
 import { orders } from '@/lib/orders';
 import { triggerGenerarCTL } from '@/lib/n8n';
 import { sendAlert } from '@/lib/alerts';
+import { formatCOP } from '@/lib/config';
 import { capiPurchase } from '@/lib/meta-capi';
 import { registrarEventoWompi } from '@/lib/wompi-log';
 import { pedidoAlCrmPorRef } from '@/lib/crm';
@@ -109,11 +110,12 @@ export async function POST(req: Request) {
     // hasta horas después; solo alertábamos los fallos). n8n abanica a WhatsApp+correo,
     // y el espejo en el CRM enciende la campana y el módulo /pedidos.
     after(async () => {
+      const monto = formatCOP(claimed.amountInCents / 100);
       await sendAlert({
         kind: 'venta_confirmada',
-        title: `💰 Venta confirmada: $${Math.round(claimed.amountInCents / 100).toLocaleString('es-CO')}`,
+        title: `💰 Venta confirmada: ${monto}`,
         message: `Pago aprobado de ${reference}. Matrícula ${claimed.matricula} (${claimed.oficina}), plan ${claimed.plan ?? order.plan}. Cliente: ${[claimed.phone ? `WhatsApp +${claimed.phone}` : null, claimed.email].filter(Boolean).join(' · ') || 'sin contacto'}. El certificado se está generando.`,
-        data: { referencia: reference, matricula: claimed.matricula, oficina: claimed.oficina, monto: claimed.amountInCents },
+        data: { referencia: reference, matricula: claimed.matricula, oficina: claimed.oficina, monto },
       });
       await pedidoAlCrmPorRef(reference);
     });
