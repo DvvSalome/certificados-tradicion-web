@@ -4,19 +4,20 @@ import { crearCheckout } from '@/lib/checkout';
 import { buscarOficina } from '@/lib/oficinas';
 import { getPlan, formatCOP } from '@/lib/config';
 
-// El consentimiento (términos, datos y antecedentes) solo con una afirmación EXPLÍCITA en `datos.acepta`: el título del
-// botón del menú del CRM («Sí, acepto») o una respuesta escrita que empiece afirmando (sí, acepto, ok, dale, claro, de
-// una, 1). Sin tildes ni mayúsculas que importen (antes /^s[ií]\b/ fallaba con «Sí»: la í no es letra para \b y el botón
-// nativo llegaba como NO aceptado, 20/10/2026). Cualquier negación, duda o pregunta, o un valor que no sea texto, es no.
-const AFIRMA = new Set(['si', 'acepto', 'aceptar', 'acepta', 'aceptamos', 'ok', 'okey', 'okay', 'dale', 'claro', '1']);
-const DUDA = new Set(['no', 'nunca', 'jamas', 'tampoco', 'sin', 'pero', 'aunque', 'quiza', 'quizas', 'tal', 'depende', 'despues', 'luego']);
+// El consentimiento (términos, datos y antecedentes) solo con una afirmación EXPLÍCITA y COMPLETA en `datos.acepta`: el
+// título del botón del menú del CRM («Sí, acepto») o una de estas respuestas cortas. Se compara la frase entera, sin
+// tildes (compuestas o descompuestas), mayúsculas, puntuación ni espacios de más; nada de prefijos: «Sí, rechazo los
+// términos», «sí, quiero información» o «Acepto cancelar» NO aceptan. Antes /^s[ií]\b/ fallaba con «Sí» (la í no es
+// letra para \b) y el botón nativo llegaba como no aceptado (20/10/2026). Un valor que no sea texto, o una pregunta, es no.
+const ACEPTACIONES = new Set([
+  'si acepto', 'si', 'acepto', '1', 'ok', 'okey', 'dale', 'claro', 'si claro', 'claro que si', 'de una', 'si dale',
+  'acepto los terminos', 'si acepto los terminos',
+]);
 function aceptaExplicita(v: unknown): boolean {
   if (typeof v !== 'string' && typeof v !== 'number') return false;
-  const t = String(v).normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
+  const t = String(v).normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
   if (/[?¿]/.test(t)) return false;
-  const palabras = t.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
-  if (!palabras.length || palabras.some((p) => DUDA.has(p))) return false;
-  return AFIRMA.has(palabras[0]) || (palabras[0] === 'de' && palabras[1] === 'una');
+  return ACEPTACIONES.has(t.split(/[^\p{L}\p{N}]+/u).filter(Boolean).join(' '));
 }
 
 export const runtime = 'nodejs';

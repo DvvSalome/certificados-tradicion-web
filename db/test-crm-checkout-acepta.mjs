@@ -50,7 +50,11 @@ for (const v of SI) {
   assert.deepEqual(eventos, ['verificar', 'orden'], `«${v}»: verifica en el SNR y crea la orden`);
 }
 
-const NO = ['No', 'No acepto', 'no, gracias', 'Sí, pero no acepto', 'acepto no', 'Sin aceptar', 'sino', 'Siempre no', 'quizá', 'Quizás sí', 'tal vez', '¿sí?', 'okupa', 'aceptable', 'Dale no', '10', '', '   ', 'true', null, 0, true, { title: 'Sí, acepto' }, ['Sí, acepto']];
+// Empiezan afirmando pero no aceptan los términos (revisión de Codex del primer arreglo): la frase completa debe ser
+// una aceptación permitida, no basta con que empiece por «sí» o «acepto».
+const NO = ['Sí, rechazo los términos', 'sí, quiero información', 'Acepto cancelar', 'Sí, cancelar', 'Sí, quiero hablar con un asesor',
+  'Acepto, pero después', 'Dale, mejor mañana', 'ok, no', 'Sí, todavía no quiero aceptar', 'Sí acepto el reembolso',
+  'No', 'No acepto', 'no, gracias', 'Sí, pero no acepto', 'acepto no', 'Sin aceptar', 'sino', 'Siempre no', 'quizá', 'Quizás sí', 'tal vez', '¿sí?', 'okupa', 'aceptable', 'Dale no', '10', '', '   ', 'true', null, 0, true, { title: 'Sí, acepto' }, ['Sí, acepto']];
 for (const v of NO) {
   eventos.length = 0;
   const r = await pedir(v);
